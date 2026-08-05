@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Calendar v2 — Agenda View — Student Academic OS</title>
+  <style>
+    :root { --bg:#000; --card:rgba(28,28,30,0.9); --border:rgba(255,255,255,0.1); --text:#fff; --muted:#8e8e93; --accent:#0a84ff; --green:#30d158; --amber:#ff9f0a; --red:#ff453a; }
+    * { box-sizing:border-box; margin:0; padding:0; font-family:-apple-system,'SF Pro Display',sans-serif; }
+    body { background:var(--bg); color:var(--text); padding-bottom:100px; }
+    .status-bar { height:47px; padding:0 24px; display:flex; justify-content:space-between; align-items:center; font-weight:600; }
+    .large-title { padding:0 20px 16px; font-size:34px; font-weight:800; letter-spacing:-0.5px; }
+
+    /* Week strip */
+    .week-strip { display:flex; overflow-x:auto; gap:4px; padding:0 20px 16px; scrollbar-width:none; }
+    .ws-day { flex:0 0 52px; display:flex; flex-direction:column; align-items:center; gap:4px; cursor:pointer; }
+    .ws-name { font-size:11px; font-weight:700; color:var(--muted); }
+    .ws-num { width:40px; height:40px; border-radius:50%; display:grid; place-items:center; font-size:16px; font-weight:700; }
+    .ws-num.today { background:var(--accent); color:#fff; }
+    .ws-bar { width:32px; height:3px; border-radius:2px; }
+
+    /* Agenda groups */
+    .agenda { padding:0 20px; display:flex; flex-direction:column; gap:16px; }
+    .agenda-group {}
+    .ag-date { font-size:13px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.4px; margin-bottom:8px; }
+    .ag-events { background:var(--card); backdrop-filter:blur(20px); border:1px solid var(--border); border-radius:18px; overflow:hidden; }
+    .evt { padding:14px 16px; border-bottom:1px solid rgba(255,255,255,0.06); display:flex; gap:12px; align-items:flex-start; }
+    .evt:last-child { border-bottom:none; }
+    .evt-stripe { width:4px; border-radius:2px; align-self:stretch; flex-shrink:0; }
+    .evt-content { flex:1; }
+    .evt-title { font-size:15px; font-weight:600; margin-bottom:3px; }
+    .evt-meta { font-size:12px; color:var(--muted); }
+    .evt-chip { display:inline-block; margin-top:6px; font-size:11px; font-weight:700; padding:3px 10px; border-radius:12px; }
+
+    .tab-bar { position:fixed; bottom:0; left:0; right:0; height:84px; background:rgba(0,0,0,0.85); backdrop-filter:blur(24px); border-top:1px solid rgba(255,255,255,0.08); display:flex; padding-bottom:20px; }
+    .tab { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; text-decoration:none; color:var(--muted); font-size:10px; }
+    .tab.active { color:var(--accent); }
+    .tab svg { width:24px; height:24px; fill:currentColor; }
+  </style>
+</head>
+<body>
+  <div class="status-bar"><span>9:41</span><span>100%</span></div>
+  <div style="padding:8px 20px 0; font-size:13px; font-weight:600; color:var(--muted);">AUGUST 2025</div>
+  <div class="large-title">Calendar</div>
+
+  <div class="week-strip">
+    <div class="ws-day"><div class="ws-name">MON</div><div class="ws-num">4</div><div class="ws-bar" style="background:var(--accent);"></div></div>
+    <div class="ws-day"><div class="ws-name">TUE</div><div class="ws-num today">5</div><div class="ws-bar" style="background:var(--green);"></div></div>
+    <div class="ws-day"><div class="ws-name">WED</div><div class="ws-num">6</div><div class="ws-bar" style="background:transparent;"></div></div>
+    <div class="ws-day"><div class="ws-name">THU</div><div class="ws-num">7</div><div class="ws-bar" style="background:var(--amber);"></div></div>
+    <div class="ws-day"><div class="ws-name">FRI</div><div class="ws-num">8</div><div class="ws-bar" style="background:transparent;"></div></div>
+    <div class="ws-day" style="opacity:0.3;"><div class="ws-name">SAT</div><div class="ws-num">9</div></div>
+  </div>
+
+  <div class="agenda">
+    <div class="agenda-group">
+      <div class="ag-date">TODAY — Tue, Aug 5</div>
+      <div class="ag-events">
+        <div class="evt">
+          <div class="evt-stripe" style="background:var(--accent);"></div>
+          <div class="evt-content">
+            <div class="evt-title">Data Structures Mid-Sem Exam</div>
+            <div class="evt-meta">9:00 – 11:00 AM · Exam Hall B</div>
+            <div class="evt-chip" style="background:rgba(10,132,255,0.15); color:var(--accent);">📝 Exam</div>
+          </div>
+        </div>
+        <div class="evt">
+          <div class="evt-stripe" style="background:var(--amber);"></div>
+          <div class="evt-content">
+            <div class="evt-title">Discrete Math Assignment 3 Due</div>
+            <div class="evt-meta">Before 11:59 PM · Online Submission</div>
+            <div class="evt-chip" style="background:rgba(255,159,10,0.15); color:var(--amber);">⚡ Deadline</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="agenda-group">
+      <div class="ag-date">TOMORROW — Wed, Aug 6</div>
+      <div class="ag-events">
+        <div class="evt">
+          <div class="evt-stripe" style="background:var(--green);"></div>
+          <div class="evt-content">
+            <div class="evt-title">AI Lab Practical — Batch B2</div>
+            <div class="evt-meta">11:15 AM – 1:05 PM · Lab 3</div>
+            <div class="evt-chip" style="background:rgba(48,209,88,0.15); color:var(--green);">🔬 Lab</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="agenda-group">
+      <div class="ag-date">THU, Aug 7</div>
+      <div class="ag-events">
+        <div class="evt">
+          <div class="evt-stripe" style="background:var(--red);"></div>
+          <div class="evt-content">
+            <div class="evt-title">OOP Java Term Project Demo</div>
+            <div class="evt-meta">2:00 – 4:00 PM · Room 305</div>
+            <div class="evt-chip" style="background:rgba(255,69,58,0.15); color:var(--red);">🎤 Viva</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <nav class="tab-bar">
+    <a href="../Dashboard/dashboard-v2.html" class="tab"><svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>Home</a>
+    <a href="../Timetable/timetable-v2.html" class="tab"><svg viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg>Schedule</a>
+    <a href="#" class="tab active"><svg viewBox="0 0 24 24"><path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/></svg>Calendar</a>
+    <a href="../Notes/notes-v2.html" class="tab"><svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>Notes</a>
+    <a href="../Settings/settings-v2.html" class="tab"><svg viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>More</a>
+  </nav>
+</body>
+</html>

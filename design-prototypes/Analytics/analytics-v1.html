@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Analytics v1 — Metrics Dashboard — Student Academic OS</title>
+  <style>
+    :root { --bg:#090d16; --card:#111827; --border:rgba(255,255,255,0.08); --text:#f9fafb; --muted:#6b7280; --accent:#6366f1; --green:#10b981; --amber:#f59e0b; --red:#ef4444; --mono:'JetBrains Mono',monospace; }
+    * { box-sizing:border-box; margin:0; padding:0; font-family:-apple-system,sans-serif; }
+    body { background:var(--bg); color:var(--text); padding-bottom:90px; }
+    .status-bar { height:47px; padding:0 24px; display:flex; justify-content:space-between; align-items:center; font-size:14px; }
+    header { padding:12px 20px; border-bottom:1px solid var(--border); }
+
+    .metrics-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:16px 20px; }
+    .metric-card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:16px; }
+    .mc-label { font-size:11px; font-family:var(--mono); text-transform:uppercase; color:var(--muted); letter-spacing:0.5px; margin-bottom:6px; }
+    .mc-value { font-size:30px; font-weight:800; font-family:var(--mono); }
+    .mc-sub { font-size:11px; color:var(--muted); margin-top:4px; }
+
+    /* Bar chart */
+    .chart-section { margin:0 20px 16px; background:var(--card); border:1px solid var(--border); border-radius:16px; padding:16px; }
+    .chart-title { font-size:13px; font-weight:700; margin-bottom:14px; }
+    .bar-chart { display:flex; gap:8px; align-items:flex-end; height:100px; }
+    .bar-col { flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; }
+    .bar { width:100%; border-radius:5px 5px 0 0; transition:height 0.5s; }
+    .bar-label { font-size:9px; font-family:var(--mono); color:var(--muted); }
+
+    /* Attendance breakdown */
+    .att-break { margin:0 20px; background:var(--card); border:1px solid var(--border); border-radius:16px; overflow:hidden; }
+    .ab-row { padding:12px 16px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; }
+    .ab-row:last-child { border-bottom:none; }
+    .ab-sub { font-size:14px; font-weight:600; }
+    .ab-pct { font-size:16px; font-weight:800; font-family:var(--mono); }
+
+    .nav-bar { position:fixed; bottom:0; left:0; right:0; height:80px; background:var(--card); border-top:1px solid var(--border); display:flex; justify-content:space-around; align-items:center; padding-bottom:20px; }
+    .nav-item { color:var(--muted); font-size:10px; text-decoration:none; display:flex; flex-direction:column; align-items:center; gap:4px; }
+    .nav-item.active { color:var(--accent); }
+    .nav-icon { width:22px; height:22px; fill:currentColor; }
+  </style>
+</head>
+<body>
+  <div class="status-bar"><span>9:41</span><span>100%</span></div>
+  <header><h1 style="font-size:20px; font-weight:800;">Analytics</h1><p style="font-size:12px; color:var(--muted);">Sem 3 · B.Tech AI&DS</p></header>
+
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <div class="mc-label">CGPA</div>
+      <div class="mc-value" style="color:var(--green);">8.4</div>
+      <div class="mc-sub">↑ 0.2 from Sem 2</div>
+    </div>
+    <div class="metric-card">
+      <div class="mc-label">SGPA Target</div>
+      <div class="mc-value" style="color:var(--accent);">9.0</div>
+      <div class="mc-sub">Need 87% in finals</div>
+    </div>
+    <div class="metric-card">
+      <div class="mc-label">Att. Overall</div>
+      <div class="mc-value" style="color:var(--amber);">82.1%</div>
+      <div class="mc-sub">1 subject at risk</div>
+    </div>
+    <div class="metric-card">
+      <div class="mc-label">Tasks Done</div>
+      <div class="mc-value" style="color:var(--green);">24/31</div>
+      <div class="mc-sub">77% completion</div>
+    </div>
+  </div>
+
+  <div class="chart-section">
+    <div class="chart-title">Weekly Attendance (Last 4 Weeks)</div>
+    <div class="bar-chart">
+      <div class="bar-col"><div class="bar" style="height:80px; background:rgba(99,102,241,0.5);"></div><span class="bar-label">W1</span></div>
+      <div class="bar-col"><div class="bar" style="height:65px; background:rgba(99,102,241,0.5);"></div><span class="bar-label">W2</span></div>
+      <div class="bar-col"><div class="bar" style="height:90px; background:rgba(16,185,129,0.6);"></div><span class="bar-label">W3</span></div>
+      <div class="bar-col"><div class="bar" style="height:82px; background:rgba(16,185,129,0.6);"></div><span class="bar-label">W4</span></div>
+      <div class="bar-col"><div class="bar" style="height:55px; background:rgba(245,158,11,0.5);"></div><span class="bar-label">W5</span></div>
+    </div>
+  </div>
+
+  <div style="padding:8px 20px; font-size:11px; font-family:var(--mono); text-transform:uppercase; color:var(--muted); letter-spacing:1px;">Subject Breakdown</div>
+  <div class="att-break">
+    <div class="ab-row">
+      <div class="ab-sub">Data Structures</div>
+      <div class="ab-pct" style="color:var(--green);">84.6%</div>
+    </div>
+    <div class="ab-row">
+      <div class="ab-sub">Discrete Math</div>
+      <div class="ab-pct" style="color:var(--red);">71.4% ⚠</div>
+    </div>
+    <div class="ab-row">
+      <div class="ab-sub">AI Lab</div>
+      <div class="ab-pct" style="color:var(--green);">93.3%</div>
+    </div>
+    <div class="ab-row">
+      <div class="ab-sub">OOP Java</div>
+      <div class="ab-pct" style="color:var(--green);">87.5%</div>
+    </div>
+  </div>
+
+  <nav class="nav-bar">
+    <a href="../Dashboard/dashboard-v1.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>Home</a>
+    <a href="../Timetable/timetable-v1.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg>Schedule</a>
+    <a href="#" class="nav-item active"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 3c1.93 0 3.5 1.57 3.5 3.5S13.93 13 12 13s-3.5-1.57-3.5-3.5S10.07 6 12 6zm7 13H5v-.23c0-.62.28-1.2.76-1.58C7.47 15.82 9.64 15 12 15s4.53.82 6.24 2.19c.48.38.76.97.76 1.58V19z"/></svg>Analytics</a>
+    <a href="../Notes/notes-v1.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>Notes</a>
+    <a href="../Settings/settings-v1.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>More</a>
+  </nav>
+</body>
+</html>

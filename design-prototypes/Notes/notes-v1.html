@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Notes v1 — Editor List — Student Academic OS</title>
+  <style>
+    :root { --bg:#090d16; --card:#111827; --border:rgba(255,255,255,0.08); --text:#f9fafb; --muted:#6b7280; --accent:#6366f1; --mono:'JetBrains Mono',monospace; }
+    * { box-sizing:border-box; margin:0; padding:0; font-family:-apple-system,sans-serif; }
+    body { background:var(--bg); color:var(--text); padding-bottom:90px; }
+    .status-bar { height:47px; padding:0 24px; display:flex; justify-content:space-between; align-items:center; font-size:14px; }
+    header { padding:12px 20px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; }
+
+    /* Search bar */
+    .search-bar { margin:12px 20px; background:rgba(255,255,255,0.05); border:1px solid var(--border); border-radius:12px; padding:10px 14px; display:flex; align-items:center; gap:10px; }
+    .search-bar input { flex:1; background:none; border:none; outline:none; color:var(--text); font-size:15px; }
+    .search-bar input::placeholder { color:var(--muted); }
+
+    /* Subject folder pills */
+    .folder-pills { display:flex; gap:8px; overflow-x:auto; padding:0 20px 12px; scrollbar-width:none; }
+    .fp { flex:0 0 auto; padding:6px 14px; border-radius:20px; font-size:12px; font-weight:600; border:1px solid var(--border); background:var(--card); color:var(--muted); cursor:pointer; }
+    .fp.active { background:rgba(99,102,241,0.15); border-color:rgba(99,102,241,0.4); color:var(--accent); }
+
+    /* Note list */
+    .note-list { margin:0 20px; background:var(--card); border:1px solid var(--border); border-radius:16px; overflow:hidden; }
+    .note-item { padding:14px 16px; border-bottom:1px solid var(--border); cursor:pointer; transition:background 0.15s; }
+    .note-item:last-child { border-bottom:none; }
+    .note-item:active { background:rgba(255,255,255,0.03); }
+    .ni-title { font-size:15px; font-weight:700; margin-bottom:3px; }
+    .ni-preview { font-size:13px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:6px; }
+    .ni-meta { display:flex; gap:8px; align-items:center; }
+    .ni-tag { font-family:var(--mono); font-size:10px; padding:2px 7px; border-radius:5px; border:1px solid var(--border); color:var(--muted); }
+    .ni-date { font-size:11px; color:var(--muted); margin-left:auto; }
+
+    .fab { position:fixed; bottom:96px; right:20px; width:52px; height:52px; background:var(--accent); border-radius:50%; display:grid; place-items:center; box-shadow:0 8px 24px rgba(99,102,241,0.4); border:none; cursor:pointer; }
+    .fab svg { width:24px; height:24px; fill:#fff; }
+
+    .nav-bar { position:fixed; bottom:0; left:0; right:0; height:80px; background:var(--card); border-top:1px solid var(--border); display:flex; justify-content:space-around; align-items:center; padding-bottom:20px; }
+    .nav-item { color:var(--muted); font-size:10px; text-decoration:none; display:flex; flex-direction:column; align-items:center; gap:4px; }
+    .nav-item.active { color:var(--accent); }
+    .nav-icon { width:22px; height:22px; fill:currentColor; }
+  </style>
+</head>
+<body>
+  <div class="status-bar"><span>9:41</span><span>100%</span></div>
+  <header><h1 style="font-size:20px; font-weight:800;">Notes</h1><span style="font-family:var(--mono); font-size:12px; color:var(--muted);">14 notes</span></header>
+
+  <div class="search-bar">
+    <svg width="16" height="16" fill="var(--muted)" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+    <input type="text" placeholder="Search notes, tags…">
+  </div>
+
+  <div class="folder-pills">
+    <div class="fp active">All Notes</div>
+    <div class="fp">DSA</div>
+    <div class="fp">Discrete Math</div>
+    <div class="fp">AI Lab</div>
+    <div class="fp">OOP Java</div>
+  </div>
+
+  <div class="note-list">
+    <div class="note-item">
+      <div class="ni-title">Trees — Binary Tree Traversals</div>
+      <div class="ni-preview">Inorder, Preorder, Postorder. Key insight: stack-based iterative traversal avoids recursion overhead…</div>
+      <div class="ni-meta">
+        <span class="ni-tag">DSA</span><span class="ni-tag">Trees</span>
+        <span class="ni-date">Aug 4</span>
+      </div>
+    </div>
+    <div class="note-item">
+      <div class="ni-title">Graph Theory — DFS vs BFS</div>
+      <div class="ni-preview">BFS uses queue, DFS uses stack or recursion. BFS finds shortest path in unweighted graphs…</div>
+      <div class="ni-meta">
+        <span class="ni-tag">DSA</span><span class="ni-tag">Graphs</span>
+        <span class="ni-date">Aug 2</span>
+      </div>
+    </div>
+    <div class="note-item">
+      <div class="ni-title">Propositional Logic — Truth Tables</div>
+      <div class="ni-preview">Truth table method for verifying tautologies and contradictions. De Morgan's laws…</div>
+      <div class="ni-meta">
+        <span class="ni-tag">Discrete Math</span>
+        <span class="ni-date">Jul 30</span>
+      </div>
+    </div>
+    <div class="note-item">
+      <div class="ni-title">Linear Regression — Lab Notes</div>
+      <div class="ni-preview">Implemented gradient descent from scratch in Python. MSE loss converged after 200 epochs…</div>
+      <div class="ni-meta">
+        <span class="ni-tag">AI Lab</span><span class="ni-tag">ML</span>
+        <span class="ni-date">Jul 28</span>
+      </div>
+    </div>
+  </div>
+
+  <button class="fab"><svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg></button>
+
+  <nav class="nav-bar">
+    <a href="../Dashboard/dashboard-v1.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>Home</a>
+    <a href="../Timetable/timetable-v1.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg>Schedule</a>
+    <a href="../Tasks/tasks-v1.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>Tasks</a>
+    <a href="#" class="nav-item active"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>Notes</a>
+    <a href="../Settings/settings-v1.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>More</a>
+  </nav>
+</body>
+</html>

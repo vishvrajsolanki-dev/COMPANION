@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Attendance v2 — Apple Minimal — Student Academic OS</title>
+  <style>
+    :root {
+      --bg: #000;
+      --card-bg: rgba(28,28,30,0.85);
+      --border: rgba(255,255,255,0.1);
+      --text: #fff;
+      --text-muted: #8e8e93;
+      --accent: #0a84ff;
+      --green: #30d158;
+      --amber: #ff9f0a;
+      --red: #ff453a;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, 'SF Pro Display', sans-serif; }
+    body { background: var(--bg); color: var(--text); padding-bottom: 100px; }
+    .status-bar { height: 47px; padding: 0 28px; display: flex; justify-content: space-between; align-items: center; font-weight: 600; font-size: 15px; }
+    
+    .large-title { padding: 0 20px 16px; font-size: 34px; font-weight: 800; letter-spacing: -0.5px; }
+    
+    .summary-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; padding: 0 20px 20px; }
+    .sum-chip { background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; padding: 14px 12px; backdrop-filter: blur(20px); }
+    .sum-num { font-size: 22px; font-weight: 800; }
+    .sum-label { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+
+    .subject-stack { padding: 0 20px; display: flex; flex-direction: column; gap: 12px; }
+    .sub-card { background: var(--card-bg); backdrop-filter: blur(20px); border: 1px solid var(--border); border-radius: 20px; padding: 18px; overflow: hidden; transition: transform 0.2s; }
+    .sub-card:active { transform: scale(0.98); }
+    .sub-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+    .sub-name { font-size: 17px; font-weight: 700; }
+    .sub-pct { font-size: 24px; font-weight: 800; }
+    .progress-track { height: 5px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden; margin-bottom: 10px; }
+    .progress-fill { height: 100%; border-radius: 3px; transition: width 0.6s cubic-bezier(0.32,0.72,0,1); }
+    .sub-meta { font-size: 13px; color: var(--text-muted); }
+
+    .state-row { display: flex; gap: 8px; margin-top: 14px; overflow-x: auto; scrollbar-width: none; }
+    .state-chip { flex: 0 0 auto; padding: 7px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; border: none; cursor: pointer; }
+    .chip-p { background: rgba(48,209,88,0.15); color: var(--green); }
+    .chip-a { background: rgba(255,69,58,0.15); color: var(--red); }
+    .chip-l { background: rgba(255,159,10,0.15); color: var(--amber); }
+    .chip-m { background: rgba(10,132,255,0.15); color: var(--accent); }
+    .chip-o { background: rgba(255,255,255,0.1); color: var(--text-muted); }
+
+    .warning-banner { margin: 0 20px 12px; background: rgba(255,69,58,0.1); border: 1px solid rgba(255,69,58,0.3); border-radius: 14px; padding: 12px 16px; display: flex; align-items: center; gap: 10px; }
+    
+    .tab-bar { position: fixed; bottom: 0; left: 0; right: 0; height: 84px; background: rgba(0,0,0,0.85); backdrop-filter: blur(24px); border-top: 1px solid rgba(255,255,255,0.08); display: flex; padding-bottom: 20px; }
+    .tab { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-decoration: none; color: var(--text-muted); font-size: 10px; font-weight: 500; }
+    .tab.active { color: var(--accent); }
+    .tab svg { width: 24px; height: 24px; fill: currentColor; }
+  </style>
+</head>
+<body>
+  <div class="status-bar"><span>9:41</span><span>···</span><span>100%</span></div>
+
+  <div style="padding: 8px 20px 0;">
+    <div style="font-size: 13px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px;">Semester 3 · 2025–26</div>
+  </div>
+  <div class="large-title">Attendance</div>
+
+  <div class="summary-row">
+    <div class="sum-chip">
+      <div class="sum-num" style="color: var(--green);">82.1%</div>
+      <div class="sum-label">Overall</div>
+    </div>
+    <div class="sum-chip">
+      <div class="sum-num" style="color: var(--accent);">22</div>
+      <div class="sum-label">Classes Attended</div>
+    </div>
+    <div class="sum-chip">
+      <div class="sum-num" style="color: var(--amber);">1 Risk</div>
+      <div class="sum-label">Subject at Risk</div>
+    </div>
+  </div>
+
+  <div class="warning-banner">
+    <span style="font-size: 18px;">⚠️</span>
+    <div>
+      <div style="font-size: 14px; font-weight: 700; color: var(--red);">Discrete Math at Risk</div>
+      <div style="font-size: 12px; color: var(--text-muted);">Attend next 2 classes to reach 75%</div>
+    </div>
+  </div>
+
+  <div class="subject-stack">
+    <div class="sub-card">
+      <div class="sub-header">
+        <div>
+          <div style="font-size: 12px; color: var(--text-muted);">Data Structures &amp; Algorithms</div>
+          <div class="sub-name">DSA</div>
+        </div>
+        <div class="sub-pct" style="color: var(--green);">84.6%</div>
+      </div>
+      <div class="progress-track"><div class="progress-fill" style="width: 84.6%; background: var(--green);"></div></div>
+      <div class="sub-meta">22 of 26 classes · Safe to skip 2</div>
+      <div class="state-row">
+        <button class="state-chip chip-p">✓ Present</button>
+        <button class="state-chip chip-a">✗ Absent</button>
+        <button class="state-chip chip-l">↗ Late</button>
+        <button class="state-chip chip-m">🩺 Medical</button>
+        <button class="state-chip chip-o">📋 On-Duty</button>
+      </div>
+    </div>
+
+    <div class="sub-card" style="border-color: rgba(255,69,58,0.3);">
+      <div class="sub-header">
+        <div>
+          <div style="font-size: 12px; color: var(--red);">⚠ AT RISK</div>
+          <div class="sub-name">Discrete Maths</div>
+        </div>
+        <div class="sub-pct" style="color: var(--red);">71.4%</div>
+      </div>
+      <div class="progress-track"><div class="progress-fill" style="width: 71.4%; background: var(--red);"></div></div>
+      <div class="sub-meta">20 of 28 classes · Need 2 more</div>
+      <div class="state-row">
+        <button class="state-chip chip-p">✓ Present</button>
+        <button class="state-chip chip-a">✗ Absent</button>
+        <button class="state-chip chip-l">↗ Late</button>
+        <button class="state-chip chip-m">🩺 Medical</button>
+        <button class="state-chip chip-o">📋 On-Duty</button>
+      </div>
+    </div>
+
+    <div class="sub-card">
+      <div class="sub-header">
+        <div>
+          <div style="font-size: 12px; color: var(--text-muted);">Artificial Intelligence Lab</div>
+          <div class="sub-name">AI Lab</div>
+        </div>
+        <div class="sub-pct" style="color: var(--green);">93.3%</div>
+      </div>
+      <div class="progress-track"><div class="progress-fill" style="width: 93.3%; background: var(--green);"></div></div>
+      <div class="sub-meta">14 of 15 sessions · Safe to skip 4</div>
+      <div class="state-row">
+        <button class="state-chip chip-p">✓ Present</button>
+        <button class="state-chip chip-a">✗ Absent</button>
+        <button class="state-chip chip-l">↗ Late</button>
+        <button class="state-chip chip-m">🩺 Medical</button>
+        <button class="state-chip chip-o">📋 On-Duty</button>
+      </div>
+    </div>
+  </div>
+
+  <nav class="tab-bar">
+    <a href="../Dashboard/dashboard-v2.html" class="tab"><svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>Home</a>
+    <a href="../Timetable/timetable-v2.html" class="tab"><svg viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg>Schedule</a>
+    <a href="#" class="tab active"><svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>Attendance</a>
+    <a href="../Notes/notes-v2.html" class="tab"><svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>Notes</a>
+    <a href="../Settings/settings-v2.html" class="tab"><svg viewBox="0 0 24 24"><path d="M12 15.5A3.5 3.5 0 018.5 12 3.5 3.5 0 0112 8.5a3.5 3.5 0 013.5 3.5 3.5 3.5 0 01-3.5 3.5m7.43-2.92c.04-.34.07-.68.07-1.08s-.03-.74-.07-1.08l2.32-1.82c.21-.16.27-.46.13-.7l-2.2-3.81c-.13-.23-.42-.31-.65-.23l-2.73 1.1c-.57-.44-1.18-.8-1.85-1.08l-.41-2.9c-.04-.25-.26-.44-.52-.44h-4.4c-.26 0-.48.19-.52.44l-.41 2.9c-.67.28-1.28.64-1.85 1.08l-2.73-1.1c-.24-.09-.52 0-.65.23l-2.2 3.81c-.14.24-.08.54.13.7l2.32 1.82c-.04.34-.07.69-.07 1.08s.03.74.07 1.08l-2.32 1.82c-.21.16-.27.46-.13.7l2.2 3.81c.13.23.42.31.65.23l2.73-1.1c.57.44 1.18.8 1.85 1.08l.41 2.9c.04.25.26.44.52.44h4.4c.26 0 .48-.19.52-.44l.41-2.9c.67-.28 1.28-.64 1.85-1.08l2.73 1.1c.24.09.52 0 .65-.23l2.2-3.81c.14-.24.08-.54-.13-.7l-2.32-1.82z"/></svg>Settings</a>
+  </nav>
+</body>
+</html>

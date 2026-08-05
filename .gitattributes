@@ -1,0 +1,9 @@
+# Normalize all text files to LF on checkout (consistent cross-platform)
+* text=auto eol=lf
+
+# Explicitly binary — no CRLF conversion
+*.png binary
+*.ico binary
+*.svg binary
+*.woff2 binary
+*.webp binary

@@ -1,0 +1,94 @@
+@import './tokens.css';
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  /* Prevent iOS bounce scroll on root */
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: var(--font-family-base);
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  height: 100%;
+  overflow: hidden;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+input, select, textarea {
+  font-family: inherit;
+}
+
+a {
+  color: inherit;
+}
+
+.mono {
+  font-family: var(--font-family-mono);
+}
+
+/* ── App Shell ────────────────────────────────────────────────────────────── */
+#root {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  /* iPhone safe area padding (Dynamic Island / home indicator) */
+  padding-top: env(safe-area-inset-top);
+  /* Do NOT add padding-bottom here — TabBar handles it via safe-area */
+}
+
+main {
+  flex: 1;
+  overflow-y: auto;
+  /* iOS momentum scroll */
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── Bottom Tab Bar Safe Area ─────────────────────────────────────────────── */
+/* Applied by TabBar component via CSS class */
+.nav-bar-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* ── Focus ring for keyboard navigation ──────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--color-accent-primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ── Scrollbar styling (dark-mode aware) ─────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 2px;
+}
+
+/* ── Form inputs — remove native arrows on number inputs ─────────────────── */
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}

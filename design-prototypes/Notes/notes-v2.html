@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Notes v2 — Card Grid — Student Academic OS</title>
+  <style>
+    :root { --bg:#000; --card:rgba(28,28,30,0.9); --border:rgba(255,255,255,0.1); --text:#fff; --muted:#8e8e93; --accent:#0a84ff; --green:#30d158; }
+    * { box-sizing:border-box; margin:0; padding:0; font-family:-apple-system,'SF Pro Display',sans-serif; }
+    body { background:var(--bg); color:var(--text); padding-bottom:100px; }
+    .status-bar { height:47px; padding:0 24px; display:flex; justify-content:space-between; align-items:center; font-weight:600; }
+    .large-title { padding:0 20px 12px; font-size:34px; font-weight:800; letter-spacing:-0.5px; }
+
+    .search-bar { margin:0 20px 14px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.1); border-radius:14px; padding:12px 16px; display:flex; align-items:center; gap:10px; }
+    .search-bar input { flex:1; background:none; border:none; outline:none; color:var(--text); font-size:16px; }
+    .search-bar input::placeholder { color:var(--muted); }
+
+    .card-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; padding:0 20px; }
+    .note-card { background:var(--card); backdrop-filter:blur(20px); border:1px solid var(--border); border-radius:18px; padding:16px; cursor:pointer; transition:transform 0.2s; }
+    .note-card:active { transform:scale(0.96); }
+    .nc-folder { font-size:11px; font-weight:700; margin-bottom:6px; }
+    .nc-title { font-size:15px; font-weight:700; margin-bottom:6px; line-height:1.3; }
+    .nc-preview { font-size:12px; color:var(--muted); line-height:1.5; }
+    .nc-date { font-size:11px; color:var(--muted); margin-top:10px; }
+
+    .wide-card { grid-column:span 2; display:flex; gap:14px; align-items:center; }
+    .wc-icon { width:48px; height:48px; border-radius:14px; display:grid; place-items:center; font-size:22px; flex-shrink:0; }
+
+    .tab-bar { position:fixed; bottom:0; left:0; right:0; height:84px; background:rgba(0,0,0,0.85); backdrop-filter:blur(24px); border-top:1px solid rgba(255,255,255,0.08); display:flex; padding-bottom:20px; }
+    .tab { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; text-decoration:none; color:var(--muted); font-size:10px; font-weight:500; }
+    .tab.active { color:var(--accent); }
+    .tab svg { width:24px; height:24px; fill:currentColor; }
+  </style>
+</head>
+<body>
+  <div class="status-bar"><span>9:41</span><span>100%</span></div>
+  <div style="padding:8px 20px 0; font-size:13px; font-weight:600; color:var(--muted);">14 NOTES</div>
+  <div class="large-title">Notes</div>
+
+  <div class="search-bar">
+    <svg width="16" height="16" fill="var(--muted)" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+    <input type="text" placeholder="Search your notes…">
+  </div>
+
+  <div class="card-grid">
+    <div class="note-card wide-card" style="background:rgba(10,132,255,0.08); border-color:rgba(10,132,255,0.25);">
+      <div class="wc-icon" style="background:rgba(10,132,255,0.15);">🌳</div>
+      <div>
+        <div class="nc-folder" style="color:var(--accent);">DSA</div>
+        <div class="nc-title">Trees — Binary Tree Traversals</div>
+        <div class="nc-date">Aug 4 · 3 min read</div>
+      </div>
+    </div>
+
+    <div class="note-card">
+      <div class="nc-folder" style="color:var(--accent);">DSA</div>
+      <div class="nc-title">DFS vs BFS</div>
+      <div class="nc-preview">BFS uses queue, shortest path…</div>
+      <div class="nc-date">Aug 2</div>
+    </div>
+    <div class="note-card">
+      <div class="nc-folder" style="color:#ff453a;">Discrete Math</div>
+      <div class="nc-title">Truth Tables</div>
+      <div class="nc-preview">De Morgan's laws, tautology…</div>
+      <div class="nc-date">Jul 30</div>
+    </div>
+
+    <div class="note-card">
+      <div class="nc-folder" style="color:var(--green);">AI Lab</div>
+      <div class="nc-title">Linear Regression Lab</div>
+      <div class="nc-preview">MSE loss converged 200 epochs…</div>
+      <div class="nc-date">Jul 28</div>
+    </div>
+    <div class="note-card">
+      <div class="nc-folder" style="color:#ff9f0a;">OOP Java</div>
+      <div class="nc-title">Inheritance &amp; Polymorphism</div>
+      <div class="nc-preview">Interface vs abstract class…</div>
+      <div class="nc-date">Jul 25</div>
+    </div>
+  </div>
+
+  <nav class="tab-bar">
+    <a href="../Dashboard/dashboard-v2.html" class="tab"><svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>Home</a>
+    <a href="../Timetable/timetable-v2.html" class="tab"><svg viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg>Schedule</a>
+    <a href="../Tasks/tasks-v2.html" class="tab"><svg viewBox="0 0 24 24"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>Tasks</a>
+    <a href="#" class="tab active"><svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>Notes</a>
+    <a href="../Settings/settings-v2.html" class="tab"><svg viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>More</a>
+  </nav>
+</body>
+</html>

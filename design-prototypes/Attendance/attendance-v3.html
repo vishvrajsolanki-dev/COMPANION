@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Attendance v3 — Calendar Heatmap — Student Academic OS</title>
+  <style>
+    :root {
+      --bg: #090d16;
+      --card: #111827;
+      --border: rgba(255,255,255,0.08);
+      --text: #f9fafb;
+      --muted: #6b7280;
+      --accent: #6366f1;
+      --green: #10b981;
+      --red: #ef4444;
+      --amber: #f59e0b;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: -apple-system, sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: var(--sans); -webkit-tap-highlight-color: transparent; }
+    body { background: var(--bg); color: var(--text); padding-bottom: 90px; }
+    .status-bar { height: 47px; padding: 0 24px; display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
+
+    header { padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
+    
+    /* Subject Tabs */
+    .sub-tabs { display: flex; gap: 8px; overflow-x: auto; padding: 12px 20px; scrollbar-width: none; }
+    .sub-tab { flex: 0 0 auto; padding: 7px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; border: 1px solid var(--border); background: var(--card); color: var(--muted); cursor: pointer; }
+    .sub-tab.active { background: rgba(99,102,241,0.15); border-color: rgba(99,102,241,0.4); color: var(--accent); }
+
+    /* Stats Header */
+    .stats-block { margin: 0 20px 16px; background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px; display: flex; justify-content: space-between; align-items: center; }
+    .big-pct { font-size: 40px; font-weight: 800; font-family: var(--mono); }
+    .stats-right { text-align: right; font-size: 13px; color: var(--muted); display: flex; flex-direction: column; gap: 4px; }
+    .stat-line span { font-weight: 700; color: var(--text); }
+
+    /* Calendar Heatmap */
+    .cal-header { padding: 0 20px 8px; font-size: 11px; font-family: var(--mono); text-transform: uppercase; color: var(--muted); letter-spacing: 1px; }
+    .calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; padding: 0 20px 16px; }
+    .cal-day-label { text-align: center; font-size: 10px; color: var(--muted); font-family: var(--mono); padding-bottom: 4px; }
+    .cal-cell { aspect-ratio: 1; border-radius: 8px; display: grid; place-items: center; font-size: 11px; font-family: var(--mono); font-weight: 600; cursor: pointer; transition: transform 0.15s; }
+    .cal-cell:active { transform: scale(0.88); }
+    .c-empty { background: transparent; }
+    .c-present { background: rgba(16,185,129,0.25); color: var(--green); border: 1px solid rgba(16,185,129,0.3); }
+    .c-absent  { background: rgba(239,68,68,0.2);  color: var(--red);   border: 1px solid rgba(239,68,68,0.3); }
+    .c-late    { background: rgba(245,158,11,0.2);  color: var(--amber); border: 1px solid rgba(245,158,11,0.3); }
+    .c-none    { background: var(--card); color: var(--muted); border: 1px solid var(--border); }
+    .c-today   { box-shadow: 0 0 0 2px var(--accent); }
+
+    /* 5-state quick mark */
+    .mark-section { margin: 0 20px; background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px; }
+    .mark-label { font-size: 12px; font-family: var(--mono); color: var(--muted); margin-bottom: 12px; }
+    .mark-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+    .mark-btn { border: none; border-radius: 10px; padding: 10px 4px; font-size: 11px; font-weight: 700; cursor: pointer; transition: transform 0.15s; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .mark-btn:active { transform: scale(0.9); }
+    .mb-p { background: rgba(16,185,129,0.15); color: var(--green); }
+    .mb-a { background: rgba(239,68,68,0.15); color: var(--red); }
+    .mb-l { background: rgba(245,158,11,0.15); color: var(--amber); }
+    .mb-m { background: rgba(99,102,241,0.15); color: var(--accent); }
+    .mb-o { background: rgba(255,255,255,0.06); color: var(--muted); }
+
+    .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; height: 80px; background: var(--card); border-top: 1px solid var(--border); display: flex; justify-content: space-around; align-items: center; padding-bottom: 20px; }
+    .nav-item { color: var(--muted); font-size: 10px; text-decoration: none; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .nav-item.active { color: var(--accent); }
+    .nav-icon { width: 22px; height: 22px; fill: currentColor; }
+  </style>
+</head>
+<body>
+  <div class="status-bar"><span>9:41</span><span>100%</span></div>
+  <header>
+    <h1 style="font-size: 20px; font-weight: 800;">Attendance</h1>
+    <span style="font-size: 12px; font-family: var(--mono); color: var(--green);">75% Target</span>
+  </header>
+
+  <div class="sub-tabs">
+    <div class="sub-tab active">DSA</div>
+    <div class="sub-tab">Discrete Math</div>
+    <div class="sub-tab">AI Lab</div>
+    <div class="sub-tab">OOP Java</div>
+    <div class="sub-tab">DBMS</div>
+  </div>
+
+  <div class="stats-block">
+    <div>
+      <div style="font-size: 12px; color: var(--muted); font-family: var(--mono);">CURRENT</div>
+      <div class="big-pct" style="color: var(--green);">84.6%</div>
+      <div style="font-size: 12px; color: var(--green); font-family: var(--mono);">✓ Safe to skip 2</div>
+    </div>
+    <div class="stats-right">
+      <div class="stat-line">Attended: <span>22</span></div>
+      <div class="stat-line">Scheduled: <span>26</span></div>
+      <div class="stat-line">Cancelled: <span>1</span></div>
+      <div class="stat-line" style="color: var(--amber);">Absent: <span style="color:var(--amber)">4</span></div>
+    </div>
+  </div>
+
+  <div class="cal-header">July 2025 — Attendance Heatmap</div>
+  <div class="calendar">
+    <div class="cal-day-label">M</div><div class="cal-day-label">T</div><div class="cal-day-label">W</div>
+    <div class="cal-day-label">T</div><div class="cal-day-label">F</div><div class="cal-day-label">S</div><div class="cal-day-label">S</div>
+    <div class="cal-cell c-empty"></div><div class="cal-cell c-present">1</div><div class="cal-cell c-present">2</div>
+    <div class="cal-cell c-absent">3</div><div class="cal-cell c-present">4</div><div class="cal-cell c-none">5</div><div class="cal-cell c-none">6</div>
+    <div class="cal-cell c-present">7</div><div class="cal-cell c-present">8</div><div class="cal-cell c-late">9</div>
+    <div class="cal-cell c-present">10</div><div class="cal-cell c-present">11</div><div class="cal-cell c-none">12</div><div class="cal-cell c-none">13</div>
+    <div class="cal-cell c-absent">14</div><div class="cal-cell c-present">15</div><div class="cal-cell c-present">16</div>
+    <div class="cal-cell c-present">17</div><div class="cal-cell c-absent">18</div><div class="cal-cell c-none">19</div><div class="cal-cell c-none">20</div>
+    <div class="cal-cell c-present">21</div><div class="cal-cell c-present">22</div><div class="cal-cell c-present">23</div>
+    <div class="cal-cell c-present">24</div><div class="cal-cell c-present">25</div><div class="cal-cell c-none">26</div><div class="cal-cell c-none">27</div>
+    <div class="cal-cell c-present">28</div><div class="cal-cell c-absent">29</div><div class="cal-cell c-present">30</div>
+    <div class="cal-cell c-present c-today">31</div><div class="cal-cell c-empty"></div><div class="cal-cell c-empty"></div><div class="cal-cell c-empty"></div>
+  </div>
+
+  <div class="mark-section">
+    <div class="mark-label">MARK TODAY — Data Structures &amp; Algorithms</div>
+    <div class="mark-row">
+      <button class="mark-btn mb-p">✓<span>Present</span></button>
+      <button class="mark-btn mb-a">✗<span>Absent</span></button>
+      <button class="mark-btn mb-l">↗<span>Late</span></button>
+      <button class="mark-btn mb-m">🩺<span>Medical</span></button>
+      <button class="mark-btn mb-o">📋<span>OnDuty</span></button>
+    </div>
+  </div>
+
+  <nav class="nav-bar">
+    <a href="../Dashboard/dashboard-v3.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>Home</a>
+    <a href="../Timetable/timetable-v3.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg>Schedule</a>
+    <a href="#" class="nav-item active"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>Attendance</a>
+    <a href="../Notes/notes-v3.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>Notes</a>
+    <a href="../Settings/settings-v3.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>More</a>
+  </nav>
+</body>
+</html>

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Calendar v1 — Month View — Student Academic OS</title>
+  <style>
+    :root { --bg:#090d16; --card:#111827; --border:rgba(255,255,255,0.08); --text:#f9fafb; --muted:#6b7280; --accent:#6366f1; --green:#10b981; --amber:#f59e0b; --red:#ef4444; --mono:'JetBrains Mono',monospace; }
+    * { box-sizing:border-box; margin:0; padding:0; font-family:-apple-system,sans-serif; }
+    body { background:var(--bg); color:var(--text); padding-bottom:90px; }
+    .status-bar { height:47px; padding:0 24px; display:flex; justify-content:space-between; align-items:center; font-size:14px; }
+    header { padding:12px 20px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; }
+
+    /* Month nav */
+    .month-nav { display:flex; justify-content:space-between; align-items:center; padding:12px 20px; }
+    .month-title { font-size:20px; font-weight:800; }
+    .nav-arrow { background:var(--card); border:1px solid var(--border); border-radius:10px; width:34px; height:34px; display:grid; place-items:center; cursor:pointer; font-size:16px; color:var(--muted); }
+
+    /* Calendar grid */
+    .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; padding:0 12px; }
+    .cal-dayname { text-align:center; font-size:11px; font-family:var(--mono); color:var(--muted); padding:6px 0; }
+    .cal-cell { aspect-ratio:1; border-radius:10px; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding:6px 2px; cursor:pointer; position:relative; transition:background 0.15s; }
+    .cal-cell:active { background:rgba(255,255,255,0.05); }
+    .cal-num { font-size:14px; font-weight:600; }
+    .cal-num.today { background:var(--accent); color:#fff; width:26px; height:26px; border-radius:50%; display:grid; place-items:center; }
+    .cal-num.muted { color:var(--muted); }
+    .cal-dots { display:flex; gap:2px; margin-top:2px; }
+    .dot { width:4px; height:4px; border-radius:50%; }
+
+    /* Event list for selected day */
+    .day-events { margin:12px 20px; background:var(--card); border:1px solid var(--border); border-radius:16px; overflow:hidden; }
+    .day-label { padding:10px 16px; font-size:12px; font-family:var(--mono); text-transform:uppercase; color:var(--muted); border-bottom:1px solid var(--border); }
+    .event-item { padding:12px 16px; border-bottom:1px solid var(--border); display:flex; gap:12px; align-items:center; }
+    .event-item:last-child { border-bottom:none; }
+    .evt-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+    .evt-title { font-size:14px; font-weight:600; }
+    .evt-time { font-size:12px; color:var(--muted); font-family:var(--mono); }
+
+    .nav-bar { position:fixed; bottom:0; left:0; right:0; height:80px; background:var(--card); border-top:1px solid var(--border); display:flex; justify-content:space-around; align-items:center; padding-bottom:20px; }
+    .nav-item { color:var(--muted); font-size:10px; text-decoration:none; display:flex; flex-direction:column; align-items:center; gap:4px; }
+    .nav-item.active { color:var(--accent); }
+    .nav-icon { width:22px; height:22px; fill:currentColor; }
+  </style>
+</head>
+<body>
+  <div class="status-bar"><span>9:41</span><span>100%</span></div>
+  <header><h1 style="font-size:20px; font-weight:800;">Calendar</h1><span style="font-family:var(--mono); font-size:12px; color:var(--muted);">Sem 3</span></header>
+
+  <div class="month-nav">
+    <div class="nav-arrow">‹</div>
+    <div class="month-title">August 2025</div>
+    <div class="nav-arrow">›</div>
+  </div>
+
+  <div class="cal-grid">
+    <div class="cal-dayname">M</div><div class="cal-dayname">T</div><div class="cal-dayname">W</div>
+    <div class="cal-dayname">T</div><div class="cal-dayname">F</div><div class="cal-dayname">S</div><div class="cal-dayname">S</div>
+    <!-- Week 1 -->
+    <div class="cal-cell"></div><div class="cal-cell"></div><div class="cal-cell"></div>
+    <div class="cal-cell"></div><div class="cal-cell"><div class="cal-num">1</div></div>
+    <div class="cal-cell"><div class="cal-num muted">2</div></div><div class="cal-cell"><div class="cal-num muted">3</div></div>
+    <!-- Week 2 -->
+    <div class="cal-cell"><div class="cal-num">4</div><div class="cal-dots"><div class="dot" style="background:var(--accent);"></div></div></div>
+    <div class="cal-cell"><div class="cal-num today">5</div><div class="cal-dots"><div class="dot" style="background:var(--green);"></div><div class="dot" style="background:var(--amber);"></div></div></div>
+    <div class="cal-cell"><div class="cal-num">6</div></div>
+    <div class="cal-cell"><div class="cal-num">7</div><div class="cal-dots"><div class="dot" style="background:var(--accent);"></div></div></div>
+    <div class="cal-cell"><div class="cal-num">8</div></div>
+    <div class="cal-cell"><div class="cal-num muted">9</div></div><div class="cal-cell"><div class="cal-num muted">10</div></div>
+    <!-- Week 3 -->
+    <div class="cal-cell"><div class="cal-num">11</div></div>
+    <div class="cal-cell"><div class="cal-num">12</div><div class="cal-dots"><div class="dot" style="background:var(--red);"></div></div></div>
+    <div class="cal-cell"><div class="cal-num">13</div></div>
+    <div class="cal-cell"><div class="cal-num">14</div><div class="cal-dots"><div class="dot" style="background:var(--accent);"></div></div></div>
+    <div class="cal-cell"><div class="cal-num">15</div></div>
+    <div class="cal-cell"><div class="cal-num muted">16</div></div><div class="cal-cell"><div class="cal-num muted">17</div></div>
+  </div>
+
+  <div class="day-events">
+    <div class="day-label">Tuesday, Aug 5</div>
+    <div class="event-item">
+      <div class="evt-dot" style="background:var(--accent);"></div>
+      <div><div class="evt-title">Data Structures — Mid Sem Exam</div><div class="evt-time">9:00 AM · Exam Hall B</div></div>
+    </div>
+    <div class="event-item">
+      <div class="evt-dot" style="background:var(--amber);"></div>
+      <div><div class="evt-title">Discrete Math Assignment 3 Due</div><div class="evt-time">Before 11:59 PM</div></div>
+    </div>
+  </div>
+
+  <nav class="nav-bar">
+    <a href="../Dashboard/dashboard-v1.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>Home</a>
+    <a href="../Timetable/timetable-v1.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg>Schedule</a>
+    <a href="#" class="nav-item active"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/></svg>Calendar</a>
+    <a href="../Notes/notes-v1.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>Notes</a>
+    <a href="../Settings/settings-v1.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>More</a>
+  </nav>
+</body>
+</html>

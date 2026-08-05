@@ -1,0 +1,265 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: var(--space-md);
+  gap: var(--space-md);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.segmentedControl {
+  display: flex;
+  background-color: var(--color-bg-tertiary);
+  border-radius: 10px;
+  padding: 3px;
+  gap: 2px;
+}
+
+.segmentButton {
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  transition: all 0.15s ease;
+}
+
+.segmentButtonActive {
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* Day Strip Navigation (for mobile) */
+.dayStrip {
+  display: flex;
+  gap: var(--space-xs);
+  justify-content: space-between;
+}
+
+.dayChip {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--space-sm) 0;
+  border-radius: var(--radius-chip);
+  background-color: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  transition: all 0.15s ease;
+}
+
+.dayChipActive {
+  background-color: var(--color-accent-primary);
+  color: #ffffff;
+  border-color: var(--color-accent-primary);
+}
+
+.dayName {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.dayDate {
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+/* Grid Layout */
+.gridWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  overflow-y: auto;
+  padding-bottom: 80px; /* Space for bottom tab bar */
+}
+
+.timeSlotCard {
+  display: flex;
+  background-color: var(--color-bg-secondary);
+  border-radius: var(--radius-card);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+  position: relative;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.timeSlotCard:active {
+  transform: scale(0.98);
+}
+
+.colorBar {
+  width: 6px;
+  flex-shrink: 0;
+}
+
+.cardBody {
+  flex: 1;
+  padding: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.subjectCode {
+  font-family: var(--font-family-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: var(--radius-chip);
+  letter-spacing: 0.5px;
+}
+
+.timeBadge {
+  font-family: var(--font-family-mono);
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+}
+
+.subjectName {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.cancelledText {
+  text-decoration: line-through;
+  color: var(--color-text-tertiary);
+}
+
+.cardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: var(--space-xs);
+}
+
+.roomInfo {
+  font-family: var(--font-family-mono);
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.statusBadge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 12px;
+  text-transform: capitalize;
+}
+
+.badgeScheduled {
+  background-color: var(--color-bg-tertiary);
+  color: var(--color-text-secondary);
+}
+
+.badgePresent {
+  background-color: rgba(22, 163, 74, 0.15);
+  color: var(--color-success);
+}
+
+.badgeAbsent {
+  background-color: var(--color-danger-bg);
+  color: var(--color-danger);
+}
+
+.badgeLate {
+  background-color: rgba(217, 119, 6, 0.15);
+  color: var(--color-warning);
+}
+
+.badgeMedical, .badgeOnduty {
+  background-color: rgba(37, 99, 235, 0.15);
+  color: var(--color-accent-primary);
+}
+
+.badgeCancelled {
+  background-color: var(--color-bg-tertiary);
+  color: var(--color-text-tertiary);
+  text-decoration: line-through;
+}
+
+.badgeExtra {
+  background-color: rgba(217, 119, 6, 0.15);
+  color: var(--color-warning);
+}
+
+/* Empty State */
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-xl) var(--space-md);
+  color: var(--color-text-tertiary);
+  gap: var(--space-sm);
+  text-align: center;
+}
+
+/* Sheet Overlay */
+.sheetOverlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  z-index: 100;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.sheetContent {
+  width: 100%;
+  max-width: 500px;
+  background-color: var(--color-bg-primary);
+  border-top-left-radius: var(--radius-sheet);
+  border-top-right-radius: var(--radius-sheet);
+  padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  box-shadow: var(--shadow-sheet);
+  animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.sheetHandle {
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background-color: var(--color-border);
+  align-self: center;
+  margin-bottom: var(--space-xs);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}

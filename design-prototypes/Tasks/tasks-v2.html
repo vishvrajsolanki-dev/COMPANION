@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Tasks v2 — Card Kanban — Student Academic OS</title>
+  <style>
+    :root { --bg:#000; --card:rgba(28,28,30,0.9); --border:rgba(255,255,255,0.1); --text:#fff; --muted:#8e8e93; --accent:#0a84ff; --green:#30d158; --amber:#ff9f0a; --red:#ff453a; }
+    * { box-sizing:border-box; margin:0; padding:0; font-family:-apple-system,'SF Pro Display',sans-serif; }
+    body { background:var(--bg); color:var(--text); padding-bottom:100px; }
+    .status-bar { height:47px; padding:0 24px; display:flex; justify-content:space-between; align-items:center; font-weight:600; }
+    .large-title { padding:0 20px 16px; font-size:34px; font-weight:800; letter-spacing:-0.5px; }
+    
+    /* Horizontal kanban scroll */
+    .kanban { display:flex; gap:14px; overflow-x:auto; padding:0 20px 16px; scrollbar-width:none; align-items:flex-start; }
+    .column { flex:0 0 260px; }
+    .col-head { font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; color:var(--muted); margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; }
+    .col-count { background:rgba(255,255,255,0.1); border-radius:12px; padding:2px 8px; font-size:11px; }
+    .task-card { background:var(--card); backdrop-filter:blur(20px); border:1px solid var(--border); border-radius:16px; padding:14px; margin-bottom:10px; cursor:pointer; transition:transform 0.2s; }
+    .task-card:active { transform:scale(0.97); }
+    .tc-title { font-size:15px; font-weight:600; margin-bottom:6px; }
+    .tc-sub { display:inline-block; font-size:11px; font-weight:700; padding:3px 10px; border-radius:12px; margin-bottom:8px; }
+    .sub-dsa { background:rgba(10,132,255,0.15); color:var(--accent); }
+    .sub-dm  { background:rgba(255,69,58,0.15);  color:var(--red); }
+    .sub-lab { background:rgba(48,209,88,0.15);  color:var(--green); }
+    .tc-meta { font-size:12px; color:var(--muted); display:flex; gap:10px; }
+    .overdue-badge { background:rgba(255,69,58,0.15); color:var(--red); border:1px solid rgba(255,69,58,0.3); border-radius:8px; padding:2px 7px; font-size:10px; font-weight:700; }
+
+    .tab-bar { position:fixed; bottom:0; left:0; right:0; height:84px; background:rgba(0,0,0,0.85); backdrop-filter:blur(24px); border-top:1px solid rgba(255,255,255,0.08); display:flex; padding-bottom:20px; }
+    .tab { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; text-decoration:none; color:var(--muted); font-size:10px; font-weight:500; }
+    .tab.active { color:var(--accent); }
+    .tab svg { width:24px; height:24px; fill:currentColor; }
+  </style>
+</head>
+<body>
+  <div class="status-bar"><span>9:41</span><span>100%</span></div>
+  <div style="padding:8px 20px 0; font-size:13px; font-weight:600; color:var(--muted);">SEM 3 TASKS</div>
+  <div class="large-title">My Work</div>
+
+  <div class="kanban">
+    <div class="column">
+      <div class="col-head">Overdue <span class="col-count" style="color:var(--red)">1</span></div>
+      <div class="task-card" style="border-color:rgba(255,69,58,0.3);">
+        <div class="tc-title">Lab Report 2 — Sorting</div>
+        <div class="tc-sub sub-dsa">DSA</div>
+        <div class="tc-meta"><span class="overdue-badge">3 days late</span></div>
+      </div>
+    </div>
+
+    <div class="column">
+      <div class="col-head">Due Today <span class="col-count">2</span></div>
+      <div class="task-card">
+        <div class="tc-title">Discrete Math Assignment 3</div>
+        <div class="tc-sub sub-dm">Discrete Math</div>
+        <div class="tc-meta"><span>🎯 High Priority</span><span>3/5 done</span></div>
+      </div>
+      <div class="task-card">
+        <div class="tc-title">Review Recursion Notes</div>
+        <div class="tc-sub sub-dsa">DSA</div>
+        <div class="tc-meta"><span>⏱ 45 min</span></div>
+      </div>
+    </div>
+
+    <div class="column">
+      <div class="col-head">This Week <span class="col-count">3</span></div>
+      <div class="task-card">
+        <div class="tc-title">Mid-Sem Exam Prep — Trees</div>
+        <div class="tc-sub sub-dsa">DSA</div>
+        <div class="tc-meta"><span>📅 Aug 6</span></div>
+      </div>
+      <div class="task-card">
+        <div class="tc-title">AI Lab Viva Prep</div>
+        <div class="tc-sub sub-lab">AI Lab</div>
+        <div class="tc-meta"><span>📅 Aug 7</span></div>
+      </div>
+    </div>
+  </div>
+
+  <nav class="tab-bar">
+    <a href="../Dashboard/dashboard-v2.html" class="tab"><svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>Home</a>
+    <a href="../Timetable/timetable-v2.html" class="tab"><svg viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg>Schedule</a>
+    <a href="#" class="tab active"><svg viewBox="0 0 24 24"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>Tasks</a>
+    <a href="../Notes/notes-v2.html" class="tab"><svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>Notes</a>
+    <a href="../Settings/settings-v2.html" class="tab"><svg viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>More</a>
+  </nav>
+</body>
+</html>

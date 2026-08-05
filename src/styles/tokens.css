@@ -1,0 +1,74 @@
+/* Student Academic OS — Design Tokens (Locked) */
+:root {
+  /* Neutral Palette (Light theme default, with dark theme option) */
+  --color-bg-primary: #FFFFFF;
+  --color-bg-secondary: #F7F8FA;   /* card backgrounds */
+  --color-bg-tertiary: #F0F1F4;    /* nested/inset elements */
+  --color-border: #E5E7EB;
+  --color-text-primary: #0F172A;   /* near-black, headings */
+  --color-text-secondary: #64748B; /* metadata, timestamps, labels */
+  --color-text-tertiary: #94A3B8;  /* placeholder, disabled */
+
+  /* Dark mode variables */
+  --color-bg-primary-dark: #0B0D12;
+  --color-bg-secondary-dark: #14161C;
+  --color-bg-tertiary-dark: #1C1F27;
+  --color-border-dark: #2A2E38;
+  --color-text-primary-dark: #F1F5F9;
+  --color-text-secondary-dark: #94A3B8;
+
+  /* Accent / Brand (Apple HIG) */
+  --color-accent-primary: #2563EB;
+  --color-accent-primary-pressed: #1D4ED8;
+
+  /* Semantic / Status Colors */
+  --color-success: #16A34A;   /* healthy attendance, completed states */
+  --color-warning: #D97706;   /* medium priority, approaching risk */
+  --color-danger: #DC2626;    /* below 75% threshold, urgent priority, at risk */
+  --color-danger-bg: #FEE2E2; /* danger badge background */
+  --color-info: #2563EB;      /* announcements banner */
+
+  /* Priority Scale (Tasks) */
+  --priority-low: #94A3B8;
+  --priority-medium: #D97706;
+  --priority-high: #DC2626;
+  --priority-urgent: #DC2626;
+
+  /* Subject Color Palette (rotating, assigned per subject in order) */
+  --subject-1: #7C3AED;  /* violet */
+  --subject-2: #DB2777;  /* pink */
+  --subject-3: #2563EB;  /* blue */
+  --subject-4: #0D9488;  /* teal */
+  --subject-5: #D97706;  /* amber */
+  --subject-6: #059669;  /* green */
+  --subject-7: #DC2626;  /* red */
+  --subject-8: #64748B;  /* slate fallback */
+
+  /* Typography */
+  --font-family-base: -apple-system, "SF Pro Text", "Inter", system-ui, sans-serif;
+  --font-family-mono: "SF Mono", "JetBrains Mono", monospace;
+
+  /* Radius & Elevation */
+  --radius-card: 14px;
+  --radius-sheet: 24px;  /* top corners only for sheets */
+  --radius-chip: 8px;
+  --shadow-card: 0 1px 3px rgba(15, 23, 42, 0.06);
+  --shadow-sheet: 0 -4px 20px rgba(0, 0, 0, 0.15);
+
+  /* Spacing Rhythm */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+}
+
+/* Dark mode theme class option */
+[data-theme="dark"] {
+  --color-bg-primary: var(--color-bg-primary-dark);
+  --color-bg-secondary: var(--color-bg-secondary-dark);
+  --color-bg-tertiary: var(--color-bg-tertiary-dark);
+  --color-border: var(--color-border-dark);
+  --color-text-primary: var(--color-text-primary-dark);
+  --color-text-secondary: var(--color-text-secondary-dark);
+}

@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Notes v3 — Inline Editor — Student Academic OS</title>
+  <style>
+    :root { --bg:#090d16; --card:#111827; --border:rgba(255,255,255,0.08); --text:#f9fafb; --muted:#6b7280; --accent:#6366f1; --mono:'JetBrains Mono',monospace; }
+    * { box-sizing:border-box; margin:0; padding:0; font-family:-apple-system,sans-serif; }
+    body { background:var(--bg); color:var(--text); padding-bottom:90px; }
+    .status-bar { height:47px; padding:0 24px; display:flex; justify-content:space-between; align-items:center; font-size:14px; }
+
+    /* Two-panel: sidebar + editor */
+    .panel-container { display:flex; height:calc(100vh - 127px); }
+    .sidebar { width:180px; border-right:1px solid var(--border); overflow-y:auto; flex-shrink:0; }
+    .sidebar-head { padding:10px 14px; font-size:11px; font-family:var(--mono); text-transform:uppercase; color:var(--muted); letter-spacing:1px; border-bottom:1px solid var(--border); }
+    .note-row { padding:10px 14px; cursor:pointer; border-bottom:1px solid rgba(255,255,255,0.04); }
+    .note-row.active { background:rgba(99,102,241,0.1); border-left:2px solid var(--accent); }
+    .nr-title { font-size:13px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .nr-date { font-size:10px; color:var(--muted); margin-top:2px; font-family:var(--mono); }
+
+    /* Editor */
+    .editor { flex:1; overflow-y:auto; padding:20px; }
+    .ed-breadcrumb { font-size:11px; color:var(--muted); font-family:var(--mono); margin-bottom:12px; display:flex; gap:6px; align-items:center; }
+    .ed-title { font-size:26px; font-weight:800; letter-spacing:-0.3px; margin-bottom:4px; outline:none; }
+    .ed-meta { font-size:12px; color:var(--muted); margin-bottom:20px; font-family:var(--mono); }
+    .ed-toolbar { display:flex; gap:6px; margin-bottom:14px; padding-bottom:10px; border-bottom:1px solid var(--border); }
+    .tb-btn { background:rgba(255,255,255,0.05); border:1px solid var(--border); border-radius:7px; padding:5px 10px; font-size:12px; color:var(--muted); cursor:pointer; }
+    .tb-btn.active { background:rgba(99,102,241,0.15); color:var(--accent); }
+    .ed-body { font-size:15px; line-height:1.8; color:var(--text); outline:none; }
+    .ed-body h2 { font-size:18px; font-weight:700; margin:16px 0 8px; }
+    .ed-body code { font-family:var(--mono); font-size:13px; background:rgba(255,255,255,0.06); padding:2px 6px; border-radius:5px; color:#a5b4fc; }
+    .ed-body ul { padding-left:20px; }
+    .ed-body li { margin-bottom:6px; }
+
+    /* Bottom toolbar */
+    .editor-footer { position:fixed; bottom:0; left:0; right:0; height:60px; background:var(--card); border-top:1px solid var(--border); display:flex; justify-content:space-around; align-items:center; padding:0 20px; }
+    .ef-btn { color:var(--muted); font-size:11px; display:flex; flex-direction:column; align-items:center; gap:4px; cursor:pointer; }
+    .ef-btn svg { width:20px; height:20px; fill:currentColor; }
+    .ef-btn.accent { color:var(--accent); }
+  </style>
+</head>
+<body>
+  <div class="status-bar">
+    <span style="display:flex; align-items:center; gap:8px;">
+      <svg width="16" height="16" fill="#6b7280" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+      Notes
+    </span>
+    <span style="font-size:12px; color:var(--accent); font-family:var(--mono);">Saved ✓</span>
+  </div>
+
+  <div class="panel-container">
+    <div class="sidebar">
+      <div class="sidebar-head">DSA (5)</div>
+      <div class="note-row active">
+        <div class="nr-title">Binary Tree Traversals</div>
+        <div class="nr-date">Aug 4</div>
+      </div>
+      <div class="note-row">
+        <div class="nr-title">DFS vs BFS</div>
+        <div class="nr-date">Aug 2</div>
+      </div>
+      <div class="note-row">
+        <div class="nr-title">Sorting Algorithms</div>
+        <div class="nr-date">Jul 29</div>
+      </div>
+      <div class="sidebar-head" style="margin-top:8px;">Discrete Math</div>
+      <div class="note-row">
+        <div class="nr-title">Truth Tables</div>
+        <div class="nr-date">Jul 30</div>
+      </div>
+      <div class="sidebar-head" style="margin-top:8px;">AI Lab</div>
+      <div class="note-row">
+        <div class="nr-title">Linear Regression</div>
+        <div class="nr-date">Jul 28</div>
+      </div>
+    </div>
+
+    <div class="editor">
+      <div class="ed-breadcrumb">DSA <span>›</span> Trees</div>
+      <div class="ed-title" contenteditable="true">Trees — Binary Tree Traversals</div>
+      <div class="ed-meta">Aug 4, 2025 · 3 min read · 240 words</div>
+      <div class="ed-toolbar">
+        <button class="tb-btn active">B</button>
+        <button class="tb-btn"><i>I</i></button>
+        <button class="tb-btn">H2</button>
+        <button class="tb-btn">Code</button>
+        <button class="tb-btn">List</button>
+        <button class="tb-btn">📎</button>
+      </div>
+      <div class="ed-body" contenteditable="true">
+        <h2>Overview</h2>
+        <p>Binary tree traversal visits all nodes. Three main types:</p>
+        <ul>
+          <li><strong>Inorder</strong> (Left → Root → Right) — gives sorted output for BST</li>
+          <li><strong>Preorder</strong> (Root → Left → Right) — useful for copying tree</li>
+          <li><strong>Postorder</strong> (Left → Right → Root) — useful for deletion</li>
+        </ul>
+        <h2>Key Insight</h2>
+        <p>Iterative traversal uses a <code>Stack&lt;TreeNode&gt;</code> to avoid call-stack overflow on deep trees.</p>
+        <p>Time: <code>O(n)</code> · Space: <code>O(h)</code> where h = height of tree.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="editor-footer">
+    <div class="ef-btn"><svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>Add</div>
+    <div class="ef-btn"><svg viewBox="0 0 24 24"><path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/></svg>Due Date</div>
+    <div class="ef-btn accent"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>Mark Done</div>
+    <div class="ef-btn"><svg viewBox="0 0 24 24"><path d="M21 6.5l-4-4-13 13V19h3.5L21 6.5zM5 17l8-8 2 2-8 8H5v-2z"/></svg>Edit</div>
+  </div>
+</body>
+</html>

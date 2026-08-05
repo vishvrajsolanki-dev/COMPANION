@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Timetable v3 — Visual Block Grid — Student Academic OS</title>
+  <style>
+    :root {
+      --bg:#090d16; --card:#111827; --border:rgba(255,255,255,0.08);
+      --text:#f9fafb; --muted:#6b7280; --accent:#6366f1;
+    }
+    * { box-sizing:border-box; margin:0; padding:0; font-family:-apple-system,sans-serif; }
+    body { background:var(--bg); color:var(--text); padding-bottom:90px; }
+    .status-bar { height:47px; padding:0 24px; display:flex; justify-content:space-between; align-items:center; font-size:14px; }
+    header { padding:12px 20px; border-bottom:1px solid var(--border); }
+
+    /* Week grid */
+    .week-grid { display:grid; grid-template-columns:40px repeat(5,1fr); gap:2px; padding:12px; overflow-x:auto; }
+    .day-head { text-align:center; font-size:11px; font-weight:700; color:var(--muted); padding:6px 2px; }
+    .day-head.today { color:var(--accent); }
+    .time-cell { font-size:10px; color:var(--muted); text-align:right; padding-right:6px; padding-top:6px; font-family:'JetBrains Mono',monospace; }
+    .empty-cell { min-height:52px; }
+    .block { border-radius:10px; padding:6px 8px; min-height:52px; font-size:11px; font-weight:700; cursor:pointer; transition:transform 0.15s; }
+    .block:active { transform:scale(0.95); }
+    .b-dsa  { background:rgba(99,102,241,0.25); border:1px solid rgba(99,102,241,0.4); color:#a5b4fc; }
+    .b-dm   { background:rgba(239,68,68,0.2);  border:1px solid rgba(239,68,68,0.3);  color:#fca5a5; }
+    .b-lab  { background:rgba(16,185,129,0.2); border:1px solid rgba(16,185,129,0.3); color:#6ee7b7; }
+    .b-oop  { background:rgba(245,158,11,0.2); border:1px solid rgba(245,158,11,0.3); color:#fcd34d; }
+    .b-dbms { background:rgba(168,85,247,0.2); border:1px solid rgba(168,85,247,0.3); color:#c4b5fd; }
+    .b-now  { box-shadow:0 0 0 2px var(--accent); }
+    .b-cancel { opacity:0.3; text-decoration:line-through; }
+    .block-time { font-size:9px; font-weight:400; margin-top:2px; opacity:0.7; }
+
+    .legend { display:flex; gap:10px; flex-wrap:wrap; padding:12px 20px; }
+    .leg { display:flex; align-items:center; gap:5px; font-size:11px; }
+    .leg-dot { width:10px; height:10px; border-radius:3px; }
+
+    .nav-bar { position:fixed; bottom:0; left:0; right:0; height:80px; background:var(--card); border-top:1px solid var(--border); display:flex; justify-content:space-around; align-items:center; padding-bottom:20px; }
+    .nav-item { color:var(--muted); font-size:10px; text-decoration:none; display:flex; flex-direction:column; align-items:center; gap:4px; }
+    .nav-item.active { color:var(--accent); }
+    .nav-icon { width:22px; height:22px; fill:currentColor; }
+  </style>
+</head>
+<body>
+  <div class="status-bar"><span>9:41</span><span>100%</span></div>
+  <header>
+    <h1 style="font-size:20px; font-weight:800;">Timetable</h1>
+    <p style="font-size:12px; color:var(--muted); margin-top:2px;">Week View · Sem 3 B.Tech AI&DS</p>
+  </header>
+
+  <div class="week-grid">
+    <div></div>
+    <div class="day-head">MON</div>
+    <div class="day-head today">TUE</div>
+    <div class="day-head">WED</div>
+    <div class="day-head">THU</div>
+    <div class="day-head">FRI</div>
+
+    <div class="time-cell">9:05</div>
+    <div class="block b-dsa">DSA<div class="block-time">204</div></div>
+    <div class="block b-dsa b-now">DSA<div class="block-time">204 ▶</div></div>
+    <div class="block b-dsa">DSA<div class="block-time">204</div></div>
+    <div class="empty-cell"></div>
+    <div class="block b-dm">DM<div class="block-time">101</div></div>
+
+    <div class="time-cell">10:05</div>
+    <div class="block b-dm">DM<div class="block-time">101</div></div>
+    <div class="block b-dm">DM<div class="block-time">101</div></div>
+    <div class="block b-oop">OOP<div class="block-time">305</div></div>
+    <div class="block b-dsa">DSA<div class="block-time">204</div></div>
+    <div class="block b-dsa">DSA<div class="block-time">204</div></div>
+
+    <div class="time-cell">11:15</div>
+    <div class="block b-lab" style="grid-row:span 2;">AI Lab<div class="block-time">Lab3</div></div>
+    <div class="block b-lab" style="grid-row:span 2;">AI Lab<div class="block-time">Lab3</div></div>
+    <div class="block b-dbms">DBMS<div class="block-time">201</div></div>
+    <div class="block b-lab">Lab<div class="block-time">Lab1</div></div>
+    <div class="empty-cell"></div>
+
+    <div class="time-cell">2:00</div>
+    <div class="block b-oop">OOP<div class="block-time">305</div></div>
+    <div class="block b-oop b-cancel">OOP<div class="block-time">CANC</div></div>
+    <div class="block b-dbms">DBMS<div class="block-time">201</div></div>
+    <div class="empty-cell"></div>
+  </div>
+
+  <div class="legend">
+    <div class="leg"><div class="leg-dot" style="background:#6366f1;"></div>DSA</div>
+    <div class="leg"><div class="leg-dot" style="background:#ef4444;"></div>Discrete Math</div>
+    <div class="leg"><div class="leg-dot" style="background:#10b981;"></div>AI Lab</div>
+    <div class="leg"><div class="leg-dot" style="background:#f59e0b;"></div>OOP</div>
+    <div class="leg"><div class="leg-dot" style="background:#a855f7;"></div>DBMS</div>
+  </div>
+
+  <nav class="nav-bar">
+    <a href="../Dashboard/dashboard-v3.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>Home</a>
+    <a href="#" class="nav-item active"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg>Schedule</a>
+    <a href="../Attendance/attendance-v3.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>Attendance</a>
+    <a href="../Notes/notes-v3.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>Notes</a>
+    <a href="../Settings/settings-v3.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>More</a>
+  </nav>
+</body>
+</html>

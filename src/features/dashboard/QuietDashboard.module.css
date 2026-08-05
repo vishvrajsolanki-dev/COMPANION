@@ -1,0 +1,379 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-md);
+  gap: var(--space-lg);
+  padding-bottom: 90px;
+  overflow-y: auto;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.greeting {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  letter-spacing: -0.5px;
+}
+
+.dateSubtitle {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+/* Alert Banner */
+.alertBanner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  border-radius: var(--radius-card);
+  background-color: var(--color-danger-bg);
+  border: 1px solid rgba(220, 38, 38, 0.2);
+  color: var(--color-danger);
+  cursor: pointer;
+  animation: fadeIn 0.3s ease;
+  transition: opacity 0.15s ease;
+}
+
+.alertBanner:active {
+  opacity: 0.8;
+}
+
+.alertText {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+/* Hero Next Lecture Card */
+.heroCard {
+  background-color: var(--color-bg-secondary);
+  border-radius: var(--radius-card);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.heroTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.heroTag {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-text-secondary);
+}
+
+.countdownBadge {
+  font-family: var(--font-family-mono);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-accent-primary);
+  background-color: rgba(37, 99, 235, 0.1);
+  padding: 4px 10px;
+  border-radius: 12px;
+}
+
+.heroTitle {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.heroMeta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  font-family: var(--font-family-mono);
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+}
+
+.heroMetaItem {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Quick Links Grid */
+.quickLinkCard {
+  background-color: var(--color-bg-secondary);
+  border-radius: var(--radius-card);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  width: 100%;
+  text-align: left;
+}
+
+.quickLinkCard:active {
+  transform: scale(0.97);
+}
+
+.quickLinkIcon {
+  padding: 6px;
+  border-radius: var(--radius-chip);
+  background-color: var(--color-bg-tertiary);
+}
+
+.quickLinkLabel {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+/* Attendance Summary Card */
+.attendanceCard {
+  background-color: var(--color-bg-secondary);
+  border-radius: var(--radius-card);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-md);
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.attendanceCard:active {
+  opacity: 0.9;
+}
+
+.ringWrapper {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ringPercentage {
+  font-family: var(--font-family-mono);
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  position: absolute;
+}
+
+.attendanceInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.attendanceStatusLabel {
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.labelHealthy {
+  color: var(--color-success);
+}
+
+.labelRisk {
+  color: var(--color-danger);
+}
+
+.attendanceSubtext {
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+}
+
+/* Sections */
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sectionTitle {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.viewAllButton {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-accent-primary);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.emptyTaskCard {
+  background-color: var(--color-bg-secondary);
+  border-radius: var(--radius-card);
+  border: 1px dashed var(--color-border);
+  padding: var(--space-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  color: var(--color-text-secondary);
+  font-size: 0.85rem;
+}
+
+/* Tasks */
+.taskCard {
+  background-color: var(--color-bg-secondary);
+  border-radius: var(--radius-card);
+  border: 1px solid var(--color-border);
+  padding: var(--space-md);
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  cursor: pointer;
+}
+
+.priorityDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.taskTitle {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.taskSubjectCode {
+  font-family: var(--font-family-mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.taskDueText {
+  font-family: var(--font-family-mono);
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+
+/* Timeline */
+.timelineItem {
+  display: flex;
+  background-color: var(--color-bg-secondary);
+  border-radius: var(--radius-card);
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+}
+
+.timelineColorBar {
+  width: 5px;
+  flex-shrink: 0;
+}
+
+.timelineBody {
+  flex: 1;
+  padding: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.timelineHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.timelineSubjectCode {
+  font-family: var(--font-family-mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: var(--radius-chip);
+}
+
+.timelineTime {
+  font-family: var(--font-family-mono);
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+
+.timelineSubjectName {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.lineThrough {
+  text-decoration: line-through;
+  color: var(--color-text-tertiary);
+}
+
+.timelineFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 2px;
+}
+
+.timelineRoom {
+  font-family: var(--font-family-mono);
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  display: flex;
+  align-items: center;
+}
+
+.badgeCancelled {
+  font-size: 0.7rem;
+  font-weight: 700;
+  background-color: var(--color-danger-bg);
+  color: var(--color-danger);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.badgeRescheduled {
+  font-size: 0.7rem;
+  font-weight: 700;
+  background-color: rgba(217, 119, 6, 0.1);
+  color: var(--color-warning);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.badgeExtra {
+  font-size: 0.7rem;
+  font-weight: 700;
+  background-color: rgba(37, 99, 235, 0.1);
+  color: var(--color-accent-primary);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}

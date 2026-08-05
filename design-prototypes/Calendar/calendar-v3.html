@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Calendar v3 — Semester Timeline — Student Academic OS</title>
+  <style>
+    :root { --bg:#090d16; --card:#111827; --border:rgba(255,255,255,0.08); --text:#f9fafb; --muted:#6b7280; --accent:#6366f1; --green:#10b981; --amber:#f59e0b; --red:#ef4444; --mono:'JetBrains Mono',monospace; }
+    * { box-sizing:border-box; margin:0; padding:0; font-family:-apple-system,sans-serif; }
+    body { background:var(--bg); color:var(--text); padding-bottom:90px; }
+    .status-bar { height:47px; padding:0 24px; display:flex; justify-content:space-between; align-items:center; font-size:14px; }
+    header { padding:12px 20px; border-bottom:1px solid var(--border); }
+
+    /* Semester progress */
+    .sem-card { margin:16px 20px; background:var(--card); border:1px solid var(--border); border-radius:16px; padding:16px; }
+    .sem-head { display:flex; justify-content:space-between; margin-bottom:12px; }
+    .sem-track { height:8px; background:rgba(255,255,255,0.06); border-radius:4px; overflow:hidden; position:relative; }
+    .sem-fill { height:100%; background:linear-gradient(90deg, var(--green), var(--accent)); border-radius:4px; width:44%; }
+    .sem-marker { position:absolute; top:-4px; left:44%; width:2px; height:16px; background:#fff; border-radius:1px; }
+    .sem-ticks { display:flex; justify-content:space-between; font-size:10px; font-family:var(--mono); color:var(--muted); margin-top:6px; }
+
+    /* Key dates timeline */
+    .timeline { padding:0 20px; }
+    .tl-month { font-size:11px; font-family:var(--mono); text-transform:uppercase; color:var(--muted); letter-spacing:1px; padding:12px 0 6px; }
+    .tl-event { display:flex; gap:14px; margin-bottom:10px; align-items:flex-start; }
+    .tl-line-col { display:flex; flex-direction:column; align-items:center; width:20px; }
+    .tl-dot { width:12px; height:12px; border-radius:50%; flex-shrink:0; border:2px solid var(--bg); }
+    .tl-stem { width:2px; flex:1; background:var(--border); min-height:24px; }
+    .tl-card { flex:1; background:var(--card); border:1px solid var(--border); border-radius:12px; padding:12px; }
+    .tl-date { font-family:var(--mono); font-size:10px; color:var(--muted); margin-bottom:4px; }
+    .tl-title { font-size:14px; font-weight:700; }
+    .tl-sub { font-size:12px; color:var(--muted); margin-top:2px; }
+
+    .nav-bar { position:fixed; bottom:0; left:0; right:0; height:80px; background:var(--card); border-top:1px solid var(--border); display:flex; justify-content:space-around; align-items:center; padding-bottom:20px; }
+    .nav-item { color:var(--muted); font-size:10px; text-decoration:none; display:flex; flex-direction:column; align-items:center; gap:4px; }
+    .nav-item.active { color:var(--accent); }
+    .nav-icon { width:22px; height:22px; fill:currentColor; }
+  </style>
+</head>
+<body>
+  <div class="status-bar"><span>9:41</span><span>100%</span></div>
+  <header><h1 style="font-size:20px; font-weight:800;">Academic Calendar</h1><p style="font-size:12px; color:var(--muted);">Sem 3 Timeline</p></header>
+
+  <div class="sem-card">
+    <div class="sem-head">
+      <span style="font-size:13px; font-weight:700;">Semester 3</span>
+      <span style="font-family:var(--mono); font-size:12px; color:var(--accent);">Week 8 / 18</span>
+    </div>
+    <div class="sem-track">
+      <div class="sem-fill"></div>
+      <div class="sem-marker"></div>
+    </div>
+    <div class="sem-ticks"><span>Aug 1</span><span>Oct 1</span><span>Dec 15</span></div>
+  </div>
+
+  <div class="timeline">
+    <div class="tl-month">August 2025</div>
+
+    <div class="tl-event">
+      <div class="tl-line-col"><div class="tl-dot" style="background:var(--accent);"></div><div class="tl-stem"></div></div>
+      <div class="tl-card" style="border-color:rgba(99,102,241,0.3); background:rgba(99,102,241,0.06);">
+        <div class="tl-date">AUG 5 — TODAY</div>
+        <div class="tl-title">Data Structures Mid-Sem Exam</div>
+        <div class="tl-sub">Exam Hall B · 9:00 AM</div>
+      </div>
+    </div>
+
+    <div class="tl-event">
+      <div class="tl-line-col"><div class="tl-dot" style="background:var(--amber);"></div><div class="tl-stem"></div></div>
+      <div class="tl-card">
+        <div class="tl-date">AUG 7</div>
+        <div class="tl-title">OOP Java Viva &amp; Project Demo</div>
+        <div class="tl-sub">Room 305 · 2:00 PM</div>
+      </div>
+    </div>
+
+    <div class="tl-event">
+      <div class="tl-line-col"><div class="tl-dot" style="background:var(--red);"></div><div class="tl-stem"></div></div>
+      <div class="tl-card">
+        <div class="tl-date">AUG 12</div>
+        <div class="tl-title">Discrete Mathematics Mid-Sem</div>
+        <div class="tl-sub">Exam Hall A · 9:00 AM</div>
+      </div>
+    </div>
+
+    <div class="tl-month">September 2025</div>
+
+    <div class="tl-event">
+      <div class="tl-line-col"><div class="tl-dot" style="background:var(--green);"></div><div class="tl-stem"></div></div>
+      <div class="tl-card">
+        <div class="tl-date">SEP 1</div>
+        <div class="tl-title">AI Lab Final Practical Exam</div>
+        <div class="tl-sub">Lab 3 · Batch B2</div>
+      </div>
+    </div>
+
+    <div class="tl-event">
+      <div class="tl-line-col"><div class="tl-dot" style="background:var(--accent);"></div></div>
+      <div class="tl-card">
+        <div class="tl-date">SEP 20</div>
+        <div class="tl-title">End-Sem Exam Schedule Released</div>
+        <div class="tl-sub">Academic Office</div>
+      </div>
+    </div>
+  </div>
+
+  <nav class="nav-bar">
+    <a href="../Dashboard/dashboard-v3.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>Home</a>
+    <a href="../Timetable/timetable-v3.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg>Schedule</a>
+    <a href="#" class="nav-item active"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/></svg>Calendar</a>
+    <a href="../Notes/notes-v3.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>Notes</a>
+    <a href="../Settings/settings-v3.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>More</a>
+  </nav>
+</body>
+</html>

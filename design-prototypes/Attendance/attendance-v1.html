@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Attendance v1 — Linear Technical — Student Academic OS</title>
+  <style>
+    :root {
+      --bg: #090d16;
+      --card-bg: #111827;
+      --border: rgba(255, 255, 255, 0.08);
+      --text: #f9fafb;
+      --text-muted: #9ca3af;
+      --accent: #6366f1;
+      --accent-green: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-red: #ef4444;
+      --font-mono: 'JetBrains Mono', monospace;
+      --font-sans: -apple-system, sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: var(--font-sans); }
+    body { background: var(--bg); color: var(--text); padding-bottom: 90px; }
+    .status-bar { height: 47px; padding: 0 24px; display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
+    header { padding: 12px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+    
+    .subject-list { padding: 16px 20px; display: flex; flex-direction: column; gap: 14px; }
+    .subject-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; padding: 16px; position: relative; }
+    .sub-code { font-family: var(--font-mono); font-size: 11px; color: var(--accent); }
+    .sub-name { font-size: 18px; font-weight: 700; margin: 4px 0 12px; }
+    
+    .pct-bar-bg { height: 6px; background: rgba(255,255,255,0.06); border-radius: 3px; overflow: hidden; margin-bottom: 12px; }
+    .pct-bar-fill { height: 100%; background: var(--accent-green); border-radius: 3px; }
+
+    .state-selector { display: flex; gap: 6px; margin-top: 12px; overflow-x: auto; padding-bottom: 4px; }
+    .state-btn { background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; font-size: 11px; font-family: var(--font-mono); color: var(--text-muted); cursor: pointer; }
+    .state-btn.active { background: rgba(16, 185, 129, 0.15); border-color: var(--accent-green); color: var(--accent-green); font-weight: 700; }
+
+    .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; height: 80px; background: var(--card-bg); border-top: 1px solid var(--border); display: flex; justify-content: space-around; align-items: center; padding-bottom: 20px; }
+    .nav-item { color: var(--text-muted); font-size: 10px; text-decoration: none; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .nav-item.active { color: var(--accent); }
+    .nav-icon { width: 22px; height: 22px; fill: currentColor; }
+  </style>
+</head>
+<body>
+  <div class="status-bar"><span>9:41</span><span>100%</span></div>
+  <header>
+    <h1 style="font-size: 20px; font-weight: 800;">Attendance Center</h1>
+    <span style="font-family: var(--font-mono); font-size: 12px; color: var(--accent-green);">Target: 75%</span>
+  </header>
+
+  <div class="subject-list">
+    <div class="subject-card">
+      <div style="display: flex; justify-content: space-between;">
+        <div class="sub-code">2AI01 • 4 CREDITS</div>
+        <div style="font-family: var(--font-mono); font-size: 18px; font-weight: 800; color: var(--accent-green);">84.6%</div>
+      </div>
+      <div class="sub-name">Data Structures & Algorithms</div>
+      <div class="pct-bar-bg"><div class="pct-bar-fill" style="width: 84.6%;"></div></div>
+      <div style="font-size: 12px; color: var(--text-muted); font-family: var(--font-mono);">Attended: 22 / 26 Scheduled • Safe to skip: 2</div>
+      
+      <div class="state-selector">
+        <button class="state-btn active">Present</button>
+        <button class="state-btn">Absent</button>
+        <button class="state-btn">Late</button>
+        <button class="state-btn">Medical</button>
+        <button class="state-btn">On-Duty</button>
+      </div>
+    </div>
+
+    <div class="subject-card" style="border-color: rgba(239, 68, 68, 0.3);">
+      <div style="display: flex; justify-content: space-between;">
+        <div class="sub-code" style="color: var(--accent-red);">2AI02 • 3 CREDITS</div>
+        <div style="font-family: var(--font-mono); font-size: 18px; font-weight: 800; color: var(--accent-red);">71.4%</div>
+      </div>
+      <div class="sub-name">Discrete Mathematics</div>
+      <div class="pct-bar-bg"><div class="pct-bar-fill" style="width: 71.4%; background: var(--accent-red);"></div></div>
+      <div style="font-size: 12px; color: var(--accent-red); font-family: var(--font-mono);">⚠️ AT RISK: Need +2 consecutive classes</div>
+
+      <div class="state-selector">
+        <button class="state-btn">Present</button>
+        <button class="state-btn active" style="border-color: var(--accent-red); color: var(--accent-red); background: rgba(239,68,68,0.15);">Absent</button>
+        <button class="state-btn">Late</button>
+        <button class="state-btn">Medical</button>
+        <button class="state-btn">On-Duty</button>
+      </div>
+    </div>
+  </div>
+
+  <nav class="nav-bar">
+    <a href="../Dashboard/dashboard-v1.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>Home</a>
+    <a href="../Timetable/timetable-v1.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg>Schedule</a>
+    <a href="#" class="nav-item active"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>Attendance</a>
+    <a href="../Notes/notes-v1.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>Notes</a>
+  </nav>
+</body>
+</html>

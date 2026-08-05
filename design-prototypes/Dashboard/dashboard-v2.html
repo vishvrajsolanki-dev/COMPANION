@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Dashboard v2 — Apple Minimal — Student Academic OS</title>
+  <style>
+    :root {
+      --bg: #000000;
+      --card-bg: rgba(28, 28, 30, 0.8);
+      --border: rgba(255, 255, 255, 0.12);
+      --text: #ffffff;
+      --text-muted: #8e8e93;
+      --accent: #0a84ff;
+      --accent-green: #30d158;
+      --font-sans: -apple-system, 'SF Pro Display', 'SF Pro Text', sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: var(--font-sans); }
+    body { background: var(--bg); color: var(--text); padding-bottom: 100px; }
+    .status-bar { height: 47px; padding: 0 24px; display: flex; justify-content: space-between; align-items: center; font-weight: 600; }
+    
+    .app-header { padding: 16px 20px; display: flex; justify-content: space-between; align-items: flex-end; }
+    .header-title { font-size: 28px; font-weight: 800; tracking: -0.5px; }
+    
+    .stack-container { padding: 0 20px; display: flex; flex-direction: column; gap: 16px; }
+    .card-hero { background: var(--card-bg); backdrop-filter: blur(20px); border: 1px solid var(--border); border-radius: 22px; padding: 22px; }
+    .hero-eyebrow { font-size: 12px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.5px; }
+    .hero-class { font-size: 24px; font-weight: 700; margin: 8px 0 4px; }
+    .hero-detail { font-size: 15px; color: var(--text-muted); margin-bottom: 16px; }
+    .pill-group { display: flex; gap: 10px; }
+    .pill-item { background: rgba(255, 255, 255, 0.1); padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; }
+
+    .widget-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .widget-card { background: var(--card-bg); backdrop-filter: blur(20px); border: 1px solid var(--border); border-radius: 20px; padding: 16px; }
+    .widget-num { font-size: 32px; font-weight: 800; color: var(--accent-green); }
+    .widget-label { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+    .floating-dock { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: rgba(30, 30, 32, 0.85); backdrop-filter: blur(24px); border: 1px solid var(--border); border-radius: 32px; padding: 8px 24px; display: flex; gap: 32px; box-shadow: 0 20px 40px rgba(0,0,0,0.6); }
+    .dock-icon { width: 24px; height: 24px; fill: var(--text-muted); }
+    .dock-icon.active { fill: var(--accent); }
+  </style>
+</head>
+<body>
+  <div class="status-bar"><span>9:41</span><span>100%</span></div>
+
+  <div class="app-header">
+    <div>
+      <div style="font-size: 13px; font-weight: 600; color: var(--text-muted);">TUESDAY, AUG 4</div>
+      <div class="header-title">Academic OS</div>
+    </div>
+    <div style="width: 36px; height: 36px; border-radius: 50%; background: var(--card-bg); border: 1px solid var(--border); display: grid; place-items: center; font-size: 14px; font-weight: 700;">VS</div>
+  </div>
+
+  <div class="stack-container">
+    <div class="card-hero">
+      <div class="hero-eyebrow">NOW • 9:05 AM</div>
+      <div class="hero-class">Data Structures</div>
+      <div class="hero-detail">Room 204 • Prof. Patel</div>
+      <div class="pill-group">
+        <div class="pill-item">Att: 84.6%</div>
+        <div class="pill-item" style="color: var(--accent-green);">Safe: 2 Classes</div>
+      </div>
+    </div>
+
+    <div class="widget-row">
+      <div class="widget-card">
+        <div class="widget-num">82.4%</div>
+        <div class="widget-label">Overall Attendance</div>
+      </div>
+      <div class="widget-card">
+        <div class="widget-num" style="color: var(--accent);">2 Due</div>
+        <div class="widget-label">Tasks Today</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="floating-dock">
+    <a href="#"><svg class="dock-icon active" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg></a>
+    <a href="../Timetable/timetable-v2.html"><svg class="dock-icon" viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg></a>
+    <a href="../Attendance/attendance-v2.html"><svg class="dock-icon" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg></a>
+    <a href="../Notes/notes-v2.html"><svg class="dock-icon" viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg></a>
+  </div>
+</body>
+</html>
