@@ -1,6 +1,10 @@
 import { db } from './index';
 
 export async function seedDatabaseIfEmpty() {
+  if (typeof window !== 'undefined' && localStorage.getItem('academic_os_user_cleared') === 'true') {
+    return; // User explicitly wiped database to enter real data — do not auto-reseed
+  }
+
   const semesterCount = await db.semesters.count();
   if (semesterCount > 0) return; // Already seeded
 

@@ -1,7 +1,16 @@
 import { create } from 'zustand';
 
 export type TabType = 'home' | 'schedule' | 'tasks' | 'profile';
-export type SubviewType = 'attendance' | 'notes' | 'analytics' | 'exams' | 'resources' | 'directory';
+export type SubviewType =
+  | 'attendance'
+  | 'notes'
+  | 'analytics'
+  | 'exams'
+  | 'resources'
+  | 'directory'
+  | 'semester-setup'
+  | 'manage-subjects'
+  | 'timetable-builder';
 
 interface UIState {
   activeTab: TabType;

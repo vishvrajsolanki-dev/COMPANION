@@ -11,12 +11,15 @@ import { TasksView }       from '../features/tasks/TasksView';
 import { ProfileView }     from '../features/profile/ProfileView';
 
 // Subviews (full-screen overlays)
-import { AttendanceView }  from '../features/attendance/AttendanceView';
-import { NotesView }       from '../features/notes/NotesView';
-import { AnalyticsView }   from '../features/analytics/AnalyticsView';
-import { ExamsView }       from '../features/exams/ExamsView';
-import { ResourcesView }   from '../features/resources/ResourcesView';
-import { DirectoryView }   from '../features/directory/DirectoryView';
+import { AttendanceView }        from '../features/attendance/AttendanceView';
+import { NotesView }             from '../features/notes/NotesView';
+import { AnalyticsView }         from '../features/analytics/AnalyticsView';
+import { ExamsView }             from '../features/exams/ExamsView';
+import { ResourcesView }         from '../features/resources/ResourcesView';
+import { DirectoryView }         from '../features/directory/DirectoryView';
+import { SemesterSetupView }     from '../features/semester/SemesterSetupView';
+import { ManageSubjectsView }    from '../features/subjects/ManageSubjectsView';
+import { TimetableBuilderView }  from '../features/timetable/TimetableBuilderView';
 
 export const App: React.FC = () => {
   const activeTab    = useUIStore(state => state.activeTab);
@@ -51,12 +54,15 @@ export const App: React.FC = () => {
           {/* Subviews take full screen — tab bar hides */}
           {activeSubview ? (
             <>
-              {activeSubview === 'attendance' && <AttendanceView  />}
-              {activeSubview === 'notes'      && <NotesView       />}
-              {activeSubview === 'analytics'  && <AnalyticsView   />}
-              {activeSubview === 'exams'      && <ExamsView       />}
-              {activeSubview === 'resources'  && <ResourcesView   />}
-              {activeSubview === 'directory'  && <DirectoryView   />}
+              {activeSubview === 'attendance'        && <AttendanceView        />}
+              {activeSubview === 'notes'             && <NotesView             />}
+              {activeSubview === 'analytics'         && <AnalyticsView         />}
+              {activeSubview === 'exams'             && <ExamsView             />}
+              {activeSubview === 'resources'         && <ResourcesView         />}
+              {activeSubview === 'directory'         && <DirectoryView         />}
+              {activeSubview === 'semester-setup'    && <SemesterSetupView     />}
+              {activeSubview === 'manage-subjects'   && <ManageSubjectsView    />}
+              {activeSubview === 'timetable-builder' && <TimetableBuilderView />}
             </>
           ) : (
             <>

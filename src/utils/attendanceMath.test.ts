@@ -28,6 +28,26 @@ describe('useAttendanceMath / calculateSubjectAttendance (TASK-102)', () => {
     expect(res.isAtRisk).toBe(false);
   });
 
+  it('handles rescheduling flow without double-counting (Section B self-audit #3)', () => {
+    // 1. Original slot 's1' was scheduled and had a 'present' record 'r1'
+    // 2. User reschedules 's1': 's1' becomes status='cancelled'
+    // 3. New slot 's2' is created with status='rescheduled' and linked_slot_id='s1', with 'present' record 'r2'
+    const slots: LectureSlot[] = [
+      { id: 's1', subject_id: subId, start_time: '2026-08-03T09:00:00', end_time: '2026-08-03T10:15:00', status: 'cancelled', is_deleted: false },
+      { id: 's2', subject_id: subId, start_time: '2026-08-04T11:00:00', end_time: '2026-08-04T12:15:00', status: 'rescheduled', linked_slot_id: 's1', is_deleted: false },
+    ];
+
+    const records: AttendanceRecord[] = [
+      { id: 'r2', lecture_slot_id: 's2', status: 'present', marked_at: '2026-08-04T11:05:00', version: 1, is_deleted: false },
+    ];
+
+    const res = calculateSubjectAttendance(subId, slots, records);
+
+    expect(res.totalEffective).toBe(1); // Reflects EXACTLY ONE class occurrence, not 2!
+    expect(res.totalAttended).toBe(1);
+    expect(res.percentage).toBe(100);
+  });
+
   it('excludes future/unrecorded slots from the denominator (prevents premature deflation)', () => {
     const slots: LectureSlot[] = [
       // 2 past slots with records

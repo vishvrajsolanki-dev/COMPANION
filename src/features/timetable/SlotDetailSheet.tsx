@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { db, LectureSlot, Subject, AttendanceRecord } from '../../db/index';
 import styles from './WeeklyGrid.module.css';
-import { Check, X, Clock, FileText, Award, AlertCircle, Trash2 } from 'lucide-react';
+import { Check, X, Clock, FileText, Award, AlertCircle, Trash2, Calendar, RefreshCw } from 'lucide-react';
 
 interface SlotDetailSheetProps {
   slot: LectureSlot;
@@ -16,6 +16,11 @@ export const SlotDetailSheet: React.FC<SlotDetailSheetProps> = ({
   record,
   onClose,
 }) => {
+  const [isRescheduling, setIsRescheduling] = useState(false);
+  const [rescheduleDate, setRescheduleDate] = useState('2026-08-06');
+  const [rescheduleStartTime, setRescheduleStartTime] = useState('10:30');
+  const [rescheduleEndTime, setRescheduleEndTime] = useState('11:45');
+
   const markStatus = async (status: 'present' | 'absent' | 'late' | 'medical' | 'onduty') => {
     if (record) {
       const history = record.edit_history || [];
@@ -52,9 +57,35 @@ export const SlotDetailSheet: React.FC<SlotDetailSheetProps> = ({
     onClose();
   };
 
+  const handleReschedule = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!rescheduleDate || !rescheduleStartTime || !rescheduleEndTime) return;
+
+    // 1. Cancel original slot
+    await db.lectureSlots.update(slot.id, { status: 'cancelled' });
+
+    // 2. Create new rescheduled slot linked to original
+    const newSlotId = `slot-resched-${Date.now()}`;
+    await db.lectureSlots.add({
+      id: newSlotId,
+      subject_id: slot.subject_id,
+      room_id: slot.room_id,
+      start_time: `${rescheduleDate}T${rescheduleStartTime}:00`,
+      end_time: `${rescheduleDate}T${rescheduleEndTime}:00`,
+      status: 'rescheduled',
+      linked_slot_id: slot.id,
+      is_deleted: false,
+    });
+
+    setIsRescheduling(false);
+    onClose();
+  };
+
   const clearRecord = async () => {
     if (record) {
-      await db.attendanceRecords.delete(record.id);
+      // Soft-delete: set is_deleted:true to preserve audit trail, matching the
+      // contract used by tasks, notes, and every other table in this app.
+      await db.attendanceRecords.update(record.id, { is_deleted: true });
     }
     onClose();
   };
@@ -218,6 +249,7 @@ export const SlotDetailSheet: React.FC<SlotDetailSheetProps> = ({
           </button>
         </div>
 
+        {/* Reschedule and Cancel Controls */}
         <div style={{ display: 'flex', gap: '8px', marginTop: 'var(--space-xs)' }}>
           <button
             onClick={toggleCancelled}
@@ -236,7 +268,27 @@ export const SlotDetailSheet: React.FC<SlotDetailSheetProps> = ({
             }}
           >
             <AlertCircle size={16} />
-            {slot.status === 'cancelled' ? 'Unmark Cancelled' : 'Faculty Cancelled Slot'}
+            {slot.status === 'cancelled' ? 'Unmark Cancelled' : 'Faculty Cancelled'}
+          </button>
+
+          <button
+            onClick={() => setIsRescheduling(true)}
+            style={{
+              flex: 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              padding: '10px',
+              borderRadius: 'var(--radius-chip)',
+              backgroundColor: 'var(--color-bg-tertiary)',
+              color: 'var(--color-accent-primary)',
+              fontSize: '0.85rem',
+              fontWeight: 600,
+            }}
+          >
+            <RefreshCw size={16} />
+            <span>Reschedule</span>
           </button>
 
           {record && (
@@ -256,6 +308,73 @@ export const SlotDetailSheet: React.FC<SlotDetailSheetProps> = ({
             </button>
           )}
         </div>
+
+        {/* Reschedule Drawer Form */}
+        {isRescheduling && (
+          <form
+            onSubmit={handleReschedule}
+            style={{
+              marginTop: '12px',
+              padding: '12px',
+              backgroundColor: 'var(--color-bg-secondary)',
+              borderRadius: 'var(--radius-card)',
+              border: '1px solid var(--color-border)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '10px',
+            }}
+          >
+            <h4 style={{ fontSize: '0.9rem', fontWeight: 700 }}>Reschedule Class</h4>
+            <div>
+              <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-text-secondary)' }}>New Date</label>
+              <input
+                type="date"
+                value={rescheduleDate}
+                onChange={e => setRescheduleDate(e.target.value)}
+                required
+                style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg-primary)', color: 'var(--color-text-primary)', marginTop: '2px' }}
+              />
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+              <div>
+                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-text-secondary)' }}>Start Time</label>
+                <input
+                  type="time"
+                  value={rescheduleStartTime}
+                  onChange={e => setRescheduleStartTime(e.target.value)}
+                  required
+                  style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg-primary)', color: 'var(--color-text-primary)', marginTop: '2px' }}
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-text-secondary)' }}>End Time</label>
+                <input
+                  type="time"
+                  value={rescheduleEndTime}
+                  onChange={e => setRescheduleEndTime(e.target.value)}
+                  required
+                  style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg-primary)', color: 'var(--color-text-primary)', marginTop: '2px' }}
+                />
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '6px', marginTop: '4px' }}>
+              <button
+                type="submit"
+                style={{ flex: 1, padding: '8px', borderRadius: '6px', backgroundColor: 'var(--color-accent-primary)', color: '#ffffff', fontWeight: 600, fontSize: '0.85rem' }}
+              >
+                Confirm Reschedule
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsRescheduling(false)}
+                style={{ padding: '8px 12px', borderRadius: '6px', backgroundColor: 'var(--color-bg-tertiary)', fontWeight: 600, fontSize: '0.85rem' }}
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   );
