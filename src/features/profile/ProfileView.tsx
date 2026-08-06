@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import { useActiveSemester, useSubjects } from '../../db/useDatabase';
+import { useActiveSemester, useSubjects, useCalendarEvents } from '../../db/useDatabase';
 import { db } from '../../db/index';
 import { useUIStore } from '../../store/uiStore';
-import { Moon, Sun, HardDrive, Users, BookOpen, ChevronRight, Calendar, BookMarked, Sliders, Trash2, Download, AlertTriangle, FileCode } from 'lucide-react';
+import { Moon, Sun, HardDrive, Users, BookOpen, ChevronRight, Calendar, CalendarDays, BookMarked, Sliders, Trash2, Download, AlertTriangle, FileCode, Upload } from 'lucide-react';
 
 export const ProfileView: React.FC = () => {
   const activeSemester    = useActiveSemester();
   const subjects          = useSubjects() || [];
+  const calendarEvents    = useCalendarEvents() || [];
   const theme             = useUIStore(state => state.theme);
   const toggleTheme       = useUIStore(state => state.toggleTheme);
   const navigateToSubview = useUIStore(state => state.navigateToSubview);
@@ -14,6 +15,8 @@ export const ProfileView: React.FC = () => {
   const [isConfirmingClear, setIsConfirmingClear] = useState(false);
   const [confirmInput, setConfirmInput]           = useState('');
   const [isExported, setIsExported]               = useState(false);
+  const [restoreError, setRestoreError]           = useState<string | null>(null);
+  const [restoreSuccess, setRestoreSuccess]       = useState(false);
 
   const totalCredits = subjects.reduce((sum, s) => sum + s.credits, 0);
 
@@ -38,7 +41,46 @@ export const ProfileView: React.FC = () => {
     return backup;
   };
 
-  // 2. Perform safe reset (export backup → set flag → clear all IndexedDB tables)
+  // 2. Import JSON backup into IndexedDB (merge mode: upsert by ID)
+  const importBackupJSON = async (file: File) => {
+    setRestoreError(null);
+    setRestoreSuccess(false);
+
+    try {
+      const text = await file.text();
+      const backup: Record<string, any[]> = JSON.parse(text);
+
+      if (typeof backup !== 'object' || backup === null) {
+        throw new Error('Invalid backup format — expected a JSON object with table names as keys.');
+      }
+
+      // Clear existing data first (fresh restore, not merge)
+      await db.transaction('rw', db.tables, async () => {
+        await Promise.all(db.tables.map(table => table.clear()));
+      });
+
+      // Import each table
+      let totalRows = 0;
+      for (const table of db.tables) {
+        const rows = backup[table.name];
+        if (Array.isArray(rows) && rows.length > 0) {
+          await table.bulkAdd(rows);
+          totalRows += rows.length;
+        }
+      }
+
+      // Remove the "user cleared" flag so seed doesn't re-trigger
+      localStorage.removeItem('academic_os_user_cleared');
+
+      setRestoreSuccess(true);
+      console.log(`Restore complete: ${totalRows} rows across ${db.tables.length} tables.`);
+    } catch (err) {
+      console.error('Restore failed:', err);
+      setRestoreError(err instanceof Error ? err.message : 'Failed to restore backup. Ensure the file is a valid JSON backup from this app.');
+    }
+  };
+
+  // 3. Perform safe reset (export backup → set flag → clear all IndexedDB tables)
   const handleClearAllData = async () => {
     if (confirmInput.trim().toUpperCase() !== 'DELETE') return;
 
@@ -121,6 +163,12 @@ export const ProfileView: React.FC = () => {
           icon={<Calendar size={18} color="#8B5CF6" />}
           onClick={() => navigateToSubview('calendar-import')}
         />
+        <Row
+          label="Calendar Events"
+          value={`${calendarEvents.length} events`}
+          icon={<CalendarDays size={18} color="#8B5CF6" />}
+          onClick={() => navigateToSubview('calendar-events')}
+        />
       </div>
 
       {/* Academic Directory & Resources */}
@@ -196,6 +244,46 @@ export const ProfileView: React.FC = () => {
             >
               <Download size={15} /> Backup Data (JSON)
             </button>
+
+            <label
+              style={{
+                flex: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                padding: '10px',
+                borderRadius: 'var(--radius-chip)',
+                backgroundColor: 'var(--color-bg-tertiary)',
+                color: 'var(--color-text-primary)',
+                fontWeight: 600,
+                fontSize: '0.85rem',
+                cursor: 'pointer'
+              }}
+            >
+              <Upload size={15} /> Restore from JSON
+              <input
+                type="file"
+                accept=".json"
+                style={{ display: 'none' }}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) importBackupJSON(file);
+                  e.target.value = '';
+                }}
+              />
+            </label>
+
+            {restoreError && (
+              <div style={{ padding: '10px', borderRadius: 'var(--radius-card)', backgroundColor: 'var(--color-danger-bg)', color: 'var(--color-danger)', fontSize: '0.85rem', fontWeight: 600, flexBasis: '100%' }}>
+                {restoreError}
+              </div>
+            )}
+            {restoreSuccess && (
+              <div style={{ padding: '10px', borderRadius: 'var(--radius-card)', backgroundColor: 'var(--color-success-bg, #dcfce7)', color: 'var(--color-success, #16a34a)', fontSize: '0.85rem', fontWeight: 600, flexBasis: '100%' }}>
+                ✓ Backup restored successfully! Data has been replaced.
+              </div>
+            )}
 
             <button
               onClick={() => {

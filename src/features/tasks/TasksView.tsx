@@ -24,35 +24,53 @@ export const TasksView: React.FC = () => {
   const selectedTask = tasks.find(t => t.id === selectedTaskId);
   const selectedTaskSubject = selectedTask ? subjects.find(s => s.id === selectedTask.subject_id) : null;
 
+  const [dbError, setDbError] = useState<string | null>(null);
+
   const toggleTask = async (id: string, currentStatus: 'todo' | 'in_progress' | 'completed') => {
     const newStatus = currentStatus === 'completed' ? 'todo' : 'completed';
-    await db.tasks.update(id, { status: newStatus });
+    try {
+      await db.tasks.update(id, { status: newStatus });
+    } catch (err) {
+      console.error('Failed to update task:', err);
+      setDbError('Failed to update task.');
+    }
   };
 
   const deleteTask = async (id: string) => {
-    await db.tasks.update(id, { is_deleted: true });
-    if (selectedTaskId === id) setSelectedTaskId(null);
+    try {
+      await db.tasks.update(id, { is_deleted: true });
+      if (selectedTaskId === id) setSelectedTaskId(null);
+    } catch (err) {
+      console.error('Failed to delete task:', err);
+      setDbError('Failed to delete task.');
+    }
   };
 
   const handleCreateTask = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTitle.trim()) return;
+    setDbError(null);
 
-    await db.tasks.add({
-      id: `task-${Date.now()}`,
-      subject_id: newSubjectId || undefined,
-      title: newTitle,
-      due_at: newDueAt,
-      priority: newPriority,
-      status: 'todo',
-      is_deleted: false,
-    });
+    try {
+      await db.tasks.add({
+        id: `task-${Date.now()}`,
+        subject_id: newSubjectId || undefined,
+        title: newTitle,
+        due_at: newDueAt,
+        priority: newPriority,
+        status: 'todo',
+        is_deleted: false,
+      });
 
-    setNewTitle('');
-    setNewSubjectId('');
-    setNewDueAt('2026-08-05T23:59:00');
-    setNewPriority('medium');
-    setIsAdding(false);
+      setNewTitle('');
+      setNewSubjectId('');
+      setNewDueAt('2026-08-05T23:59:00');
+      setNewPriority('medium');
+      setIsAdding(false);
+    } catch (err) {
+      console.error('Failed to create task:', err);
+      setDbError('Failed to save task. Please try again.');
+    }
   };
 
   // Filter computation
@@ -329,8 +347,14 @@ export const TasksView: React.FC = () => {
               </div>
             </div>
 
+            {dbError && (
+              <div style={{ padding: '10px', borderRadius: 'var(--radius-card)', backgroundColor: 'var(--color-danger-bg)', color: 'var(--color-danger)', fontSize: '0.85rem', fontWeight: 600 }}>
+                {dbError}
+              </div>
+            )}
+
             <div style={{ display: 'flex', gap: '8px', marginTop: 'var(--space-xs)' }}>
-              <button 
+              <button
                 type="submit"
                 style={{
                   flex: 1,

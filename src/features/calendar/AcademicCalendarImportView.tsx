@@ -33,14 +33,14 @@ export const AcademicCalendarImportView: React.FC = () => {
   const sampleCalendarJSON = JSON.stringify({
     semester_defaults: {
       label: "Semester 5 (Odd 2026)",
-      start_date: "2026-08-01",
-      end_date: "2026-12-15"
+      start_date: "2026-07-06",
+      end_date: "2026-11-05"
     },
     events: [
-      { title: "Independence Day Holiday", date: "2026-08-15", type: "holiday", description: "National Holiday" },
-      { title: "Ganesh Chaturthi", date: "2026-09-07", type: "holiday" },
-      { title: "Midsem Exam Window", date: "2026-09-21", type: "exam_window", description: "Midsem Examinations" },
-      { title: "Diwali Vacation Start", date: "2026-10-25", type: "holiday" }
+      { title: "Internal Exams Sem 3/5/7", date: "2026-08-24", type: "exam_window", description: "Mon 24 Aug to Fri 28 Aug 2026" },
+      { title: "Rakshabandhan", date: "2026-08-28", type: "holiday" },
+      { title: "Gandhi Jayanti", date: "2026-10-02", type: "holiday" },
+      { title: "Diwali Vacation", date: "2026-11-06", type: "college_event", description: "Fri 6 Nov to Fri 13 Nov 2026 (8 days)" }
     ]
   }, null, 2);
 

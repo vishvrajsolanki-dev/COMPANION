@@ -21,73 +21,89 @@ export const SlotDetailSheet: React.FC<SlotDetailSheetProps> = ({
   const [rescheduleStartTime, setRescheduleStartTime] = useState('10:30');
   const [rescheduleEndTime, setRescheduleEndTime] = useState('11:45');
 
+  const [dbError, setDbError] = useState<string | null>(null);
+
   const markStatus = async (status: 'present' | 'absent' | 'late' | 'medical' | 'onduty') => {
-    if (record) {
-      const history = record.edit_history || [];
-      await db.attendanceRecords.update(record.id, {
-        status,
-        marked_at: new Date().toISOString(),
-        version: record.version + 1,
-        edit_history: [
-          ...history,
-          {
-            changed_at: new Date().toISOString(),
-            old_status: record.status,
-            new_status: status,
-            reason: 'Modified via slot detail sheet',
-          },
-        ],
-      });
-    } else {
-      await db.attendanceRecords.add({
-        id: `att-${Date.now()}`,
-        lecture_slot_id: slot.id,
-        status,
-        marked_at: new Date().toISOString(),
-        version: 1,
-        is_deleted: false,
-      });
+    try {
+      if (record) {
+        const history = record.edit_history || [];
+        await db.attendanceRecords.update(record.id, {
+          status,
+          marked_at: new Date().toISOString(),
+          version: record.version + 1,
+          edit_history: [
+            ...history,
+            {
+              changed_at: new Date().toISOString(),
+              old_status: record.status,
+              new_status: status,
+              reason: 'Modified via slot detail sheet',
+            },
+          ],
+        });
+      } else {
+        await db.attendanceRecords.add({
+          id: `att-${Date.now()}`,
+          lecture_slot_id: slot.id,
+          status,
+          marked_at: new Date().toISOString(),
+          version: 1,
+          is_deleted: false,
+        });
+      }
+      onClose();
+    } catch (err) {
+      console.error('Failed to mark attendance:', err);
+      setDbError('Failed to save. Please try again.');
     }
-    onClose();
   };
 
   const toggleCancelled = async () => {
-    const newStatus = slot.status === 'cancelled' ? 'scheduled' : 'cancelled';
-    await db.lectureSlots.update(slot.id, { status: newStatus });
-    onClose();
+    try {
+      const newStatus = slot.status === 'cancelled' ? 'scheduled' : 'cancelled';
+      await db.lectureSlots.update(slot.id, { status: newStatus });
+      onClose();
+    } catch (err) {
+      console.error('Failed to toggle cancelled:', err);
+      setDbError('Failed to update slot.');
+    }
   };
 
   const handleReschedule = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!rescheduleDate || !rescheduleStartTime || !rescheduleEndTime) return;
 
-    // 1. Cancel original slot
-    await db.lectureSlots.update(slot.id, { status: 'cancelled' });
-
-    // 2. Create new rescheduled slot linked to original
-    const newSlotId = `slot-resched-${Date.now()}`;
-    await db.lectureSlots.add({
-      id: newSlotId,
-      subject_id: slot.subject_id,
-      room_id: slot.room_id,
-      start_time: `${rescheduleDate}T${rescheduleStartTime}:00`,
-      end_time: `${rescheduleDate}T${rescheduleEndTime}:00`,
-      status: 'rescheduled',
-      linked_slot_id: slot.id,
-      is_deleted: false,
-    });
-
-    setIsRescheduling(false);
-    onClose();
+    try {
+      await db.lectureSlots.update(slot.id, { status: 'cancelled' });
+      const newSlotId = `slot-resched-${Date.now()}`;
+      await db.lectureSlots.add({
+        id: newSlotId,
+        subject_id: slot.subject_id,
+        room_id: slot.room_id,
+        start_time: `${rescheduleDate}T${rescheduleStartTime}:00`,
+        end_time: `${rescheduleDate}T${rescheduleEndTime}:00`,
+        status: 'rescheduled',
+        linked_slot_id: slot.id,
+        is_deleted: false,
+      });
+      setIsRescheduling(false);
+      onClose();
+    } catch (err) {
+      console.error('Failed to reschedule:', err);
+      setDbError('Failed to reschedule. Please try again.');
+    }
   };
 
   const clearRecord = async () => {
-    if (record) {
-      // Soft-delete: set is_deleted:true to preserve audit trail, matching the
-      // contract used by tasks, notes, and every other table in this app.
-      await db.attendanceRecords.update(record.id, { is_deleted: true });
+    try {
+      if (record) {
+        await db.attendanceRecords.update(record.id, { is_deleted: true });
+      }
+      onClose();
+    } catch (err) {
+      console.error('Failed to clear record:', err);
+      setDbError('Failed to clear record.');
     }
-    onClose();
   };
 
   const currentStatus = record?.status;
@@ -96,6 +112,12 @@ export const SlotDetailSheet: React.FC<SlotDetailSheetProps> = ({
     <div className={styles.sheetOverlay} onClick={onClose}>
       <div className={styles.sheetContent} onClick={e => e.stopPropagation()}>
         <div className={styles.sheetHandle} />
+
+        {dbError && (
+          <div style={{ padding: '10px', borderRadius: 'var(--radius-card)', backgroundColor: 'var(--color-danger-bg)', color: 'var(--color-danger)', fontSize: '0.85rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <AlertCircle size={14} /> {dbError}
+          </div>
+        )}
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div

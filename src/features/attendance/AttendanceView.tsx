@@ -27,39 +27,47 @@ export const AttendanceView: React.FC = () => {
     subjectSlots.some(s => s.id === r.lecture_slot_id) && !r.is_deleted
   );
 
+  const [dbError, setDbError] = useState<string | null>(null);
+
   const handleBackfill = async () => {
     if (!backfillSlotId) return;
-    
-    const existingRecord = attendanceRecords.find(r => r.lecture_slot_id === backfillSlotId && !r.is_deleted);
-    
-    if (existingRecord) {
-      await db.attendanceRecords.update(existingRecord.id, {
-        status: backfillStatus,
-        marked_at: new Date().toISOString(),
-        version: existingRecord.version + 1,
-        edit_history: [
-          ...(existingRecord.edit_history || []),
-          {
-            changed_at: new Date().toISOString(),
-            old_status: existingRecord.status,
-            new_status: backfillStatus,
-            reason: 'Backfill adjustment'
-          }
-        ]
-      });
-    } else {
-      await db.attendanceRecords.add({
-        id: `att-${Date.now()}`,
-        lecture_slot_id: backfillSlotId,
-        status: backfillStatus,
-        marked_at: new Date().toISOString(),
-        edit_history: [],
-        version: 1,
-        is_deleted: false
-      });
+    setDbError(null);
+
+    try {
+      const existingRecord = attendanceRecords.find(r => r.lecture_slot_id === backfillSlotId && !r.is_deleted);
+
+      if (existingRecord) {
+        await db.attendanceRecords.update(existingRecord.id, {
+          status: backfillStatus,
+          marked_at: new Date().toISOString(),
+          version: existingRecord.version + 1,
+          edit_history: [
+            ...(existingRecord.edit_history || []),
+            {
+              changed_at: new Date().toISOString(),
+              old_status: existingRecord.status,
+              new_status: backfillStatus,
+              reason: 'Backfill adjustment'
+            }
+          ]
+        });
+      } else {
+        await db.attendanceRecords.add({
+          id: `att-${Date.now()}`,
+          lecture_slot_id: backfillSlotId,
+          status: backfillStatus,
+          marked_at: new Date().toISOString(),
+          edit_history: [],
+          version: 1,
+          is_deleted: false
+        });
+      }
+
+      setBackfillSlotId(null);
+    } catch (err) {
+      console.error('Failed to save attendance record:', err);
+      setDbError('Failed to save attendance. Please try again.');
     }
-    
-    setBackfillSlotId(null);
   };
 
   return (
@@ -288,6 +296,11 @@ export const AttendanceView: React.FC = () => {
                   ))}
                 </div>
                 <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                  {dbError && (
+                    <div style={{ padding: '8px 12px', borderRadius: '6px', backgroundColor: 'var(--color-danger-bg)', color: 'var(--color-danger)', fontSize: '0.8rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px', gridColumn: '1 / -1' }}>
+                      <AlertCircle size={14} /> {dbError}
+                    </div>
+                  )}
                   <button onClick={handleBackfill} style={{ flex: 1, padding: '8px', borderRadius: '6px', backgroundColor: 'var(--color-accent-primary)', color: '#ffffff', fontWeight: 600, fontSize: '0.85rem' }}>
                     Save Backfill
                   </button>

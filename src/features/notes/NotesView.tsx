@@ -59,39 +59,52 @@ export const NotesView: React.FC = () => {
     setIsPreview(false);
   };
 
+  const [dbError, setDbError] = useState<string | null>(null);
+
   const handleSave = async () => {
     if (!editTitle.trim()) return;
+    setDbError(null);
 
-    const parsedTags = editTagsString
-      .split(',')
-      .map(t => t.trim())
-      .filter(t => t.length > 0);
+    try {
+      const parsedTags = editTagsString
+        .split(',')
+        .map(t => t.trim())
+        .filter(t => t.length > 0);
 
-    if (editingNoteId === 'new') {
-      await db.notes.add({
-        id: `note-${Date.now()}`,
-        subject_id: editSubjectId || undefined,
-        title: editTitle,
-        body_markdown: editBody,
-        tags: parsedTags,
-        is_deleted: false
-      });
-    } else if (editingNoteId) {
-      await db.notes.update(editingNoteId, {
-        subject_id: editSubjectId || undefined,
-        title: editTitle,
-        body_markdown: editBody,
-        tags: parsedTags
-      });
+      if (editingNoteId === 'new') {
+        await db.notes.add({
+          id: `note-${Date.now()}`,
+          subject_id: editSubjectId || undefined,
+          title: editTitle,
+          body_markdown: editBody,
+          tags: parsedTags,
+          is_deleted: false
+        });
+      } else if (editingNoteId) {
+        await db.notes.update(editingNoteId, {
+          subject_id: editSubjectId || undefined,
+          title: editTitle,
+          body_markdown: editBody,
+          tags: parsedTags
+        });
+      }
+
+      setEditingNoteId(null);
+    } catch (err) {
+      console.error('Failed to save note:', err);
+      setDbError('Failed to save note. Please try again.');
     }
-
-    setEditingNoteId(null);
   };
 
   const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this note?')) {
-      await db.notes.update(id, { is_deleted: true });
-      if (editingNoteId === id) setEditingNoteId(null);
+      try {
+        await db.notes.update(id, { is_deleted: true });
+        if (editingNoteId === id) setEditingNoteId(null);
+      } catch (err) {
+        console.error('Failed to delete note:', err);
+        setDbError('Failed to delete note. Please try again.');
+      }
     }
   };
 
@@ -153,6 +166,12 @@ export const NotesView: React.FC = () => {
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: 'var(--space-md)', overflowY: 'auto' }}>
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: 'var(--space-md)' }}>
+            {dbError && (
+              <div style={{ padding: '10px', borderRadius: 'var(--radius-card)', backgroundColor: 'var(--color-danger-bg)', color: 'var(--color-danger)', fontSize: '0.85rem', fontWeight: 600 }}>
+                {dbError}
+              </div>
+            )}
+
             <input
               type="text"
               placeholder="Note Title"
@@ -316,7 +335,7 @@ export const NotesView: React.FC = () => {
         </div>
 
         {/* Tag chips */}
-        <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '4px' }}>
+        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', paddingBottom: '4px' }}>
           <button
             onClick={() => setSelectedTag(null)}
             style={{

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useExams, useSubjects } from '../../db/useDatabase';
 import { db, Exam, Subject } from '../../db/index';
 import { useUIStore } from '../../store/uiStore';
-import { ArrowLeft, Plus, Calendar, Clock, AlertTriangle, CheckSquare } from 'lucide-react';
+import { ArrowLeft, Plus, Calendar, Clock, AlertTriangle, CheckSquare, Trash2 } from 'lucide-react';
 
 export const ExamsView: React.FC = () => {
   const exams = useExams() || [];
@@ -23,40 +23,65 @@ export const ExamsView: React.FC = () => {
   const selectedExam = exams.find(e => e.id === selectedExamId);
   const selectedExamSubject = selectedExam ? subjects.find(s => s.id === selectedExam.subject_id) : null;
 
+  const [dbError, setDbError] = useState<string | null>(null);
+
   const handleCreateExam = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newSubjectId) return;
+    setDbError(null);
 
-    const topicsList = newSyllabusInput
-      .split(',')
-      .map(t => t.trim())
-      .filter(t => t.length > 0)
-      .map(t => ({ topic: t, completed: false }));
+    try {
+      const topicsList = newSyllabusInput
+        .split(',')
+        .map(t => t.trim())
+        .filter(t => t.length > 0)
+        .map(t => ({ topic: t, completed: false }));
 
-    await db.exams.add({
-      id: `exam-${Date.now()}`,
-      subject_id: newSubjectId,
-      type: newType,
-      date: newDate,
-      syllabus_checklist: topicsList,
-      is_deleted: false
-    });
+      await db.exams.add({
+        id: `exam-${Date.now()}`,
+        subject_id: newSubjectId,
+        type: newType,
+        date: newDate,
+        syllabus_checklist: topicsList,
+        is_deleted: false
+      });
 
-    setNewSubjectId('');
-    setNewType('midsem');
-    setNewDate('2026-08-15T10:00:00');
-    setNewSyllabusInput('');
-    setIsAdding(false);
+      setNewSubjectId('');
+      setNewType('midsem');
+      setNewDate('2026-08-15T10:00:00');
+      setNewSyllabusInput('');
+      setIsAdding(false);
+    } catch (err) {
+      console.error('Failed to create exam:', err);
+      setDbError('Failed to save exam. Please try again.');
+    }
+  };
+
+  const handleDeleteExam = async (examId: string) => {
+    const exam = exams.find(e => e.id === examId);
+    if (!exam) return;
+    const sub = subjects.find(s => s.id === exam.subject_id);
+    if (!confirm(`Delete ${sub?.name || 'this exam'} (${exam.type})?`)) return;
+    try {
+      await db.exams.update(examId, { is_deleted: true });
+      setSelectedExamId(null);
+    } catch (err) {
+      console.error('Failed to delete exam:', err);
+      setDbError('Failed to delete exam. Please try again.');
+    }
   };
 
   const toggleSyllabusItem = async (examId: string, index: number) => {
     const exam = exams.find(e => e.id === examId);
     if (!exam) return;
 
-    const updatedChecklist = [...exam.syllabus_checklist];
-    updatedChecklist[index].completed = !updatedChecklist[index].completed;
-
-    await db.exams.update(examId, { syllabus_checklist: updatedChecklist });
+    try {
+      const updatedChecklist = [...exam.syllabus_checklist];
+      updatedChecklist[index].completed = !updatedChecklist[index].completed;
+      await db.exams.update(examId, { syllabus_checklist: updatedChecklist });
+    } catch (err) {
+      console.error('Failed to update syllabus:', err);
+    }
   };
 
   // Filter exams based on Simulated Time (August 5, 2026 11:30 AM)
@@ -158,6 +183,9 @@ export const ExamsView: React.FC = () => {
             return (
               <div
                 key={exam.id}
+                role="button"
+                data-exam-id={exam.id}
+                data-exam-date={exam.date}
                 onClick={() => setSelectedExamId(exam.id)}
                 style={{
                   padding: 'var(--space-md)',
@@ -328,6 +356,12 @@ export const ExamsView: React.FC = () => {
               />
             </div>
 
+            {dbError && (
+              <div style={{ padding: '10px', borderRadius: 'var(--radius-card)', backgroundColor: 'var(--color-danger-bg)', color: 'var(--color-danger)', fontSize: '0.85rem', fontWeight: 600 }}>
+                {dbError}
+              </div>
+            )}
+
             <div style={{ display: 'flex', gap: '8px', marginTop: 'var(--space-xs)' }}>
               <button type="submit" style={{ flex: 1, padding: '12px', borderRadius: 'var(--radius-card)', backgroundColor: 'var(--color-accent-primary)', color: '#ffffff', fontWeight: 600, fontSize: '0.9rem' }}>
                 Add Exam
@@ -378,6 +412,10 @@ export const ExamsView: React.FC = () => {
                 {selectedExamSubject?.code} — {selectedExam.type.toUpperCase()}
               </span>
               <h3 style={{ fontSize: '1.2rem', fontWeight: 700 }}>{selectedExamSubject?.name}</h3>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', color: 'var(--color-text-secondary)', fontFamily: 'var(--font-family-mono)', marginTop: '4px' }}>
+                <Calendar size={14} />
+                {new Date(selectedExam.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+              </div>
             </div>
 
             {/* Syllabus Checklist */}
@@ -430,7 +468,22 @@ export const ExamsView: React.FC = () => {
               )}
             </div>
 
-            <button 
+            <button
+              onClick={() => handleDeleteExam(selectedExam.id)}
+              style={{
+                width: '100%',
+                padding: '12px',
+                borderRadius: 'var(--radius-card)',
+                backgroundColor: 'var(--color-danger-bg)',
+                color: 'var(--color-danger)',
+                fontWeight: 600,
+                fontSize: '0.9rem',
+                marginTop: 'var(--space-xs)'
+              }}
+            >
+              <Trash2 size={15} style={{ display: 'inline', marginRight: '6px', verticalAlign: 'middle' }} /> Delete Exam
+            </button>
+            <button
               onClick={() => setSelectedExamId(null)}
               style={{
                 width: '100%',

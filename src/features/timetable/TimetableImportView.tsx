@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, Subject, LectureSlot } from '../../db/index';
 import { useUIStore } from '../../store/uiStore';
-import { ArrowLeft, Upload, CheckCircle2, AlertCircle, FileCode, Play } from 'lucide-react';
+import { ArrowLeft, Upload, CheckCircle2, AlertCircle, FileCode, Play, Copy } from 'lucide-react';
 import { SUBJECT_COLORS } from '../subjects/ManageSubjectsView';
 
 interface JSONSubjectImport {
@@ -27,6 +27,32 @@ interface JSONTimetablePayload {
   subjects?: JSONSubjectImport[];
   patterns?: JSONPatternImport[];
 }
+
+// Student-facing prompt they paste into any AI (ChatGPT/Gemini/Claude/…) along
+// with their timetable to get back JSON matching the exact schema validated in
+// handleValidate and consumed by handleCommitImport. Colors are auto-assigned
+// from the 8 locked subject tokens, so the AI is told not to emit them.
+const CONVERSION_PROMPT = `I need to convert my college timetable into a specific JSON format. I'll describe or show you my weekly timetable — convert it into this exact structure:
+
+{
+  "subjects": [
+    { "code": "SUBJECT_CODE", "name": "Full Subject Name", "credits": 4 }
+  ],
+  "patterns": [
+    { "subject_code": "SUBJECT_CODE", "day_of_week": 1, "start_time": "09:00", "end_time": "10:15", "room_id": "LH-301", "faculty_name": "Prof. Name" }
+  ]
+}
+
+Rules:
+- "day_of_week" is an integer: 1 = Monday, 2 = Tuesday, 3 = Wednesday, 4 = Thursday, 5 = Friday, 6 = Saturday, 7 = Sunday.
+- "start_time" and "end_time" are 24-hour "HH:MM" strings (e.g. "09:00", "14:30").
+- One entry in "subjects" per real course, using its short code (e.g. "DS", "DBMS"). Every "subject_code" used in "patterns" MUST have a matching entry in "subjects".
+- Labs and tutorials are NOT separate subjects — they are extra entries in "patterns" using the SAME "subject_code" as the parent lecture. Example: if "DS" has a lecture on Monday and a lab on Wednesday, both go in "patterns" with "subject_code": "DS". Do NOT create a "DS Lab" subject.
+- Every distinct weekly time slot (lecture, lab, or tutorial) is its own entry in "patterns", even if several slots share a subject_code.
+- Do NOT include a "color" field — subject colors are assigned automatically.
+- Only include real, confirmed classes — don't guess or fill in gaps.
+
+Here's my timetable: [paste your timetable text, or describe it, or attach an image]`;
 
 function generateSlotsForPattern(
   subjectId: string,
@@ -83,6 +109,7 @@ export const TimetableImportView: React.FC = () => {
   const [importedCount, setImportedCount] = useState<number | null>(null);
   const [commitSummary, setCommitSummary] = useState<{ created: string[]; updated: string[]; skipped: string[] } | null>(null);
   const [preview, setPreview] = useState<{ newSubjects: number; projectedSlots: number; unresolvable: string[] } | null>(null);
+  const [copied, setCopied] = useState(false);
 
   // Live preview of the real DB impact: how many subjects are NEW, and how many
   // dated lecture slots the patterns will generate across the active semester.
@@ -166,6 +193,25 @@ export const TimetableImportView: React.FC = () => {
       setCommitSummary(null);
     };
     reader.readAsText(file);
+  };
+
+  const copyConversionPrompt = async () => {
+    const text = CONVERSION_PROMPT;
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      // Fallback for non-secure contexts (served over plain http / file://)
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const handleCommitImport = async () => {
@@ -290,7 +336,15 @@ export const TimetableImportView: React.FC = () => {
         {/* Upload file or paste JSON */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <label style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--color-text-secondary)' }}>JSON Data</label>
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+            <button
+              onClick={copyConversionPrompt}
+              title="Copies a prompt you can paste into any AI (ChatGPT/Gemini/Claude) with your timetable to get schema-correct JSON back"
+              style={{ fontSize: '0.78rem', padding: '4px 8px', borderRadius: '6px', backgroundColor: 'rgba(37,99,235,0.12)', color: 'var(--color-accent-primary)', border: '1px solid var(--color-accent-primary)', fontWeight: 600 }}
+            >
+              <Copy size={12} style={{ display: 'inline', marginRight: '4px' }} />
+              {copied ? 'Copied ✓' : 'Copy Conversion Prompt'}
+            </button>
             <button
               onClick={() => { setJsonText(sampleJSON); setError(null); setImportedCount(null); setCommitSummary(null); }}
               style={{ fontSize: '0.78rem', padding: '4px 8px', borderRadius: '6px', backgroundColor: 'var(--color-bg-tertiary)', color: 'var(--color-text-secondary)', border: '1px solid var(--color-border)' }}

@@ -1,19 +1,42 @@
-import { db } from './index';
+import { db, type CalendarEvent } from './index';
+import { ADIT_SEMESTER_DEFAULT, ADIT_CALENDAR_EVENT_DEFAULTS } from '../data/aditCalendarDefaults';
+
+// Insert the official ADIT Academic Calendar 2026-27 events (see
+// src/data/aditCalendarDefaults.ts) into calendarEvents. Deduped by
+// date|title|type so a partially-seeded install never duplicates a row.
+export async function ensureAditCalendarDefaults() {
+  const existing = await db.calendarEvents.filter(e => !e.is_deleted).toArray();
+  const existingKeys = new Set(existing.map(e => `${e.date}|${e.title}|${e.type}`));
+
+  const toAdd: CalendarEvent[] = [];
+  ADIT_CALENDAR_EVENT_DEFAULTS.forEach((ev, i) => {
+    const key = `${ev.date}|${ev.title}|${ev.type}`;
+    if (existingKeys.has(key)) return;
+    existingKeys.add(key);
+    toAdd.push({ ...ev, id: `cal-ev-default-${i}`, is_deleted: false });
+  });
+  if (toAdd.length > 0) await db.calendarEvents.bulkAdd(toAdd);
+}
 
 export async function seedDatabaseIfEmpty() {
   if (typeof window !== 'undefined' && localStorage.getItem('academic_os_user_cleared') === 'true') {
     return; // User explicitly wiped database to enter real data — do not auto-reseed
   }
 
+  // Ship the official ADIT calendar on first run — including for installs that
+  // pre-date this feature (semesters already present, calendar table empty).
+  await ensureAditCalendarDefaults();
+
   const semesterCount = await db.semesters.count();
   if (semesterCount > 0) return; // Already seeded
 
   // ── Semester ──────────────────────────────────────────────────────────────
+  // Dates match the real ADIT ODD 2026 teaching calendar (Mon 6 Jul → 5 Nov).
   await db.semesters.add({
     id: 'sem-5',
-    label: 'Semester 5 (Odd 2026)',
-    start_date: '2026-08-01',
-    end_date: '2026-12-15',
+    label: ADIT_SEMESTER_DEFAULT.label,
+    start_date: ADIT_SEMESTER_DEFAULT.start_date,
+    end_date: ADIT_SEMESTER_DEFAULT.end_date,
     is_active: true,
     is_deleted: false,
   });

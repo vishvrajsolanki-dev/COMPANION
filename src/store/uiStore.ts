@@ -12,7 +12,8 @@ export type SubviewType =
   | 'manage-subjects'
   | 'timetable-builder'
   | 'timetable-import'
-  | 'calendar-import';
+  | 'calendar-import'
+  | 'calendar-events';
 
 interface UIState {
   activeTab: TabType;

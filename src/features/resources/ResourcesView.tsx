@@ -46,24 +46,38 @@ export const ResourcesView: React.FC = () => {
     grouped[r.subject_id].push(r);
   });
 
+  const [dbError, setDbError] = useState<string | null>(null);
+
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTitle.trim() || !newSubjectId || !newUrl.trim()) return;
-    await db.resources.add({
-      id:               `res-${Date.now()}`,
-      subject_id:       newSubjectId,
-      title:            newTitle.trim(),
-      type:             newType,
-      url_or_file_ref:  newUrl.trim(),
-      description:      newDesc.trim() || undefined,
-      is_deleted:       false,
-    });
-    setNewTitle(''); setNewSubjectId(''); setNewType('url'); setNewUrl(''); setNewDesc('');
-    setIsAdding(false);
+    setDbError(null);
+
+    try {
+      await db.resources.add({
+        id:               `res-${Date.now()}`,
+        subject_id:       newSubjectId,
+        title:            newTitle.trim(),
+        type:             newType,
+        url_or_file_ref:  newUrl.trim(),
+        description:      newDesc.trim() || undefined,
+        is_deleted:       false,
+      });
+      setNewTitle(''); setNewSubjectId(''); setNewType('url'); setNewUrl(''); setNewDesc('');
+      setIsAdding(false);
+    } catch (err) {
+      console.error('Failed to add resource:', err);
+      setDbError('Failed to save resource. Please try again.');
+    }
   };
 
   const handleDelete = async (id: string) => {
-    await db.resources.update(id, { is_deleted: true });
+    try {
+      await db.resources.update(id, { is_deleted: true });
+    } catch (err) {
+      console.error('Failed to delete resource:', err);
+      setDbError('Failed to delete resource. Please try again.');
+    }
   };
 
   return (
@@ -201,6 +215,12 @@ export const ResourcesView: React.FC = () => {
 
             <input type="url" placeholder="https://..." value={newUrl} onChange={e => setNewUrl(e.target.value)} required style={{ width: '100%', padding: '12px', borderRadius: 'var(--radius-card)', border: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg-secondary)', color: 'var(--color-text-primary)', fontSize: '0.9rem' }} />
             <input type="text" placeholder="Short description (optional)" value={newDesc} onChange={e => setNewDesc(e.target.value)} style={{ width: '100%', padding: '12px', borderRadius: 'var(--radius-card)', border: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg-secondary)', color: 'var(--color-text-primary)', fontSize: '0.9rem' }} />
+
+            {dbError && (
+              <div style={{ padding: '10px', borderRadius: 'var(--radius-card)', backgroundColor: 'var(--color-danger-bg)', color: 'var(--color-danger)', fontSize: '0.85rem', fontWeight: 600 }}>
+                {dbError}
+              </div>
+            )}
 
             <div style={{ display: 'flex', gap: '8px' }}>
               <button type="submit" style={{ flex: 1, padding: '12px', borderRadius: 'var(--radius-card)', backgroundColor: 'var(--color-accent-primary)', color: '#ffffff', fontWeight: 600, fontSize: '0.9rem' }}>Save Resource</button>
