@@ -19,7 +19,9 @@ import { ResourcesView }         from '../features/resources/ResourcesView';
 import { DirectoryView }         from '../features/directory/DirectoryView';
 import { SemesterSetupView }     from '../features/semester/SemesterSetupView';
 import { ManageSubjectsView }    from '../features/subjects/ManageSubjectsView';
-import { TimetableBuilderView }  from '../features/timetable/TimetableBuilderView';
+import { TimetableBuilderView }     from '../features/timetable/TimetableBuilderView';
+import { TimetableImportView }      from '../features/timetable/TimetableImportView';
+import { AcademicCalendarImportView } from '../features/calendar/AcademicCalendarImportView';
 
 export const App: React.FC = () => {
   const activeTab    = useUIStore(state => state.activeTab);
@@ -63,6 +65,8 @@ export const App: React.FC = () => {
               {activeSubview === 'semester-setup'    && <SemesterSetupView     />}
               {activeSubview === 'manage-subjects'   && <ManageSubjectsView    />}
               {activeSubview === 'timetable-builder' && <TimetableBuilderView />}
+              {activeSubview === 'timetable-import'  && <TimetableImportView  />}
+              {activeSubview === 'calendar-import'   && <AcademicCalendarImportView />}
             </>
           ) : (
             <>

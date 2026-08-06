@@ -35,10 +35,20 @@ export interface LectureSlot {
   id: string;
   subject_id: string;
   room_id?: string;
+  faculty_name?: string;
   start_time: string;  // Full ISO 8601 string, e.g. "2026-08-03T09:00:00"
   end_time: string;    // Full ISO 8601 string, e.g. "2026-08-03T10:15:00"
   status: 'scheduled' | 'cancelled' | 'rescheduled' | 'extra';
   linked_slot_id?: string;
+  is_deleted: boolean;
+}
+
+export interface CalendarEvent {
+  id: string;
+  title: string;
+  date: string; // "YYYY-MM-DD"
+  type: 'holiday' | 'exam_window' | 'college_event' | 'semester_boundary';
+  description?: string;
   is_deleted: boolean;
 }
 
@@ -110,6 +120,7 @@ class AcademicOSDB extends Dexie {
   notes!: Table<Note>;
   exams!: Table<Exam>;
   resources!: Table<Resource>;
+  calendarEvents!: Table<CalendarEvent>;
 
   constructor() {
     super('AcademicOSDB');
@@ -123,6 +134,7 @@ class AcademicOSDB extends Dexie {
       notes: 'id, subject_id, title, *tags, is_deleted',
       exams: 'id, subject_id, date, is_deleted',
       resources: 'id, subject_id, type, is_deleted',
+      calendarEvents: 'id, date, type, is_deleted',
     });
   }
 }

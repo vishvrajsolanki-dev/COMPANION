@@ -10,7 +10,9 @@ export type SubviewType =
   | 'directory'
   | 'semester-setup'
   | 'manage-subjects'
-  | 'timetable-builder';
+  | 'timetable-builder'
+  | 'timetable-import'
+  | 'calendar-import';
 
 interface UIState {
   activeTab: TabType;

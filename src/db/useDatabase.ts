@@ -63,3 +63,10 @@ export function useResources() {
     []
   );
 }
+
+export function useCalendarEvents() {
+  return useLiveQuery(
+    () => db.calendarEvents.filter(c => !c.is_deleted).toArray(),
+    []
+  );
+}

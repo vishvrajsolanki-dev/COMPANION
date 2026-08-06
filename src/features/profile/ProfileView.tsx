@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useActiveSemester, useSubjects } from '../../db/useDatabase';
 import { db } from '../../db/index';
 import { useUIStore } from '../../store/uiStore';
-import { Moon, Sun, HardDrive, Users, BookOpen, ChevronRight, Calendar, BookMarked, Sliders, Trash2, Download, AlertTriangle } from 'lucide-react';
+import { Moon, Sun, HardDrive, Users, BookOpen, ChevronRight, Calendar, BookMarked, Sliders, Trash2, Download, AlertTriangle, FileCode } from 'lucide-react';
 
 export const ProfileView: React.FC = () => {
   const activeSemester    = useActiveSemester();
@@ -110,6 +110,16 @@ export const ProfileView: React.FC = () => {
           label="Build Timetable Pattern"
           icon={<Sliders size={18} color="#10B981" />}
           onClick={() => navigateToSubview('timetable-builder')}
+        />
+        <Row
+          label="Import Timetable JSON"
+          icon={<FileCode size={18} color="#F59E0B" />}
+          onClick={() => navigateToSubview('timetable-import')}
+        />
+        <Row
+          label="Import Academic Calendar JSON"
+          icon={<Calendar size={18} color="#8B5CF6" />}
+          onClick={() => navigateToSubview('calendar-import')}
         />
       </div>
 
