@@ -30,3 +30,9 @@ test-results/
 # Local Gemini agent scratch files
 .agents/
 .gemini/
+
+# Claude Code — local session memory and machine-local settings (do not commit)
+.claude/
+
+# Local Claude launcher — embeds a machine-local API key
+claude-free.bat
