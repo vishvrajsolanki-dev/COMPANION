@@ -66,6 +66,11 @@ export const ADMIN_ERROR_MESSAGES: Record<AdminErrorCode, string> = {
 
 /* ── small parse helpers ──────────────────────────────────────────────────── */
 
+/** True when a code returned by the server is display-only redacted (mask_access_code). */
+export function isMaskedCode(code: string): boolean {
+  return typeof code === 'string' && code.includes('****');
+}
+
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null;
 const ROLES: readonly string[] = ['student', 'admin', 'owner'];
 const asStr = (v: unknown): string | null => (typeof v === 'string' ? v : null);

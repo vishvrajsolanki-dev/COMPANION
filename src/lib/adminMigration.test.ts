@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 
 const sql = readFileSync(resolve(process.cwd(), 'supabase/migrations/0002_admin_portal.sql'), 'utf8');
 const compactSql = sql.replace(/\s+/g, ' ').toLowerCase();
+const compactRawSql = sql.replace(/\s+/g, ' ');
 
 describe('Phase C admin portal migration', () => {
   it('defines every admin RPC as a security-definer function pinned to the public search path', () => {
@@ -59,5 +60,47 @@ describe('Phase C admin portal migration', () => {
     expect(compactSql).toContain('exception when unique_violation then');
     expect(compactSql).toContain('if v_attempt >= 3 then');
     expect(compactSql).toContain("return json_build_object('ok', false, 'error', 'generation_conflict')");
+  });
+});
+
+describe('Phase C — Gap A: privileged-code masking in admin_list_keys', () => {
+  it('defines mask_access_code as an immutable SQL helper', () => {
+    const start = compactSql.indexOf('create or replace function public.mask_access_code(');
+    expect(start, 'mask_access_code should be defined').toBeGreaterThanOrEqual(0);
+
+    const nextFn = compactSql.indexOf('create or replace function public.', start + 1);
+    const body = nextFn === -1 ? compactSql.slice(start) : compactSql.slice(start, nextFn);
+
+    expect(body).toContain('language sql');
+    expect(body).toContain('immutable');
+  });
+
+  it('masks with the ACAD-****-****-1A2B shape (first + last 4-char groups, literal middle)', () => {
+    // Reveals only the first + last 4-char groups; the middle two groups are
+    // literal asterisks — visually identifiable and unusable as a credential.
+    const start = compactSql.indexOf('create or replace function public.mask_access_code(');
+    expect(start).toBeGreaterThanOrEqual(0);
+    const body = compactSql.slice(start, compactSql.indexOf('create or replace function public.', start + 1));
+
+    expect(body).toContain("left(coalesce(p_code, ''), 4) || '-****-****-' || right(coalesce(p_code, ''), 4)");
+  });
+
+  it('does not leak admin/owner codes to a non-owner admin caller', () => {
+    // The CASE: owner callers (or student rows) get the raw code; every other
+    // row (admin + owner codes) is masked for anyone who is not the owner.
+    expect(compactSql).toContain('case');
+    expect(compactSql).toContain("when (v_admin->>'role') = 'owner' or role = 'student' then code");
+    expect(compactSql).toContain('else public.mask_access_code(code)');
+  });
+
+  it('shows owner callers every full code', () => {
+    // The masking branch must be gated on role — an owner reads full codes
+    // unconditionally. Guard against a regression that masks everyone.
+    const listStart = compactSql.indexOf('create or replace function public.admin_list_keys(');
+    expect(listStart).toBeGreaterThanOrEqual(0);
+    const listBody = compactSql.slice(listStart, compactSql.indexOf('create or replace function public.', listStart + 1));
+
+    expect(listBody).toContain("(v_admin->>'role') = 'owner'");
+    expect(listBody).not.toContain("else public.mask_access_code(code) when (v_admin->>'role') = 'owner'");
   });
 });

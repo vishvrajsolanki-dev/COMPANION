@@ -5,11 +5,33 @@ import {
   mapKeyListResult,
   mapSetActiveResult,
   mapProfileListResult,
+  isMaskedCode,
   ADMIN_ERROR_MESSAGES,
   type AdminErrorCode,
   type AdminKeyRecord,
   type AdminProfileRecord,
 } from './adminKeys';
+
+describe('isMaskedCode', () => {
+  it('flags codes redacted by mask_access_code', () => {
+    expect(isMaskedCode('ACAD-****-****-1A2B')).toBe(true);
+    expect(isMaskedCode('AAAA-****-****-ZZZZ')).toBe(true);
+    expect(isMaskedCode('****-****-****-****')).toBe(true);
+  });
+
+  it('does not flag full, usable codes', () => {
+    expect(isMaskedCode('SEFV-KMAA-2C6K-K72S')).toBe(false);
+    expect(isMaskedCode('ABCD-EFGH-JKLM-NPQR')).toBe(false);
+    expect(isMaskedCode('')).toBe(false);
+  });
+
+  it('does not flag non-string values', () => {
+    expect(isMaskedCode(null as unknown as string)).toBe(false);
+    expect(isMaskedCode(undefined as unknown as string)).toBe(false);
+    expect(isMaskedCode(123 as unknown as string)).toBe(false);
+    expect(isMaskedCode({} as unknown as string)).toBe(false);
+  });
+});
 
 describe('mapAdminError', () => {
   it('passes through every known server error code', () => {

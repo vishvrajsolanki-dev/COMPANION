@@ -3,7 +3,7 @@ import { useAuthStore } from '../../store/authStore';
 import { useUIStore } from '../../store/uiStore';
 import { GlassButton, GlassCard, EmptyState, SegmentedControl, Badge, Banner } from '../../components/ui';
 import {
-  generateKey, listKeys, setKeyActive, listProfiles, getAdminCredential,
+  generateKey, listKeys, setKeyActive, listProfiles, getAdminCredential, isMaskedCode,
   ADMIN_ERROR_MESSAGES,
   type AdminKeyRecord, type AdminProfileRecord, type AdminErrorCode, type AdminRole,
 } from '../../lib/adminKeys';
@@ -108,12 +108,23 @@ export const AdminPortalView: React.FC = () => {
     e.preventDefault();
     setGenError(null);
     setNewKey(null);
+
+    const uses = parseInt(maxUses, 10) || 1;
+    if (uses > 5) {
+      const proceed = window.confirm(
+        `You're about to make this key work on ${uses} devices. ` +
+        'Each key is meant for one person — if you need to give access to multiple people, ' +
+        'generate a separate key for each. Continue with one key across ' + uses + ' devices?',
+      );
+      if (!proceed) return;
+    }
+
     setGenerating(true);
     try {
       const res = await generateKey({
         role,
         label: label.trim() || undefined,
-        maxUses: parseInt(maxUses, 10) || 1,
+        maxUses: uses,
         expiresAt: expiresAt ? new Date(expiresAt + 'T00:00:00').toISOString() : null,
       });
       if (res.ok) {
@@ -134,8 +145,12 @@ export const AdminPortalView: React.FC = () => {
     setTogglingId(key.id);
     try {
       const res = await setKeyActive(key.id, !key.is_active);
-      if (!res.ok) setKeysError(res.error);
-      load();
+      if (!res.ok) {
+        setKeysError(res.error);
+        return;
+      }
+      setKeysError(null);
+      await load();
     } finally {
       setTogglingId(null);
     }
@@ -274,27 +289,29 @@ export const AdminPortalView: React.FC = () => {
                   />
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                  <div>
-                    <label style={labelStyle}>Max devices</label>
-                    <input
-                      type="number"
-                      min={1}
-                      max={100}
-                      value={maxUses}
-                      onChange={e => setMaxUses(e.target.value)}
-                      className="input"
-                    />
-                  </div>
-                  <div>
-                    <label style={labelStyle}>Expires (optional)</label>
-                    <input
-                      type="date"
-                      value={expiresAt}
-                      onChange={e => setExpiresAt(e.target.value)}
-                      className="input"
-                    />
-                  </div>
+                <div>
+                  <label style={labelStyle}>Devices for this person (not for sharing with others)</label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={100}
+                    value={maxUses}
+                    onChange={e => setMaxUses(e.target.value)}
+                    className="input"
+                  />
+                  <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 6, lineHeight: 1.5 }}>
+                    Each key is meant for one person. If you need to give access to multiple people, generate a separate key for each.
+                  </p>
+                </div>
+
+                <div>
+                  <label style={labelStyle}>Expires (optional)</label>
+                  <input
+                    type="date"
+                    value={expiresAt}
+                    onChange={e => setExpiresAt(e.target.value)}
+                    className="input"
+                  />
                 </div>
 
                 <GlassButton type="submit" variant="primary" size="lg" fullWidth disabled={generating}>
@@ -353,13 +370,17 @@ export const AdminPortalView: React.FC = () => {
                     <code style={{ flex: 1, fontFamily: 'var(--font-family-mono)', fontSize: '0.82rem', color: 'var(--text-secondary)', letterSpacing: '0.03em' }}>
                       {k.code}
                     </code>
-                    <button
-                      onClick={() => copyCode(k.code)}
-                      title="Copy code"
-                      style={{ color: 'var(--text-muted)', flexShrink: 0, display: 'flex' }}
-                    >
-                      {copiedCode === k.code ? <Check size={15} /> : <Copy size={15} />}
-                    </button>
+                    {isMaskedCode(k.code) ? (
+                      <Badge tone="neutral">masked</Badge>
+                    ) : (
+                      <button
+                        onClick={() => copyCode(k.code)}
+                        title="Copy code"
+                        style={{ color: 'var(--text-muted)', flexShrink: 0, display: 'flex' }}
+                      >
+                        {copiedCode === k.code ? <Check size={15} /> : <Copy size={15} />}
+                      </button>
+                    )}
                   </div>
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.74rem', color: 'var(--text-muted)' }}>

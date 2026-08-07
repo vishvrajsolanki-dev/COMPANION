@@ -65,13 +65,16 @@ begin
   if v_key.expires_at is not null and v_key.expires_at < now() then
     return json_build_object('ok', false, 'error', 'EXPIRED_KEY');
   end if;
-  if v_key.used_count >= v_key.max_uses then
-    return json_build_object('ok', false, 'error', 'KEY_EXHAUSTED');
-  end if;
-
+  -- Atomic consumption: the WHERE guard runs under the row lock, so two
+  -- concurrent activations can never both win the last remaining use.
   update public.access_keys
   set used_count = used_count + 1
-  where id = v_key.id;
+  where id = v_key.id
+    and used_count < max_uses;
+
+  if not found then
+    return json_build_object('ok', false, 'error', 'KEY_EXHAUSTED');
+  end if;
 
   select * into v_profile
   from public.profiles

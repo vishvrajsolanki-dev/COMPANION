@@ -9,6 +9,17 @@
 -- Run with: node scripts/apply-migration.cjs "<db-conn>" supabase/migrations/0002_admin_portal.sql
 -- ============================================================================
 
+-- ── mask_access_code() — display-only redaction for privileged codes ─────────
+-- Reveals only the first + last 4-char groups; the middle two are literal
+-- asterisks. A masked code is visually identifiable and unusable as a credential.
+create or replace function public.mask_access_code(p_code text)
+returns text
+language sql
+immutable
+as $$
+  select left(coalesce(p_code, ''), 4) || '-****-****-' || right(coalesce(p_code, ''), 4);
+$$;
+
 -- ── gen_access_code() — server-side key minting ──────────────────────────────
 -- Ambiguity-free alphabet (no 0/O/1/I) → easy to type by hand, same format the
 -- Phase B CLI used: XXXX-XXXX-XXXX-XXXX.
@@ -134,7 +145,10 @@ end;
 $$;
 
 -- ── admin_list_keys ──────────────────────────────────────────────────────────
--- Full codes are returned — the admin is the distributor.
+-- Owner callers see full codes.  Non-owner (admin) callers see full codes only
+-- for student keys (which they may manage).  Admin and owner-role codes are
+-- masked with mask_access_code for non-owner callers, preventing credential
+-- leakage from one privileged key to another.
 create or replace function public.admin_list_keys(p_admin_code text)
 returns json
 language plpgsql
@@ -153,7 +167,13 @@ begin
   select coalesce(json_agg(row_to_json(t) order by t.created_at desc), '[]')
   into v_keys
   from (
-    select id, code, role, label, is_active, max_uses, used_count, created_at, expires_at
+    select id,
+           case
+             when (v_admin->>'role') = 'owner' or role = 'student'
+               then code
+             else public.mask_access_code(code)
+           end as code,
+           role, label, is_active, max_uses, used_count, created_at, expires_at
     from public.access_keys
   ) t;
 
