@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { db, LectureSlot, Subject, AttendanceRecord } from '../../db/index';
+import { todayISO } from '../../utils/date';
 import { GlassButton, BottomSheet } from '../../components/ui';
 import { Check, X, Clock, FileText, Award, AlertCircle, Trash2, RefreshCw } from 'lucide-react';
 
@@ -17,7 +18,7 @@ export const SlotDetailSheet: React.FC<SlotDetailSheetProps> = ({
   onClose,
 }) => {
   const [isRescheduling, setIsRescheduling] = useState(false);
-  const [rescheduleDate, setRescheduleDate] = useState('2026-08-06');
+  const [rescheduleDate, setRescheduleDate] = useState(() => todayISO());
   const [rescheduleStartTime, setRescheduleStartTime] = useState('10:30');
   const [rescheduleEndTime, setRescheduleEndTime] = useState('11:45');
 
@@ -25,17 +26,22 @@ export const SlotDetailSheet: React.FC<SlotDetailSheetProps> = ({
 
   const markStatus = async (status: 'present' | 'absent' | 'late' | 'medical' | 'onduty') => {
     try {
-      if (record) {
-        const history = record.edit_history || [];
-        await db.attendanceRecords.update(record.id, {
+      // Re-read the freshest row instead of relying on the render-time prop, so
+      // rapid consecutive marks never lose edit history or create duplicates.
+      const existing = await db.attendanceRecords
+        .filter(r => r.lecture_slot_id === slot.id && !r.is_deleted)
+        .first();
+
+      if (existing) {
+        await db.attendanceRecords.update(existing.id, {
           status,
           marked_at: new Date().toISOString(),
-          version: record.version + 1,
+          version: existing.version + 1,
           edit_history: [
-            ...history,
+            ...(existing.edit_history || []),
             {
               changed_at: new Date().toISOString(),
-              old_status: record.status,
+              old_status: existing.status,
               new_status: status,
               reason: 'Modified via slot detail sheet',
             },
@@ -166,7 +172,7 @@ export const SlotDetailSheet: React.FC<SlotDetailSheetProps> = ({
       >
         <span>Time Slot</span>
         <span style={{ fontWeight: 600 }}>
-          {slot.start_time.split('T')[1].substring(0, 5)} - {slot.end_time.split('T')[1].substring(0, 5)}
+          {slot.start_time.split('T')[1]?.substring(0, 5) || slot.start_time} - {slot.end_time.split('T')[1]?.substring(0, 5) || slot.end_time}
         </span>
       </div>
 

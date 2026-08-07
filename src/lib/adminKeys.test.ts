@@ -20,7 +20,7 @@ describe('isMaskedCode', () => {
   });
 
   it('does not flag full, usable codes', () => {
-    expect(isMaskedCode('SEFV-KMAA-2C6K-K72S')).toBe(false);
+    expect(isMaskedCode('ABCD-EFGH-JKLM-NPQR')).toBe(false);
     expect(isMaskedCode('ABCD-EFGH-JKLM-NPQR')).toBe(false);
     expect(isMaskedCode('')).toBe(false);
   });

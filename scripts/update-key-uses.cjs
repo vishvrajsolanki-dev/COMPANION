@@ -18,7 +18,8 @@ async function main() {
   const client = new Client({ connectionString: connStr, ssl: { rejectUnauthorized: false } });
   await client.connect();
 
-  const code = 'SEFV-KMAA-2C6K-K72S';
+  const { requireOwnerKey } = require('./lib/env.cjs');
+  const code = requireOwnerKey();
   await client.query(
     'UPDATE public.access_keys SET max_uses = $1 WHERE code = $2',
     [newMax, code]

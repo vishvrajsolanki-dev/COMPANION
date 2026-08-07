@@ -42,10 +42,10 @@ async function main() {
   console.log(`\n  Deleted ${del.rowCount} test key(s) (cascades to profiles).`);
 
   // Confirm the owner key survived.
-  const owner = await client.query(
-    `select code, role, label, max_uses, used_count from public.access_keys where code = 'SEFV-KMAA-2C6K-K72S'`
+  const owners = await client.query(
+    `select code, role, label, max_uses, used_count from public.access_keys where role = 'owner'`
   );
-  owner.rows.forEach(r => console.log(`  Kept owner key ${r.code} (uses ${r.used_count}/${r.max_uses})`));
+  owners.rows.forEach(r => console.log(`  Kept owner key ${r.code} (uses ${r.used_count}/${r.max_uses})`));
 
   await client.end();
   console.log('\n  ✓ Done.');

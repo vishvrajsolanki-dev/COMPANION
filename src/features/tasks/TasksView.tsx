@@ -48,6 +48,10 @@ export const TasksView: React.FC = () => {
   const handleCreateTask = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTitle.trim()) return;
+    if (!newDueAt) {
+      setDbError('Please choose a due date & time for the task.');
+      return;
+    }
     setDbError(null);
 
     try {
@@ -275,6 +279,7 @@ export const TasksView: React.FC = () => {
                 type="datetime-local"
                 value={newDueAt}
                 onChange={e => setNewDueAt(e.target.value)}
+                required
                 className="input"
                 style={{ marginTop: 4 }}
               />
@@ -343,7 +348,7 @@ export const TasksView: React.FC = () => {
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius-card)', border: '1px solid var(--border-hairline)' }}>
                 <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Due Date</span>
                 <span style={{ fontSize: '0.85rem', fontWeight: 600, fontFamily: 'var(--font-family-mono)', color: 'var(--text-primary)' }}>
-                  {new Date(selectedTask.due_at).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}
+                  {selectedTask.due_at ? new Date(selectedTask.due_at).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }) : 'No due date set'}
                 </span>
               </div>
 

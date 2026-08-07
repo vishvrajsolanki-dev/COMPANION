@@ -6,16 +6,22 @@
  * the Keys tab and the owner in Activations → signs out → activates with the
  * student key → confirms a student sees no Admin Portal button.
  *
+ * NOTE: This script mints a throwaway temp owner key for its UI activation, so
+ * it never consumes a use of the real VERIFY_OWNER_KEY.  For the current,
+ * comprehensive security audit use scripts/verify-security-fixes.cjs instead.
+ *
  * Prereqs: preview server on :4173 built with .env.local configured + migration
  * 0002 applied. Run: node scripts/phase-c-live-verify.cjs
  */
 'use strict';
 const { chromium } = require('playwright');
+const { requireOwnerKey } = require('./lib/env.cjs');
 
 const BASE = 'http://localhost:4173/';
 const OUT  = 'scripts/shots/phase-c';
-const OWNER_KEY = 'SEFV-KMAA-2C6K-K72S';
 const KEY_RE = /^[A-Z2-9]{4}(?:-[A-Z2-9]{4}){3}$/;
+
+const OWNER_KEY = requireOwnerKey();
 
 let passed = 0, failed = 0;
 function log(ok, msg) {
@@ -28,6 +34,25 @@ async function setTheme(page, theme) {
   await page.waitForTimeout(400);
 }
 
+/**
+ * Mint a throwaway owner key (max_uses=1) via the RPC and return its code.
+ * Used so the script never burns a use of the real owner key.
+ */
+async function mintTempOwnerKey() {
+  const envPath = require('fs').readFileSync(require('path').resolve(process.cwd(), '.env.local'), 'utf8');
+  const url = (envPath.match(/VITE_SUPABASE_URL=(.+)/) || [])[1]?.trim();
+  const anon = (envPath.match(/VITE_SUPABASE_ANON_KEY=(.+)/) || [])[1]?.trim();
+  if (!url || !anon) throw new Error('.env.local missing VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY');
+  const r = await fetch(`${url}/rest/v1/rpc/admin_generate_key`, {
+    method: 'POST',
+    headers: { apikey: anon, Authorization: `Bearer ${anon}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ p_admin_code: OWNER_KEY, p_role: 'owner', p_label: 'PhaseC-VerifyTempOwner', p_max_uses: 1, p_expires_at: null }),
+  });
+  const { data, error } = JSON.parse(await r.text());
+  if (error || data?.ok !== true || !data.key?.code) throw new Error(`Could not mint temp owner key: ${JSON.stringify(data || error)}`);
+  return String(data.key.code).toUpperCase();
+}
+
 async function activateKey(page, code) {
   const input = page.locator('input[placeholder="XXXX-XXXX-XXXX-XXXX"]');
   await input.fill(code);
@@ -37,6 +62,16 @@ async function activateKey(page, code) {
 }
 
 async function main() {
+  // Mint a throwaway owner key so the UI never burns a use of the real owner key.
+  let tempOwnerCode;
+  try {
+    tempOwnerCode = await mintTempOwnerKey();
+    console.log(`  Temp owner key minted (max_uses=1): ${tempOwnerCode.slice(0,4)}…${tempOwnerCode.slice(-4)}`);
+  } catch (e) {
+    console.error(`\n✗ Could not mint a temp owner key — is the owner key active in the database?\n  ${e.message}`);
+    process.exit(1);
+  }
+
   const browser = await chromium.launch();
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const page = await ctx.newPage();
@@ -54,7 +89,7 @@ async function main() {
   const gateVisible = await page.getByText('Activate this device').isVisible().catch(() => false);
   log(gateVisible, 'Activation gate shown on fresh device');
 
-  await activateKey(page, OWNER_KEY);
+  await activateKey(page, tempOwnerCode);
   const ownerDashboard = await page.getByText(/Good (morning|afternoon|evening)/i).isVisible().catch(() => false)
     || await page.getByText('No more classes today').isVisible().catch(() => false);
   log(ownerDashboard, 'Dashboard loads after owner activation');

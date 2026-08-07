@@ -15,12 +15,16 @@ export async function ensureAditCalendarDefaults() {
     existingKeys.add(key);
     toAdd.push({ ...ev, id: `cal-ev-default-${i}`, is_deleted: false });
   });
-  if (toAdd.length > 0) await db.calendarEvents.bulkAdd(toAdd);
+  if (toAdd.length > 0) await db.calendarEvents.bulkPut(toAdd);
 }
 
 export async function seedDatabaseIfEmpty() {
-  if (typeof window !== 'undefined' && localStorage.getItem('academic_os_user_cleared') === 'true') {
-    return; // User explicitly wiped database to enter real data — do not auto-reseed
+  if (typeof window !== 'undefined') {
+    try {
+      if (localStorage.getItem('academic_os_user_cleared') === 'true') {
+        return; // User explicitly wiped database to enter real data — do not auto-reseed
+      }
+    } catch { /* ignore — storage may be blocked in privacy modes */ }
   }
 
   // Ship the official ADIT calendar on first run — including for installs that
@@ -32,7 +36,7 @@ export async function seedDatabaseIfEmpty() {
 
   // ── Semester ──────────────────────────────────────────────────────────────
   // Dates match the real ADIT ODD 2026 teaching calendar (Mon 6 Jul → 5 Nov).
-  await db.semesters.add({
+  await db.semesters.put({
     id: 'sem-5',
     label: ADIT_SEMESTER_DEFAULT.label,
     start_date: ADIT_SEMESTER_DEFAULT.start_date,
@@ -51,7 +55,7 @@ export async function seedDatabaseIfEmpty() {
     { id: 'sub-5', semester_id: 'sem-5', code: '2AI505', name: 'Software Engineering',        credits: 3, color: '#EF4444', current_faculty_id: 'teacher-5', is_deleted: false },
     { id: 'sub-6', semester_id: 'sem-5', code: '2AI506', name: 'AI Lab (Batch A)',             credits: 2, color: '#06B6D4', current_faculty_id: 'teacher-1', is_deleted: false },
   ];
-  await db.subjects.bulkAdd(subjects);
+  await db.subjects.bulkPut(subjects);
 
   // ── Teachers ─────────────────────────────────────────────────────────────
   const teachers = [
@@ -61,7 +65,7 @@ export async function seedDatabaseIfEmpty() {
     { id: 'teacher-4', name: 'Prof. Ajay Trivedi',   email: 'ajay.trivedi@adit.ac.in',   phone: '+91-98765-44444', cabin: 'CS-203', office_hours: 'Wed–Thu 11:00–13:00',  subject_ids: ['sub-4'], is_deleted: false },
     { id: 'teacher-5', name: 'Dr. Sneha Joshi',      email: 'sneha.joshi@adit.ac.in',    phone: '+91-98765-55555', cabin: 'AB-412', office_hours: 'Tue, Fri 15:00–17:00', subject_ids: ['sub-5'], is_deleted: false },
   ];
-  await db.teachers.bulkAdd(teachers);
+  await db.teachers.bulkPut(teachers);
 
   // ── Lecture Slots (Week of Aug 4–9, 2026) ─────────────────────────────────
   // Dates use naive local IST strings (no trailing Z — wall-clock times)
@@ -97,7 +101,7 @@ export async function seedDatabaseIfEmpty() {
     // Saturday Aug 9 — Lab session
     { id: 'slot-sat-1', subject_id: 'sub-6', room_id: 'CL-101', start_time: '2026-08-09T10:00:00', end_time: '2026-08-09T12:30:00', status: 'scheduled' as const, is_deleted: false },
   ];
-  await db.lectureSlots.bulkAdd(lectureSlots);
+  await db.lectureSlots.bulkPut(lectureSlots);
 
   // ── Attendance Records (for Monday Aug 4 only — past slots) ──────────────
   // Denominator rule: only count slots with attendance records
@@ -109,7 +113,7 @@ export async function seedDatabaseIfEmpty() {
     // slot-wed-2 (rescheduled version of mon-3) — has a present record
     { id: 'att-wed-2', lecture_slot_id: 'slot-wed-2', status: 'present' as const, marked_at: '2026-08-06T12:00:00', version: 1, is_deleted: false },
   ];
-  await db.attendanceRecords.bulkAdd(attendanceRecords);
+  await db.attendanceRecords.bulkPut(attendanceRecords);
 
   // ── Tasks ─────────────────────────────────────────────────────────────────
   const tasks = [
@@ -119,7 +123,7 @@ export async function seedDatabaseIfEmpty() {
     { id: 'task-4', subject_id: 'sub-5', title: 'Software Requirement Specification Draft',       due_at: '2026-08-10T23:59:00', priority: 'medium' as const, status: 'in_progress' as const, is_deleted: false },
     { id: 'task-5',                       title: 'Buy stationery for lab record',                  due_at: '2026-08-05T12:00:00', priority: 'low'    as const, status: 'completed' as const, is_deleted: false },
   ];
-  await db.tasks.bulkAdd(tasks);
+  await db.tasks.bulkPut(tasks);
 
   // ── Notes ─────────────────────────────────────────────────────────────────
   const notes = [
@@ -148,7 +152,7 @@ export async function seedDatabaseIfEmpty() {
       is_deleted: false,
     },
   ];
-  await db.notes.bulkAdd(notes);
+  await db.notes.bulkPut(notes);
 
   // ── Exams ─────────────────────────────────────────────────────────────────
   const exams = [
@@ -192,7 +196,7 @@ export async function seedDatabaseIfEmpty() {
       is_deleted: false,
     },
   ];
-  await db.exams.bulkAdd(exams);
+  await db.exams.bulkPut(exams);
 
   // ── Resources ─────────────────────────────────────────────────────────────
   const resources = [
@@ -205,5 +209,5 @@ export async function seedDatabaseIfEmpty() {
     { id: 'res-7', subject_id: 'sub-5', title: 'Pressman Software Engg. Slides',     type: 'drive'  as const, url_or_file_ref: 'https://drive.google.com/pressman',          description: 'Unit 1–3 presentation decks',       is_deleted: false },
     { id: 'res-8', subject_id: 'sub-6', title: 'Scikit-Learn Quick Reference',       type: 'url'    as const, url_or_file_ref: 'https://scikit-learn.org/stable/user_guide', description: 'Official sklearn documentation',     is_deleted: false },
   ];
-  await db.resources.bulkAdd(resources);
+  await db.resources.bulkPut(resources);
 }

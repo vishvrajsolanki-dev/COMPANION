@@ -40,6 +40,7 @@ export const SemesterSetupView: React.FC = () => {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!label.trim() || !startDate || !endDate) return;
+    if (endDate < startDate) { alert('End date must be on or after the start date.'); return; }
     if (editing) {
       await db.semesters.update(editing.id, { label: label.trim(), start_date: startDate, end_date: endDate });
     } else {

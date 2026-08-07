@@ -44,6 +44,7 @@ export const ACTIVATION_ERROR_MESSAGES: Record<ActivationErrorCode, string> = {
   INACTIVE_KEY: 'This access key has been deactivated by the admin.',
   EXPIRED_KEY: 'This access key has expired — ask your admin for a new one.',
   KEY_EXHAUSTED: 'This access key has already reached its usage limit.',
+  TOO_MANY_ATTEMPTS: "Too many failed attempts. This key is locked for 15 minutes — wait, or ask your admin for a new key.",
   NETWORK: "Couldn't reach the activation server. Check your internet connection and try again.",
   SUPABASE_NOT_CONFIGURED: 'This build has no activation server configured.',
   UNKNOWN: 'Something went wrong while activating. Please try again.',

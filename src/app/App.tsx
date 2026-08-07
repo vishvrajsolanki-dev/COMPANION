@@ -38,12 +38,33 @@ export const App: React.FC = () => {
   const authStatus = useAuthStore(state => state.status);
 
   const [isSeeded, setIsSeeded] = useState(false);
+  const [seedError, setSeedError] = useState<string | null>(null);
 
   useEffect(() => {
     // Apply persisted theme to root before first paint
     document.documentElement.setAttribute('data-theme', theme);
-    seedDatabaseIfEmpty().then(() => setIsSeeded(true));
+    seedDatabaseIfEmpty()
+      .then(() => setIsSeeded(true))
+      .catch((err: any) => {
+        console.error('Seed failed:', err);
+        setSeedError('Local database failed to initialise. Reload or clear site data to retry.');
+      });
   }, []);
+
+  if (seedError) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', gap: '16px', background: 'var(--bg-page)', padding: 'var(--space-lg)' }}>
+        <p style={{ color: 'var(--color-danger)', fontWeight: 700, fontSize: '1rem' }}>Database error</p>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', textAlign: 'center', maxWidth: 320 }}>{seedError}</p>
+        <button
+          onClick={() => { setSeedError(null); setIsSeeded(false); window.location.reload(); }}
+          style={{ padding: '10px 20px', borderRadius: 'var(--radius-pill)', backgroundColor: 'var(--color-primary)', color: '#fff', fontWeight: 600, border: 'none', cursor: 'pointer' }}
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
 
   if (!isSeeded) {
     return (

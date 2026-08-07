@@ -22,6 +22,16 @@ interface JSONAcademicCalendarPayload {
   events?: JSONCalendarEvent[];
 }
 
+const VALID_EVENT_TYPES = ['holiday', 'exam_window', 'college_event', 'semester_boundary'];
+
+/** Strict "YYYY-MM-DD" structural check that also rejects impossible dates (e.g. 2026-13-40). */
+const isValidDateStr = (s: string): boolean => {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
+  const [y, m, d] = s.split('-').map(Number);
+  const dt = new Date(y, m - 1, d);
+  return dt.getFullYear() === y && dt.getMonth() === m - 1 && dt.getDate() === d;
+};
+
 export const AcademicCalendarImportView: React.FC = () => {
   const closeSubview = useUIStore(s => s.closeSubview);
   const navigateToSubview = useUIStore(s => s.navigateToSubview);
@@ -30,6 +40,7 @@ export const AcademicCalendarImportView: React.FC = () => {
   const [parsed, setParsed] = useState<JSONAcademicCalendarPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
 
   const sampleCalendarJSON = JSON.stringify({
     semester_defaults: {
@@ -57,9 +68,21 @@ export const AcademicCalendarImportView: React.FC = () => {
         throw new Error('Invalid JSON: Must contain "semester_defaults" or an "events" array.');
       }
 
+      if (data.semester_defaults) {
+        const { label, start_date, end_date } = data.semester_defaults;
+        if (!label) throw new Error('"semester_defaults" missing "label".');
+        if (!isValidDateStr(start_date)) throw new Error(`"semester_defaults" has invalid "start_date" (expected YYYY-MM-DD): ${start_date}`);
+        if (!isValidDateStr(end_date)) throw new Error(`"semester_defaults" has invalid "end_date" (expected YYYY-MM-DD): ${end_date}`);
+        if (end_date < start_date) throw new Error('"semester_defaults" end_date is before start_date.');
+      }
+
       if (data.events) {
         data.events.forEach((ev, idx) => {
           if (!ev.title || !ev.date) throw new Error(`Event #${idx + 1} missing "title" or "date".`);
+          if (!isValidDateStr(ev.date)) throw new Error(`Event #${idx + 1} ("${ev.title}") has invalid "date" (expected YYYY-MM-DD): ${ev.date}`);
+          if (ev.type && !VALID_EVENT_TYPES.includes(ev.type)) {
+            throw new Error(`Event #${idx + 1} ("${ev.title}") has invalid "type": "${ev.type}" (must be one of ${VALID_EVENT_TYPES.join(', ')}).`);
+          }
         });
       }
 
@@ -82,8 +105,9 @@ export const AcademicCalendarImportView: React.FC = () => {
   };
 
   const handleCommitImport = async () => {
-    if (!parsed) return;
-
+    if (!parsed || isImporting) return;
+    setIsImporting(true);
+    try {
     // 1. Create/refresh the pre-filled Semester and make it THE single active one.
     //    A second active semester would silently hijack the app's active-semester
     //    pointer (useActiveSemester().first()) away from the semester holding data.
@@ -148,6 +172,9 @@ export const AcademicCalendarImportView: React.FC = () => {
     setSuccessMsg(`Academic calendar defaults imported successfully! (${eventCount} events added${dupNote})`);
     setParsed(null);
     setJsonText('');
+    } finally {
+      setIsImporting(false);
+    }
   };
 
   return (
@@ -234,8 +261,8 @@ export const AcademicCalendarImportView: React.FC = () => {
               Events to import: <strong>{parsed.events?.length || 0}</strong>
             </div>
 
-            <GlassButton onClick={handleCommitImport} fullWidth>
-              Import Academic Calendar Defaults
+            <GlassButton onClick={handleCommitImport} disabled={isImporting} fullWidth>
+              {isImporting ? 'Importing…' : 'Import Academic Calendar Defaults'}
             </GlassButton>
           </div>
         )}

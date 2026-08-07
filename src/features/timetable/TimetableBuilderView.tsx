@@ -22,6 +22,13 @@ const DAYS = [
  *
  * dayOfWeek: 1=Mon … 6=Sat, 7=Sun  (matches DAYS[] above and WeeklyGrid convention)
  */
+
+/** Parse "YYYY-MM-DD" as a local Date (avoids UTC-midnight timezone drift). */
+const parseLocalDate = (isoDate: string): Date => {
+  const [y, m, d] = isoDate.split('-').map(Number);
+  return new Date(y, m - 1, d);
+};
+
 function generateSlotsForPattern(
   subjectId: string,
   dayOfWeek: number,       // 1–7
@@ -32,10 +39,11 @@ function generateSlotsForPattern(
   semesterEnd: string,     // "YYYY-MM-DD"
 ): Omit<LectureSlot, never>[] {
   // JS getDay(): 0=Sun, 1=Mon … 6=Sat → convert our 1-7 to JS 0-6
-  const jsDay = dayOfWeek === 7 ? 0 : dayOfWeek;
+  const numericDay = Number(dayOfWeek);
+  const jsDay = numericDay === 7 ? 0 : numericDay;
 
-  const start = new Date(semesterStart);
-  const end   = new Date(semesterEnd);
+  const start = parseLocalDate(semesterStart);
+  const end   = parseLocalDate(semesterEnd);
 
   // Advance start to the first matching weekday
   while (start.getDay() !== jsDay) {
@@ -52,7 +60,7 @@ function generateSlotsForPattern(
     const dateStr = `${yyyy}-${mm}-${dd}`;
 
     slots.push({
-      id: `slot-${subjectId.slice(-6)}-${dateStr.replace(/-/g, '')}`,
+      id: `slot-${subjectId.slice(-6)}-${dateStr.replace(/-/g, '')}-${(startTime || '0000').replace(/[^0-9]/g, '')}`,
       subject_id: subjectId,
       room_id: roomId || undefined,
       start_time: `${dateStr}T${startTime}:00`,

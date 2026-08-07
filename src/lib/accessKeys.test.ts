@@ -21,6 +21,7 @@ describe('mapRpcResult (activation RPC → typed result)', () => {
     expect(mapRpcResult({ ok: false, error: 'INACTIVE_KEY' })).toEqual({ ok: false, error: 'INACTIVE_KEY' });
     expect(mapRpcResult({ ok: false, error: 'EXPIRED_KEY' })).toEqual({ ok: false, error: 'EXPIRED_KEY' });
     expect(mapRpcResult({ ok: false, error: 'KEY_EXHAUSTED' })).toEqual({ ok: false, error: 'KEY_EXHAUSTED' });
+    expect(mapRpcResult({ ok: false, error: 'TOO_MANY_ATTEMPTS' })).toEqual({ ok: false, error: 'TOO_MANY_ATTEMPTS' });
   });
 
   it('falls back to UNKNOWN for unrecognized errors', () => {

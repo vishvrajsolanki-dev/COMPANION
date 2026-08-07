@@ -14,7 +14,8 @@ const fs = require('fs');
 const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
 
-const OWNER_KEY = 'SEFV-KMAA-2C6K-K72S';
+const { requireOwnerKey } = require('./lib/env.cjs');
+const OWNER_KEY = requireOwnerKey();
 const NEW_MAX_USES = 100;
 
 function loadEnv() {

@@ -3,6 +3,7 @@ import { useSubjects, useLectureSlots, useAttendanceRecords } from '../../db/use
 import { db, LectureSlot, Subject, AttendanceRecord } from '../../db/index';
 import styles from './WeeklyGrid.module.css';
 import { SlotDetailSheet } from './SlotDetailSheet';
+import { todayISO } from '../../utils/date';
 import { useUIStore } from '../../store/uiStore';
 import { GlassButton, BottomSheet, EmptyState, Badge } from '../../components/ui';
 import { Calendar, MapPin, Clock, Plus, CalendarPlus } from 'lucide-react';
@@ -24,7 +25,7 @@ export const WeeklyGrid: React.FC = () => {
   // Extra class form state
   const [isAddingExtra, setIsAddingExtra] = useState(false);
   const [extraSubjectId, setExtraSubjectId] = useState('');
-  const [extraDate, setExtraDate] = useState('2026-08-05');
+  const [extraDate, setExtraDate] = useState(() => todayISO());
   const [extraStartTime, setExtraStartTime] = useState('16:00');
   const [extraEndTime, setExtraEndTime] = useState('17:15');
   const [extraRoomId, setExtraRoomId] = useState('LH-301');

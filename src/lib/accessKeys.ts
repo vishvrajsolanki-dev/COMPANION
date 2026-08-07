@@ -13,7 +13,7 @@ export interface ActivationProfile {
 }
 
 /** Server-side rejection codes returned by activate_access_key(). */
-export type RpcErrorCode = 'INVALID_KEY' | 'INACTIVE_KEY' | 'EXPIRED_KEY' | 'KEY_EXHAUSTED';
+export type RpcErrorCode = 'INVALID_KEY' | 'INACTIVE_KEY' | 'EXPIRED_KEY' | 'KEY_EXHAUSTED' | 'TOO_MANY_ATTEMPTS';
 
 /** All failure codes the client can surface, incl. transport-level ones. */
 export type ActivationErrorCode = RpcErrorCode | 'NETWORK' | 'SUPABASE_NOT_CONFIGURED' | 'UNKNOWN';
@@ -22,7 +22,7 @@ export type ActivationResult =
   | { ok: true; role: ActivationRole; profile: ActivationProfile }
   | { ok: false; error: ActivationErrorCode };
 
-const RPC_ERROR_CODES: readonly string[] = ['INVALID_KEY', 'INACTIVE_KEY', 'EXPIRED_KEY', 'KEY_EXHAUSTED'];
+const RPC_ERROR_CODES: readonly string[] = ['INVALID_KEY', 'INACTIVE_KEY', 'EXPIRED_KEY', 'KEY_EXHAUSTED', 'TOO_MANY_ATTEMPTS'];
 
 function isRpcErrorCode(v: unknown): v is RpcErrorCode {
   return typeof v === 'string' && RPC_ERROR_CODES.includes(v);

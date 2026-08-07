@@ -55,6 +55,12 @@ Rules:
 
 Here's my timetable: [paste your timetable text, or describe it, or attach an image]`;
 
+/** Parse "YYYY-MM-DD" as a local Date (avoids UTC-midnight timezone drift). */
+const parseLocalDate = (isoDate: string): Date => {
+  const [y, m, d] = isoDate.split('-').map(Number);
+  return new Date(y, m - 1, d);
+};
+
 function generateSlotsForPattern(
   subjectId: string,
   dayOfWeek: number,
@@ -66,9 +72,10 @@ function generateSlotsForPattern(
   semesterEnd?: string
 ): LectureSlot[] {
   if (!semesterStart || !semesterEnd) return [];
-  const jsDay = dayOfWeek === 7 ? 0 : dayOfWeek;
-  const start = new Date(semesterStart);
-  const end   = new Date(semesterEnd);
+  const numericDay = Number(dayOfWeek);
+  const jsDay = numericDay === 7 ? 0 : numericDay;
+  const start = parseLocalDate(semesterStart);
+  const end   = parseLocalDate(semesterEnd);
 
   while (start.getDay() !== jsDay) {
     start.setDate(start.getDate() + 1);
@@ -84,7 +91,7 @@ function generateSlotsForPattern(
     const dateStr = `${yyyy}-${mm}-${dd}`;
 
     slots.push({
-      id: `slot-${subjectId.slice(-6)}-${dateStr.replace(/-/g, '')}`,
+      id: `slot-${subjectId.slice(-6)}-${dateStr.replace(/-/g, '')}-${(startTime || '0000').replace(/[^0-9]/g, '')}`,
       subject_id: subjectId,
       room_id: roomId || undefined,
       faculty_name: facultyName || undefined,
@@ -172,7 +179,7 @@ export const TimetableImportView: React.FC = () => {
 
       data.patterns.forEach((p, idx) => {
         if (!p.subject_code) throw new Error(`Pattern #${idx + 1} missing "subject_code".`);
-        if (!p.day_of_week || p.day_of_week < 1 || p.day_of_week > 7) throw new Error(`Pattern #${idx + 1} has invalid "day_of_week" (must be 1-7).`);
+        if (typeof p.day_of_week !== 'number' || !Number.isInteger(p.day_of_week) || p.day_of_week < 1 || p.day_of_week > 7) throw new Error(`Pattern #${idx + 1} has invalid "day_of_week" (must be an integer 1-7).`);
         if (!p.start_time || !p.end_time) throw new Error(`Pattern #${idx + 1} missing "start_time" or "end_time".`);
       });
 

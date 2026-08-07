@@ -14,22 +14,27 @@
  *      Keys-tab masked-badge rendering (conditional on the server's masking
  *      state, so it is meaningful before AND after the migration is applied).
  *
- * Prereqs: .env.local with VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY, a built
- * app served on :4173 (`npm run build && npx vite preview --port 4173`), and
- * migration 0001 + 0002 applied to the live DB for the server-side parts that
+ * Prereqs: .env.local with VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY + VERIFY_OWNER_KEY,
+ * a built app served on :4173 (`npm run build && npx vite preview --port 4173`),
+ * and migration 0001 + 0002 applied to the live DB for the server-side parts that
  * depend on the new behavior.
+ *
+ * Security note: this script never consumes a use of the real owner key
+ * (VERIFY_OWNER_KEY). All activation checks use throwaway temp keys minted via
+ * the admin_generate_key RPC, so the owner's one-use device slot is never burned.
  *
  * Run: node scripts/verify-security-fixes.cjs
  */
 'use strict';
 const fs = require('fs');
 const path = require('path');
+const { requireOwnerKey } = require('./lib/env.cjs');
 
 const ROOT = path.join(__dirname, '..');
 const env = fs.readFileSync(path.join(ROOT, '.env.local'), 'utf8');
 const SUPABASE_URL = (env.match(/VITE_SUPABASE_URL=(.+)/) || [])[1].trim();
 const ANON_KEY = (env.match(/VITE_SUPABASE_ANON_KEY=(.+)/) || [])[1].trim();
-const OWNER_KEY = 'SEFV-KMAA-2C6K-K72S';
+const OWNER_KEY = requireOwnerKey();
 const BASE = 'http://localhost:4173/';
 const OUT = path.join(__dirname, 'shots', 'verify-security');
 const KEY_RE = /^[A-Z2-9]{4}(?:-[A-Z2-9]{4}){3}$/;
@@ -59,9 +64,26 @@ const masked = code => typeof code === 'string' && code.includes('****');
 async function phase1() {
   console.log('\n═════════ PHASE 1 · SERVER PROBES (live RPC) ═════════\n');
 
-  const owner = await call('activate_access_key', { p_code: OWNER_KEY });
-  log(owner.j && owner.j.ok === true && owner.j.role === 'owner', 'Owner key activates (owner session works)');
-  if (!owner.j || owner.j.ok !== true) return { maskingLive: false };
+  // ── Owner credential pre-flight (no activation — the owner key's one use is reserved for the real device)
+  const ownerAuth = await call('admin_list_keys', { p_admin_code: OWNER_KEY });
+  log(ownerAuth.j && ownerAuth.j.ok === true && (ownerAuth.j.keys || []).some(k => k.role === 'owner' && k.is_active),
+      'Owner credential works (admin_list_keys succeeds; owner row is active)');
+
+  // ── Owner-role activation via a throwaway temp owner key (max_uses=1) ─────
+  const mintTempOwner = await call('admin_generate_key', {
+    p_admin_code: OWNER_KEY, p_role: 'owner', p_label: 'VerifyTempOwner', p_max_uses: 1, p_expires_at: null,
+  });
+  log(mintTempOwner.j && mintTempOwner.j.ok === true && mintTempOwner.j.key?.code,
+      'Owner mints a throwaway temp-owner key (max_uses=1)');
+  const tempOwnerCode = mintTempOwner.j?.key?.code;
+  const tempOwnerId = mintTempOwner.j?.key?.id;
+  if (!tempOwnerCode) {
+    log(false, 'Could not mint temp-owner key — aborting server probes');
+    return { maskingLive: false };
+  }
+  const tempOwnerAct = await call('activate_access_key', { p_code: tempOwnerCode });
+  log(tempOwnerAct.j && tempOwnerAct.j.ok === true && tempOwnerAct.j.role === 'owner',
+      'Temp owner key activates as role "owner" (owner activation works)');
 
   // ── Mint a fresh admin key + a fresh student key (max_uses=1 default) ──────
   const mintAdmin = await call('admin_generate_key', {
@@ -128,21 +150,25 @@ async function phase1() {
   if (raceCode) {
     const shots = await Promise.all(Array.from({ length: 8 }, () => call('activate_access_key', { p_code: raceCode })));
     const okCount = shots.filter(r => r.j && r.j.ok === true).length;
-    const exhausted = shots.filter(r => r.j && r.j.error === 'KEY_EXHAUSTED').length;
-    const errored = shots.filter(r => r.status >= 400 || (r.j && typeof r.j === 'object' && r.j.error && r.j.error !== 'KEY_EXHAUSTED')).length;
-    const consistent = okCount === 1 && exhausted === 7 && errored === 0;
-    console.log(`\n  [concurrency probe] 8 parallel activations, max_uses=1 → ok=${okCount} key_exhausted=${exhausted} errored=${errored}`);
-    log(consistent, 'Concurrency probe observed exactly 1 success (consistent with the atomic guard; deterministic proof lives in the vitest simulation)');
-    if (!consistent) log(false, `Observed ok=${okCount} — would oversell under the old code`, 'fail');
+    const rejected = shots.filter(r => r.j && r.j.ok === false && (r.j.error === 'KEY_EXHAUSTED' || r.j.error === 'TOO_MANY_ATTEMPTS')).length;
+    const errored = shots.filter(r =>
+      r.status >= 400 ||
+      (r.j && typeof r.j === 'object' && r.j.ok === false &&
+       !['KEY_EXHAUSTED', 'TOO_MANY_ATTEMPTS'].includes(r.j.error))
+    ).length;
+    const consistent = okCount === 1 && rejected === 7 && errored === 0;
+    console.log(`\n  [concurrency probe] 8 parallel activations, max_uses=1 → ok=${okCount} rejected=${rejected} errored=${errored}`);
+    log(consistent, 'Concurrency probe observed exactly 1 success and 7 rejections (consistent with the atomic guard; deterministic proof lives in the vitest simulation)');
+    if (!consistent) log(false, `Observed ok=${okCount} rejected=${rejected} — would oversell under the old code`, 'fail');
   } else {
     log(false, 'Could not mint a race-probe key');
   }
 
-  return { maskingLive, adminCode, studentCode };
+  return { maskingLive, adminCode, studentCode, tempOwnerCode, tempOwnerId };
 }
 
 /* ═══════════════════════════ PHASE 2 · UI WALKTHROUGH ══════════════════════ */
-async function phase2(maskingLive, adminCode) {
+async function phase2(maskingLive, adminCode, tempOwnerCode, tempOwnerId) {
   console.log('\n═════════ PHASE 2 · UI WALKTHROUGH (Playwright :4173) ═════════\n');
 
   // Server reachable?
@@ -182,7 +208,15 @@ async function phase2(maskingLive, adminCode) {
 
   /* ── Owner flow: generate form ───────────────────────────────────────────── */
   console.log('\n— OWNER: generate-form defaults & guard —');
-  await activate(OWNER_KEY);
+  // The server-probe temp-owner key (max_uses=1) was already exhausted by the
+  // activation check in phase1 — mint a separate one for the UI walkthrough.
+  const mintOwnerUI = await call('admin_generate_key', {
+    p_admin_code: OWNER_KEY, p_role: 'owner', p_label: 'VerifyOwner-UI', p_max_uses: 1, p_expires_at: null,
+  });
+  const ownerUIKey = mintOwnerUI.j?.key?.code;
+  log(mintOwnerUI.j && mintOwnerUI.j.ok === true && ownerUIKey,
+      'Owner mints a fresh temp-owner key for the UI walkthrough (max_uses=1)');
+  await activate(ownerUIKey || tempOwnerCode);
   await openPortal();
   await page.getByRole('button', { name: /generate access key/i }).waitFor().catch(() => {});
 
@@ -239,17 +273,21 @@ async function phase2(maskingLive, adminCode) {
       log(false, `MIGRATION NOT APPLIED: admin UI shows full codes + Copy buttons until 0002 is applied`, 'skip');
     }
 
-    // Owner row protection — climb from the owner's code element to its card.
-    const ownerCode = page.locator('code', { hasText: 'SEFV' }).first();
-    if (await ownerCode.isVisible().catch(() => false)) {
-      const ownerCard = ownerCode.locator('xpath=../..'); // code → code-row div → card
-      const deactBtn = ownerCard.getByRole('button', { name: /deactivate/i });
+    // Owner row protection — locate the row containing an "owner" role badge,
+    // climb to the card's first flex row (the badge's parent is the badge+label
+    // group; the Deactivate button is one level up, in the space-between row),
+    // and click Deactivate. This avoids a hardcoded prefix that breaks after
+    // key rotation.
+    const ownerBadge = page.getByText('owner', { exact: true }).first();
+    if (await ownerBadge.isVisible().catch(() => false)) {
+      const ownerRow = ownerBadge.locator('xpath=../..'); // flex row holding the Deactivate button
+      const deactBtn = ownerRow.getByRole('button', { name: /deactivate/i });
       await deactBtn.click();
       await page.waitForTimeout(2500);
       const authBanner = await page.getByText("Your key doesn't have admin access.").isVisible().catch(() => false);
       log(authBanner, 'Admin cannot deactivate the owner key (UNAUTHORIZED banner shown)');
     } else {
-      log(false, 'Owner key row visible in admin Keys tab');
+      log(false, 'Owner row visible in admin Keys tab');
     }
   }
 
@@ -258,8 +296,8 @@ async function phase2(maskingLive, adminCode) {
 
 /* ═══════════════════════════════ MAIN ══════════════════════════════════════ */
 (async () => {
-  const { maskingLive, adminCode } = await phase1();
-  await phase2(maskingLive, adminCode);
+  const { maskingLive, adminCode, tempOwnerCode, tempOwnerId } = await phase1();
+  await phase2(maskingLive, adminCode, tempOwnerCode, tempOwnerId);
 
   console.log(`\n  ───────────────────────────────────────────────`);
   console.log(`  Results: ${passed} passed, ${failed} failed, ${skipped} skipped`);

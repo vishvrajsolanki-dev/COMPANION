@@ -208,7 +208,7 @@ export const AnalyticsView: React.FC = () => {
                           </div>
                         </div>
                         <span style={{ fontFamily: 'var(--font-family-mono)', color: 'var(--text-muted)', textDecoration: 'line-through' }}>
-                          {slot.start_time.split('T')[1].substring(0, 5)}
+                          {slot.start_time.split('T')[1]?.substring(0, 5) || slot.start_time}
                         </span>
                       </div>
                     );

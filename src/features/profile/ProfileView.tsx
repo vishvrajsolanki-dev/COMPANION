@@ -65,20 +65,18 @@ export const ProfileView: React.FC = () => {
         throw new Error('Invalid backup format — expected a JSON object with table names as keys.');
       }
 
-      // Clear existing data first (fresh restore, not merge)
+      // Clear existing data and import backup in a single atomic transaction
+      let totalRows = 0;
       await db.transaction('rw', db.tables, async () => {
         await Promise.all(db.tables.map(table => table.clear()));
-      });
-
-      // Import each table
-      let totalRows = 0;
-      for (const table of db.tables) {
-        const rows = backup[table.name];
-        if (Array.isArray(rows) && rows.length > 0) {
-          await table.bulkAdd(rows);
-          totalRows += rows.length;
+        for (const table of db.tables) {
+          const rows = backup[table.name];
+          if (Array.isArray(rows) && rows.length > 0) {
+            await table.bulkAdd(rows);
+            totalRows += rows.length;
+          }
         }
-      }
+      });
 
       // Remove the "user cleared" flag so seed doesn't re-trigger
       localStorage.removeItem('academic_os_user_cleared');

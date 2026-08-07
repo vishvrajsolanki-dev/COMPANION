@@ -127,13 +127,14 @@ export const ResourcesView: React.FC = () => {
         ) : (
           Object.entries(grouped).map(([subjectId, items]) => {
             const sub = subjects.find(s => s.id === subjectId);
-            if (!sub) return null;
             return (
               <div key={subjectId}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: sub.color }} />
-                  <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)' }}>{sub.name}</span>
-                  <span style={{ fontFamily: 'var(--font-family-mono)', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{sub.code}</span>
+                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: sub?.color || 'var(--text-muted)' }} />
+                  <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)' }}>{sub?.name || 'Removed Subject'}</span>
+                  {sub && (
+                    <span style={{ fontFamily: 'var(--font-family-mono)', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{sub.code}</span>
+                  )}
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {items.map(r => {

@@ -20,8 +20,8 @@ const fs = require('fs');
 const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
 
-const DEFAULT_OWNER_KEY = 'SEFV-KMAA-2C6K-K72S';
-const OWNER_KEY = (process.env.PHASE_C_OWNER_KEY || DEFAULT_OWNER_KEY).trim().toUpperCase();
+const { requireOwnerKey } = require('./lib/env.cjs');
+const OWNER_KEY = (process.env.PHASE_C_OWNER_KEY || requireOwnerKey()).trim().toUpperCase();
 const KEY_RE = /^[A-Z2-9]{4}(?:-[A-Z2-9]{4}){3}$/;
 const RUN_LABEL = `Phase C RPC Verify ${new Date().toISOString().replace(/[:.]/g, '-')}`;
 

@@ -29,13 +29,18 @@ export const AttendanceView: React.FC = () => {
   );
 
   const [dbError, setDbError] = useState<string | null>(null);
+  const [isSavingBackfill, setIsSavingBackfill] = useState(false);
 
   const handleBackfill = async () => {
-    if (!backfillSlotId) return;
+    if (isSavingBackfill || !backfillSlotId) return;
+    setIsSavingBackfill(true);
     setDbError(null);
 
     try {
-      const existingRecord = attendanceRecords.find(r => r.lecture_slot_id === backfillSlotId && !r.is_deleted);
+      // Re-read DB instead of relying on stale render-time state
+      const existingRecord = await db.attendanceRecords
+        .filter(r => r.lecture_slot_id === backfillSlotId && !r.is_deleted)
+        .first();
 
       if (existingRecord) {
         await db.attendanceRecords.update(existingRecord.id, {
@@ -68,6 +73,8 @@ export const AttendanceView: React.FC = () => {
     } catch (err) {
       console.error('Failed to save attendance record:', err);
       setDbError('Failed to save attendance. Please try again.');
+    } finally {
+      setIsSavingBackfill(false);
     }
   };
 
@@ -304,8 +311,8 @@ export const AttendanceView: React.FC = () => {
                       <AlertCircle size={14} /> {dbError}
                     </div>
                   )}
-                  <GlassButton onClick={handleBackfill} style={{ flex: 1 }}>
-                    Save Backfill
+                  <GlassButton onClick={handleBackfill} disabled={isSavingBackfill} style={{ flex: 1 }}>
+                    {isSavingBackfill ? 'Saving…' : 'Save Backfill'}
                   </GlassButton>
                   <GlassButton variant="ghost" onClick={() => setBackfillSlotId(null)}>
                     Cancel

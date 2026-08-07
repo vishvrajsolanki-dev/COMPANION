@@ -30,6 +30,10 @@ export const ExamsView: React.FC = () => {
   const handleCreateExam = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newSubjectId) return;
+    if (!newDate) {
+      setDbError('Please choose a date & time for the exam.');
+      return;
+    }
     setDbError(null);
 
     try {
@@ -74,13 +78,14 @@ export const ExamsView: React.FC = () => {
   };
 
   const toggleSyllabusItem = async (examId: string, index: number) => {
-    const exam = exams.find(e => e.id === examId);
-    if (!exam) return;
-
     try {
-      const updatedChecklist = [...exam.syllabus_checklist];
-      updatedChecklist[index].completed = !updatedChecklist[index].completed;
-      await db.exams.update(examId, { syllabus_checklist: updatedChecklist });
+      // Atomic read-modify-write against the freshest row — avoids lost updates
+      // when two checkboxes are toggled in quick succession.
+      await db.exams.update(examId, (exam) => {
+        exam.syllabus_checklist = (exam.syllabus_checklist || []).map((item, i) =>
+          i === index ? { ...item, completed: !item.completed } : item
+        );
+      });
     } catch (err) {
       console.error('Failed to update syllabus:', err);
     }
@@ -218,7 +223,7 @@ export const ExamsView: React.FC = () => {
                   </div>
                   <h4 style={{ fontWeight: 700, fontSize: '1rem', marginTop: 4, color: 'var(--text-primary)' }}>{sub.name}</h4>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-family-mono)', marginTop: 2 }}>
-                    {new Date(exam.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    {exam.date ? new Date(exam.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'No date set'}
                   </div>
                 </div>
 
@@ -294,6 +299,7 @@ export const ExamsView: React.FC = () => {
                 type="datetime-local"
                 value={newDate}
                 onChange={e => setNewDate(e.target.value)}
+                required
                 className="input"
                 style={{ marginTop: 4 }}
               />
@@ -340,7 +346,7 @@ export const ExamsView: React.FC = () => {
               <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-primary)' }}>{selectedExamSubject?.name}</h3>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.85rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-family-mono)', marginTop: 4 }}>
                 <Calendar size={14} />
-                {new Date(selectedExam.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                {selectedExam.date ? new Date(selectedExam.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'No date set'}
               </div>
             </div>
 

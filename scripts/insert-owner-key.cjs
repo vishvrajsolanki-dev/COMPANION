@@ -15,8 +15,11 @@ if (!connStr) {
 async function main() {
   const client = new Client({ connectionString: connStr, ssl: { rejectUnauthorized: false } });
   await client.connect();
+  const { requireOwnerKey } = require('./lib/env.cjs');
+  const code = requireOwnerKey();
   await client.query(
-    "INSERT INTO public.access_keys (code, role, max_uses, label) VALUES ('SEFV-KMAA-2C6K-K72S', 'owner', 1, 'Vishvraj')"
+    "INSERT INTO public.access_keys (code, role, max_uses, label) VALUES ($1, 'owner', 1, 'Vishvraj')",
+    [code]
   );
   const { rows } = await client.query('SELECT code, role, label, max_uses, used_count FROM public.access_keys');
   console.log('Owner key inserted. Current keys:');

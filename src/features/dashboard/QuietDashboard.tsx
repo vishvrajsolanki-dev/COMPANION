@@ -48,17 +48,18 @@ export const QuietDashboard: React.FC = () => {
   // anchored to the ADIT ODD 2026 semester), fall back to the nearest upcoming
   // slot so the hero card is never dead.
   const upcomingSlots = lectureSlots
-    .filter(s => !s.is_deleted)
+    .filter(s => !s.is_deleted && s.status !== 'cancelled')
     .filter(s => datePart(s.start_time) >= todayISO())
     .sort((a, b) => a.start_time.localeCompare(b.start_time));
   const fallbackSlot = todaySlots.length > 0 ? null : upcomingSlots[0] || null;
   const isFallback = !!fallbackSlot;
 
-  // Next lecture today (start time after the real current time)
-  const candidates = isFallback ? [fallbackSlot] : todaySlots;
-  const nextSlot = candidates.find(
-    slot => slot && timePart(slot.start_time) > nowMinutes() && slot.status !== 'cancelled'
-  ) || null;
+  // In fallback mode pick the slot as-is (no time-greater-than-now filter,
+  // since the slot may be on a different day).  In normal mode pick the next
+  // non-cancelled slot whose start time is after the real clock.
+  const nextSlot = isFallback
+    ? fallbackSlot
+    : todaySlots.find(slot => slot.status !== 'cancelled' && timePart(slot.start_time) > nowMinutes()) || null;
 
   const nextSubject = nextSlot ? subjects.find(s => s.id === nextSlot.subject_id) : null;
 
@@ -72,9 +73,10 @@ export const QuietDashboard: React.FC = () => {
   const hour = now.getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
 
-  // Active tasks due soon (max 2-3)
+  // Active tasks due soon (max 2-3), sorted by due date ascending
   const activeTasks = tasks
     .filter(t => t.status !== 'completed' && !t.is_deleted)
+    .sort((a, b) => (a.due_at || '').localeCompare(b.due_at || ''))
     .slice(0, 3);
 
   // SVG circular ring configurations
@@ -254,7 +256,7 @@ export const QuietDashboard: React.FC = () => {
                     {sub && <span className={styles.taskSubjectCode} style={{ color: sub.color }}>{sub.code}</span>}
                   </div>
                   <span className={styles.taskDueText}>
-                    {new Date(t.due_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    {t.due_at ? new Date(t.due_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'No date'}
                   </span>
                 </div>
               );
@@ -295,7 +297,7 @@ export const QuietDashboard: React.FC = () => {
                         {sub.code}
                       </span>
                       <span className={styles.timelineTime}>
-                        {slot.start_time.split('T')[1].substring(0, 5)} - {slot.end_time.split('T')[1].substring(0, 5)}
+                        {timePart(slot.start_time)} - {timePart(slot.end_time)}
                       </span>
                     </div>
                     <div className={`${styles.timelineSubjectName} ${isCancelled ? styles.lineThrough : ''}`}>
