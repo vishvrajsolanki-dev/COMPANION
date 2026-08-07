@@ -99,15 +99,28 @@ export const ExamsView: React.FC = () => {
   });
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: 'var(--color-bg-primary)', paddingBottom: '80px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: 'var(--bg-page)', paddingBottom: '80px' }}>
 
-      {/* Header */}
-      <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'var(--space-md)', borderBottom: '1px solid var(--color-border)' }}>
+      {/* Screen header */}
+      <header
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: 'var(--space-md)',
+          paddingTop: 'calc(var(--space-md) + env(safe-area-inset-top))',
+          borderBottom: '1px solid var(--border-hairline)',
+          backgroundColor: 'var(--bg-page)',
+          position: 'sticky',
+          top: 0,
+          zIndex: 10,
+        }}
+      >
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <button onClick={closeSubview} style={{ color: 'var(--color-text-primary)' }}>
+          <button onClick={closeSubview} style={{ color: 'var(--text-primary)' }}>
             <ArrowLeft size={24} />
           </button>
-          <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--color-text-primary)' }}>Exams & Quizzes</h2>
+          <h2 style={{ fontSize: 'var(--text-xl)', fontWeight: 700, color: 'var(--text-primary)' }}>Exams & Quizzes</h2>
         </div>
 
         <GlassButton size="sm" onClick={() => setIsAdding(true)}>
@@ -116,7 +129,7 @@ export const ExamsView: React.FC = () => {
       </header>
 
       {/* Filter Tabs */}
-      <div style={{ padding: 'var(--space-md)' }}>
+      <div style={{ padding: 'var(--space-sm) var(--space-md)' }}>
         <SegmentedControl
           options={[
             { value: 'upcoming', label: 'Upcoming' },
@@ -145,7 +158,7 @@ export const ExamsView: React.FC = () => {
             const diffHours = (examTime - nowTime) / (1000 * 60 * 60);
             const diffDays = Math.floor(diffHours / 24);
 
-            let countdownColor = 'var(--color-text-secondary)';
+            let countdownColor = 'var(--text-secondary)';
             let isClose = false;
 
             if (activeFilter === 'upcoming') {
@@ -169,13 +182,11 @@ export const ExamsView: React.FC = () => {
                   position: 'relative',
                   overflow: 'hidden',
                   padding: 'var(--space-md)',
-                  paddingLeft: 'var(--space-lg)',
-                  backgroundColor: 'var(--surface-glass)',
-                  backdropFilter: 'blur(var(--blur-glass)) saturate(1.4)',
-                  WebkitBackdropFilter: 'blur(var(--blur-glass)) saturate(1.4)',
-                  borderRadius: 'var(--radius-squircle)',
-                  border: '1px solid var(--surface-glass-border)',
-                  boxShadow: isClose ? 'var(--shadow-glass), var(--shadow-glow)' : 'var(--shadow-glass)',
+                  paddingLeft: 'calc(var(--space-md) + 4px)',
+                  backgroundColor: 'var(--bg-card)',
+                  borderRadius: 'var(--radius-card)',
+                  border: '1px solid var(--border-hairline)',
+                  boxShadow: 'var(--shadow-card)',
                   cursor: 'pointer',
                   display: 'flex',
                   justifyContent: 'space-between',
@@ -183,8 +194,8 @@ export const ExamsView: React.FC = () => {
                   gap: 'var(--space-sm)',
                 }}
               >
-                {/* Left gradient accent bar */}
-                <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, background: 'var(--gradient-accent)' }} />
+                {/* Left accent bar — solid subject color */}
+                <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, background: sub.color }} />
 
                 <div style={{ minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -194,19 +205,19 @@ export const ExamsView: React.FC = () => {
                         fontSize: '0.75rem',
                         fontWeight: 700,
                         color: sub.color,
-                        backgroundColor: `${sub.color}18`,
+                        backgroundColor: `${sub.color}1A`,
                         padding: '2px 8px',
                         borderRadius: 'var(--radius-pill)',
                       }}
                     >
                       {sub.code}
                     </span>
-                    <span style={{ fontSize: '0.8rem', fontWeight: 600, textTransform: 'capitalize', color: 'var(--color-text-secondary)' }}>
+                    <span style={{ fontSize: '0.8rem', fontWeight: 600, textTransform: 'capitalize', color: 'var(--text-secondary)' }}>
                       {exam.type === 'midsem' ? 'Mid-Sem' : exam.type === 'endsem' ? 'End-Sem' : 'Quiz'}
                     </span>
                   </div>
-                  <h4 style={{ fontWeight: 700, fontSize: '1rem', marginTop: 4, color: 'var(--color-text-primary)' }}>{sub.name}</h4>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', fontFamily: 'var(--font-family-mono)', marginTop: 2 }}>
+                  <h4 style={{ fontWeight: 700, fontSize: '1rem', marginTop: 4, color: 'var(--text-primary)' }}>{sub.name}</h4>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-family-mono)', marginTop: 2 }}>
                     {new Date(exam.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                   </div>
                 </div>
@@ -218,11 +229,11 @@ export const ExamsView: React.FC = () => {
                       textAlign: 'center',
                       padding: '6px 12px',
                       borderRadius: 'var(--radius-pill)',
-                      backgroundColor: `${countdownColor}1A`,
-                      border: `1px solid ${countdownColor}44`,
+                      backgroundColor: isClose ? `${countdownColor}1A` : 'var(--bg-card-tint)',
+                      border: `1px solid ${isClose ? `${countdownColor}44` : 'transparent'}`,
                     }}
                   >
-                    <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: '0.9rem', fontWeight: 700, color: countdownColor }}>
+                    <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: '0.9rem', fontWeight: 700, color: isClose ? countdownColor : 'var(--color-primary)' }}>
                       {diffHours > 0 ? (diffDays > 0 ? `${diffDays}d left` : `${Math.floor(diffHours)}h left`) : 'Starting now'}
                     </div>
                     {isClose && (
@@ -244,24 +255,15 @@ export const ExamsView: React.FC = () => {
           onSubmit={handleCreateExam}
           style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}
         >
-          <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--color-text-primary)' }}>Add Exam / Quiz</h3>
+          <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-primary)' }}>Add Exam / Quiz</h3>
 
           <div>
-            <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-text-secondary)' }}>Subject Connection</label>
+            <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Subject Connection</label>
             <select
               value={newSubjectId}
               onChange={e => setNewSubjectId(e.target.value)}
-              className="input-like"
-              style={{
-                width: '100%',
-                padding: '12px',
-                borderRadius: 'var(--radius-btn)',
-                border: '1px solid var(--color-border)',
-                backgroundColor: 'var(--surface-glass)',
-                color: 'var(--color-text-primary)',
-                fontSize: '0.95rem',
-                marginTop: 4,
-              }}
+              className="input"
+              style={{ marginTop: 4 }}
               required
             >
               <option value="">Select Subject</option>
@@ -273,20 +275,12 @@ export const ExamsView: React.FC = () => {
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-md)' }}>
             <div>
-              <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-text-secondary)' }}>Exam Type</label>
+              <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Exam Type</label>
               <select
                 value={newType}
                 onChange={e => setNewType(e.target.value as any)}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  borderRadius: 'var(--radius-btn)',
-                  border: '1px solid var(--color-border)',
-                  backgroundColor: 'var(--surface-glass)',
-                  color: 'var(--color-text-primary)',
-                  fontSize: '0.95rem',
-                  marginTop: 4,
-                }}
+                className="input"
+                style={{ marginTop: 4 }}
               >
                 <option value="midsem">Mid-Semester</option>
                 <option value="endsem">End-Semester</option>
@@ -295,47 +289,31 @@ export const ExamsView: React.FC = () => {
             </div>
 
             <div>
-              <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-text-secondary)' }}>Date & Time</label>
+              <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Date & Time</label>
               <input
                 type="datetime-local"
                 value={newDate}
                 onChange={e => setNewDate(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  borderRadius: 'var(--radius-btn)',
-                  border: '1px solid var(--color-border)',
-                  backgroundColor: 'var(--surface-glass)',
-                  color: 'var(--color-text-primary)',
-                  fontSize: '0.95rem',
-                  marginTop: 4,
-                }}
+                className="input"
+                style={{ marginTop: 4 }}
               />
             </div>
           </div>
 
           <div>
-            <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-text-secondary)' }}>Syllabus Topics (comma separated)</label>
+            <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Syllabus Topics (comma separated)</label>
             <input
               type="text"
               placeholder="Topic A, Topic B, Topic C"
               value={newSyllabusInput}
               onChange={e => setNewSyllabusInput(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '12px',
-                borderRadius: 'var(--radius-btn)',
-                border: '1px solid var(--color-border)',
-                backgroundColor: 'var(--surface-glass)',
-                color: 'var(--color-text-primary)',
-                fontSize: '0.95rem',
-                marginTop: 4,
-              }}
+              className="input"
+              style={{ marginTop: 4 }}
             />
           </div>
 
           {dbError && (
-            <div style={{ padding: 10, borderRadius: 'var(--radius-chip)', backgroundColor: 'var(--color-danger-bg)', color: 'var(--color-danger)', fontSize: '0.85rem', fontWeight: 600 }}>
+            <div style={{ padding: '10px', borderRadius: 'var(--radius-card)', backgroundColor: 'var(--color-danger-bg)', color: 'var(--color-danger)', fontSize: '0.85rem', fontWeight: 600 }}>
               {dbError}
             </div>
           )}
@@ -359,8 +337,8 @@ export const ExamsView: React.FC = () => {
               <span style={{ fontSize: '0.8rem', fontFamily: 'var(--font-family-mono)', color: selectedExamSubject?.color, fontWeight: 700 }}>
                 {selectedExamSubject?.code} — {selectedExam.type.toUpperCase()}
               </span>
-              <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--color-text-primary)' }}>{selectedExamSubject?.name}</h3>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.85rem', color: 'var(--color-text-secondary)', fontFamily: 'var(--font-family-mono)', marginTop: 4 }}>
+              <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-primary)' }}>{selectedExamSubject?.name}</h3>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.85rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-family-mono)', marginTop: 4 }}>
                 <Calendar size={14} />
                 {new Date(selectedExam.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
               </div>
@@ -368,7 +346,7 @@ export const ExamsView: React.FC = () => {
 
             {/* Syllabus Checklist */}
             <div>
-              <h4 style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--color-text-secondary)', marginBottom: 8 }}>
+              <h4 style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 8 }}>
                 Syllabus Checklist
               </h4>
 
@@ -385,11 +363,9 @@ export const ExamsView: React.FC = () => {
                         alignItems: 'center',
                         gap: 8,
                         padding: 10,
-                        backgroundColor: 'var(--surface-glass)',
-                        backdropFilter: 'blur(var(--blur-glass))',
-                        WebkitBackdropFilter: 'blur(var(--blur-glass))',
-                        borderRadius: 'var(--radius-squircle)',
-                        border: '1px solid var(--surface-glass-border)',
+                        backgroundColor: 'var(--bg-card)',
+                        borderRadius: 'var(--radius-card)',
+                        border: '1px solid var(--border-hairline)',
                         cursor: 'pointer',
                         opacity: item.completed ? 0.6 : 1,
                       }}
@@ -399,7 +375,7 @@ export const ExamsView: React.FC = () => {
                           width: 20,
                           height: 20,
                           borderRadius: 7,
-                          border: item.completed ? 'none' : '2px solid var(--color-border)',
+                          border: item.completed ? 'none' : '2px solid var(--border-hairline)',
                           backgroundColor: item.completed ? 'var(--color-success)' : 'transparent',
                           display: 'flex',
                           alignItems: 'center',
@@ -410,7 +386,7 @@ export const ExamsView: React.FC = () => {
                       >
                         {item.completed && <Check size={12} />}
                       </span>
-                      <span style={{ fontSize: '0.85rem', textDecoration: item.completed ? 'line-through' : 'none', color: 'var(--color-text-primary)' }}>
+                      <span style={{ fontSize: '0.85rem', textDecoration: item.completed ? 'line-through' : 'none', color: 'var(--text-primary)' }}>
                         {item.topic}
                       </span>
                     </div>

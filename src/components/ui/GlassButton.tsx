@@ -24,7 +24,7 @@ const SIZE_CLASS: Record<GlassButtonSize, string> = {
   lg: styles.btnLg,
 };
 
-/** Premium button. primary = gradient + glow, ghost = glass, subtle = quiet, danger/success = status-tinted. */
+/** Academic Core button. primary = solid blue pill, ghost = bordered white, subtle = tinted blue, danger/success = soft status-tinted. */
 export const GlassButton: React.FC<GlassButtonProps> = ({
   children,
   variant = 'primary',

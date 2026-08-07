@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useAuthStore } from '../../store/authStore';
 import { useUIStore } from '../../store/uiStore';
-import { GlassButton, GlassCard, EmptyState, SegmentedControl, Badge } from '../../components/ui';
+import { GlassButton, GlassCard, EmptyState, SegmentedControl, Badge, Banner } from '../../components/ui';
 import {
   generateKey, listKeys, setKeyActive, listProfiles, getAdminCredential,
   ADMIN_ERROR_MESSAGES,
@@ -17,19 +17,10 @@ const TABS: { value: PortalTab; label: string }[] = [
   { value: 'activations', label: 'Activations' },
 ];
 
-const inputStyle: React.CSSProperties = {
-  width: '100%',
-  padding: '11px 12px',
-  borderRadius: 'var(--radius-card)',
-  border: '1px solid var(--color-border)',
-  backgroundColor: 'var(--color-bg-secondary)',
-  color: 'var(--color-text-primary)',
-  fontSize: '0.95rem',
-};
 const labelStyle: React.CSSProperties = {
   fontSize: '0.8rem',
   fontWeight: 600,
-  color: 'var(--color-text-secondary)',
+  color: 'var(--text-secondary)',
 };
 const overlineStyle: React.CSSProperties = {
   display: 'flex',
@@ -39,7 +30,7 @@ const overlineStyle: React.CSSProperties = {
   fontWeight: 700,
   letterSpacing: '0.08em',
   textTransform: 'uppercase',
-  color: 'var(--color-text-tertiary)',
+  color: 'var(--text-muted)',
 };
 
 const roleBadgeTone = (role: AdminRole): 'accent' | 'success' | 'neutral' =>
@@ -153,10 +144,10 @@ export const AdminPortalView: React.FC = () => {
   // ── Authorization guard ────────────────────────────────────────────────────
   if (!isAdmin) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: 'var(--color-bg-primary)' }}>
-        <header style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 'var(--space-md)', borderBottom: '1px solid var(--color-border)' }}>
-          <button onClick={closeSubview} style={{ color: 'var(--color-text-primary)' }}><ArrowLeft size={24} /></button>
-          <h2 style={{ fontSize: '1.2rem', fontWeight: 700 }}>Admin Portal</h2>
+      <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: 'var(--bg-page)' }}>
+        <header style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 'var(--space-md)', paddingTop: 'calc(var(--space-md) + env(safe-area-inset-top))', borderBottom: '1px solid var(--border-hairline)', backgroundColor: 'var(--bg-page)' }}>
+          <button onClick={closeSubview} style={{ color: 'var(--text-primary)' }}><ArrowLeft size={24} /></button>
+          <h2 style={{ fontSize: 'var(--text-xl)', fontWeight: 700, color: 'var(--text-primary)' }}>Admin Portal</h2>
         </header>
         <div style={{ padding: 'var(--space-lg)' }}>
           <EmptyState
@@ -171,10 +162,10 @@ export const AdminPortalView: React.FC = () => {
 
   if (!hasCredential) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: 'var(--color-bg-primary)' }}>
-        <header style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 'var(--space-md)', borderBottom: '1px solid var(--color-border)' }}>
-          <button onClick={closeSubview} style={{ color: 'var(--color-text-primary)' }}><ArrowLeft size={24} /></button>
-          <h2 style={{ fontSize: '1.2rem', fontWeight: 700 }}>Admin Portal</h2>
+      <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: 'var(--bg-page)' }}>
+        <header style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 'var(--space-md)', paddingTop: 'calc(var(--space-md) + env(safe-area-inset-top))', borderBottom: '1px solid var(--border-hairline)', backgroundColor: 'var(--bg-page)' }}>
+          <button onClick={closeSubview} style={{ color: 'var(--text-primary)' }}><ArrowLeft size={24} /></button>
+          <h2 style={{ fontSize: 'var(--text-xl)', fontWeight: 700, color: 'var(--text-primary)' }}>Admin Portal</h2>
         </header>
         <div style={{ padding: 'var(--space-lg)' }}>
           <EmptyState
@@ -188,7 +179,7 @@ export const AdminPortalView: React.FC = () => {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: 'var(--color-bg-primary)', paddingBottom: '80px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: 'var(--bg-page)', paddingBottom: '80px' }}>
       {/* Header */}
       <header
         style={{
@@ -199,15 +190,16 @@ export const AdminPortalView: React.FC = () => {
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: 'var(--space-md)',
-          borderBottom: '1px solid var(--color-border)',
-          backgroundColor: 'var(--color-bg-primary)',
+          paddingTop: 'calc(var(--space-md) + env(safe-area-inset-top))',
+          borderBottom: '1px solid var(--border-hairline)',
+          backgroundColor: 'var(--bg-page)',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <button onClick={closeSubview} style={{ color: 'var(--color-text-primary)' }}><ArrowLeft size={24} /></button>
+          <button onClick={closeSubview} style={{ color: 'var(--text-primary)' }}><ArrowLeft size={24} /></button>
           <div>
-            <h2 style={{ fontSize: '1.2rem', fontWeight: 700 }}>Admin Portal</h2>
-            <div style={{ fontSize: '0.72rem', color: 'var(--color-text-tertiary)' }}>Access-key distribution</div>
+            <h2 style={{ fontSize: 'var(--text-xl)', fontWeight: 700, color: 'var(--text-primary)' }}>Admin Portal</h2>
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Access-key distribution</div>
           </div>
         </div>
         <Badge tone={roleBadgeTone(currentRole!)}>{currentRole}</Badge>
@@ -223,18 +215,16 @@ export const AdminPortalView: React.FC = () => {
         {tab === 'generate' && (
           <>
             {genError && (
-              <div style={{ padding: 10, borderRadius: 'var(--radius-chip)', backgroundColor: 'var(--color-danger-bg)', color: 'var(--color-danger)', fontSize: '0.85rem', fontWeight: 600 }}>
-                {genError}
-              </div>
+              <Banner tone="danger" title={genError} />
             )}
 
             {newKey && (
               <GlassCard variant="accent">
                 <div style={overlineStyle}>
-                  <span style={{ width: 3, height: 14, borderRadius: 2, background: 'var(--gradient-accent)', flexShrink: 0 }} />
+                  <span style={{ width: 3, height: 14, borderRadius: 2, background: 'var(--color-primary)', flexShrink: 0 }} />
                   New key — share it now
                 </div>
-                <p style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)', margin: '6px 0 10px' }}>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '6px 0 10px' }}>
                   This is the only time the full code is shown. Share it with your classmate.
                 </p>
                 <div
@@ -244,11 +234,11 @@ export const AdminPortalView: React.FC = () => {
                     gap: 10,
                     padding: '12px',
                     borderRadius: 'var(--radius-card)',
-                    backgroundColor: 'var(--color-bg-secondary)',
-                    border: '1px solid var(--color-border)',
+                    backgroundColor: 'var(--neutral-100)',
+                    border: '1px solid var(--border-hairline)',
                   }}
                 >
-                  <code style={{ flex: 1, fontFamily: 'var(--font-family-mono)', fontSize: '0.95rem', fontWeight: 700, color: 'var(--color-accent-primary)', letterSpacing: '0.04em' }}>
+                  <code style={{ flex: 1, fontFamily: 'var(--font-family-mono)', fontSize: '0.95rem', fontWeight: 700, color: 'var(--color-primary)', letterSpacing: '0.04em' }}>
                     {newKey.code}
                   </code>
                   <GlassButton variant="ghost" size="sm" onClick={() => copyCode(newKey.code)}>
@@ -266,7 +256,7 @@ export const AdminPortalView: React.FC = () => {
                   <select
                     value={role}
                     onChange={e => { setRole(e.target.value as AdminRole); setNewKey(null); }}
-                    style={inputStyle}
+                    className="input"
                   >
                     {roleOptions.map(r => (
                       <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>
@@ -280,7 +270,7 @@ export const AdminPortalView: React.FC = () => {
                     value={label}
                     onChange={e => { setLabel(e.target.value); setNewKey(null); }}
                     placeholder="e.g. Meet Patel"
-                    style={inputStyle}
+                    className="input"
                   />
                 </div>
 
@@ -293,7 +283,7 @@ export const AdminPortalView: React.FC = () => {
                       max={100}
                       value={maxUses}
                       onChange={e => setMaxUses(e.target.value)}
-                      style={inputStyle}
+                      className="input"
                     />
                   </div>
                   <div>
@@ -302,7 +292,7 @@ export const AdminPortalView: React.FC = () => {
                       type="date"
                       value={expiresAt}
                       onChange={e => setExpiresAt(e.target.value)}
-                      style={inputStyle}
+                      className="input"
                     />
                   </div>
                 </div>
@@ -319,13 +309,11 @@ export const AdminPortalView: React.FC = () => {
         {tab === 'keys' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {keysError && (
-              <div style={{ padding: 10, borderRadius: 'var(--radius-chip)', backgroundColor: 'var(--color-danger-bg)', color: 'var(--color-danger)', fontSize: '0.85rem', fontWeight: 600 }}>
-                {ADMIN_ERROR_MESSAGES[keysError]}
-              </div>
+              <Banner tone="danger" title={ADMIN_ERROR_MESSAGES[keysError]} />
             )}
 
             {keys === null ? (
-              <p style={{ textAlign: 'center', color: 'var(--color-text-tertiary)', padding: 24, fontSize: '0.85rem' }}>Loading keys…</p>
+              <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 24, fontSize: '0.85rem' }}>Loading keys…</p>
             ) : keys.length === 0 ? (
               <EmptyState icon={<KeyRound size={28} />} title="No keys yet" body="Generate the first access key on the Generate tab." />
             ) : (
@@ -335,12 +323,10 @@ export const AdminPortalView: React.FC = () => {
                   style={{
                     opacity: k.is_active ? 1 : 0.55,
                     padding: 'var(--space-md)',
-                    backgroundColor: 'var(--surface-glass)',
-                    backdropFilter: 'blur(var(--blur-glass)) saturate(1.4)',
-                    WebkitBackdropFilter: 'blur(var(--blur-glass)) saturate(1.4)',
-                    borderRadius: 'var(--radius-squircle)',
-                    border: '1px solid var(--surface-glass-border)',
-                    boxShadow: 'var(--shadow-glass)',
+                    backgroundColor: 'var(--bg-card)',
+                    borderRadius: 'var(--radius-card)',
+                    border: '1px solid var(--border-hairline)',
+                    boxShadow: 'var(--shadow-card)',
                     display: 'flex',
                     flexDirection: 'column',
                     gap: 10,
@@ -349,7 +335,7 @@ export const AdminPortalView: React.FC = () => {
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
                       <Badge tone={roleBadgeTone(k.role)}>{k.role}</Badge>
-                      <span style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--color-text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <span style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {k.label || '—'}
                       </span>
                     </div>
@@ -364,19 +350,19 @@ export const AdminPortalView: React.FC = () => {
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <code style={{ flex: 1, fontFamily: 'var(--font-family-mono)', fontSize: '0.82rem', color: 'var(--color-text-secondary)', letterSpacing: '0.03em' }}>
+                    <code style={{ flex: 1, fontFamily: 'var(--font-family-mono)', fontSize: '0.82rem', color: 'var(--text-secondary)', letterSpacing: '0.03em' }}>
                       {k.code}
                     </code>
                     <button
                       onClick={() => copyCode(k.code)}
                       title="Copy code"
-                      style={{ color: 'var(--color-text-tertiary)', flexShrink: 0, display: 'flex' }}
+                      style={{ color: 'var(--text-muted)', flexShrink: 0, display: 'flex' }}
                     >
                       {copiedCode === k.code ? <Check size={15} /> : <Copy size={15} />}
                     </button>
                   </div>
 
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.74rem', color: 'var(--color-text-tertiary)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.74rem', color: 'var(--text-muted)' }}>
                     <span>
                       used {k.used_count}/{k.max_uses}
                     </span>
@@ -394,13 +380,11 @@ export const AdminPortalView: React.FC = () => {
         {tab === 'activations' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {profilesError && (
-              <div style={{ padding: 10, borderRadius: 'var(--radius-chip)', backgroundColor: 'var(--color-danger-bg)', color: 'var(--color-danger)', fontSize: '0.85rem', fontWeight: 600 }}>
-                {ADMIN_ERROR_MESSAGES[profilesError]}
-              </div>
+              <Banner tone="danger" title={ADMIN_ERROR_MESSAGES[profilesError]} />
             )}
 
             {profiles === null ? (
-              <p style={{ textAlign: 'center', color: 'var(--color-text-tertiary)', padding: 24, fontSize: '0.85rem' }}>Loading activations…</p>
+              <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 24, fontSize: '0.85rem' }}>Loading activations…</p>
             ) : profiles.length === 0 ? (
               <EmptyState icon={<Users size={28} />} title="No activations yet" body="When someone redeems a key, they'll show up here." />
             ) : (
@@ -409,12 +393,10 @@ export const AdminPortalView: React.FC = () => {
                   key={p.id}
                   style={{
                     padding: 'var(--space-md)',
-                    backgroundColor: 'var(--surface-glass)',
-                    backdropFilter: 'blur(var(--blur-glass)) saturate(1.4)',
-                    WebkitBackdropFilter: 'blur(var(--blur-glass)) saturate(1.4)',
-                    borderRadius: 'var(--radius-squircle)',
-                    border: '1px solid var(--surface-glass-border)',
-                    boxShadow: 'var(--shadow-glass)',
+                    backgroundColor: 'var(--bg-card)',
+                    borderRadius: 'var(--radius-card)',
+                    border: '1px solid var(--border-hairline)',
+                    boxShadow: 'var(--shadow-card)',
                     display: 'flex',
                     alignItems: 'center',
                     gap: 10,
@@ -425,8 +407,8 @@ export const AdminPortalView: React.FC = () => {
                       width: 38,
                       height: 38,
                       borderRadius: 12,
-                      background: 'var(--gradient-accent-soft)',
-                      color: 'var(--color-accent-primary)',
+                      background: 'var(--bg-card-tint)',
+                      color: 'var(--color-primary)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -439,12 +421,12 @@ export const AdminPortalView: React.FC = () => {
                   </span>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--color-text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <span style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {p.name || 'Unnamed'}
                       </span>
                       <Badge tone={roleBadgeTone(p.role)}>{p.role}</Badge>
                     </div>
-                    <div style={{ fontSize: '0.74rem', color: 'var(--color-text-tertiary)', marginTop: 2 }}>
+                    <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: 2 }}>
                       {p.key_label ? `via ${p.key_label}` : 'via access key'} · {fmtDate(p.created_at)}
                     </div>
                   </div>

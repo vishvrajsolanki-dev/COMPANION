@@ -39,14 +39,14 @@ export class ErrorBoundary extends Component<Props, State> {
             alignItems: 'center',
             justifyContent: 'center',
             padding: '2rem',
-            backgroundColor: 'var(--color-bg-primary)',
+            backgroundColor: 'var(--bg-page)',
             gap: '1rem',
             textAlign: 'center',
           }}
         >
           <AlertTriangle size={48} color="var(--color-danger)" />
           <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Something went wrong</h2>
-          <p style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)', maxWidth: '300px' }}>
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', maxWidth: '300px' }}>
             {this.state.error?.message || 'An unexpected error occurred. Your data is safe in IndexedDB.'}
           </p>
           <button
@@ -56,8 +56,8 @@ export class ErrorBoundary extends Component<Props, State> {
               alignItems: 'center',
               gap: '6px',
               padding: '10px 20px',
-              borderRadius: 'var(--radius-chip)',
-              backgroundColor: 'var(--color-accent-primary)',
+              borderRadius: 'var(--radius-pill)',
+              backgroundColor: 'var(--color-primary)',
               color: '#ffffff',
               fontWeight: 600,
               fontSize: '0.9rem',

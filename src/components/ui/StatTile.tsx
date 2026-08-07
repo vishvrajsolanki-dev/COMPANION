@@ -10,7 +10,7 @@ interface StatTileProps extends React.HTMLAttributes<HTMLDivElement> {
   valueColor?: string;
 }
 
-/** Metric tile: gradient wash + glow, mono value, overline label. */
+/** Metric tile: white card, mono tabular value, uppercase label. */
 export const StatTile: React.FC<StatTileProps> = ({
   value,
   label,

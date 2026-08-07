@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, Subject, LectureSlot } from '../../db/index';
 import { useUIStore } from '../../store/uiStore';
+import { GlassButton } from '../../components/ui';
 import { ArrowLeft, Upload, CheckCircle2, AlertCircle, FileCode, Play, Copy } from 'lucide-react';
 import { SUBJECT_COLORS } from '../subjects/ManageSubjectsView';
 
@@ -164,7 +165,7 @@ export const TimetableImportView: React.FC = () => {
     try {
       if (!jsonText.trim()) throw new Error('Please paste JSON content or load sample.');
       const data: JSONTimetablePayload = JSON.parse(jsonText);
-      
+
       if (!data.patterns || !Array.isArray(data.patterns) || data.patterns.length === 0) {
         throw new Error('Invalid JSON: Must contain a "patterns" array with at least 1 entry.');
       }
@@ -300,19 +301,27 @@ export const TimetableImportView: React.FC = () => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: 'var(--color-bg-primary)', paddingBottom: '80px' }}>
-      <header style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: 'var(--space-md)', borderBottom: '1px solid var(--color-border)' }}>
-        <button onClick={closeSubview}><ArrowLeft size={24} /></button>
-        <div>
-          <h2 style={{ fontSize: '1.2rem', fontWeight: 700 }}>Import Timetable JSON</h2>
-          <p style={{ fontSize: '0.78rem', color: 'var(--color-text-secondary)' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: 'var(--bg-page)', paddingBottom: '80px' }}>
+      {/* Header */}
+      <header style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: 'var(--space-md)',
+        paddingTop: 'calc(var(--space-md) + env(safe-area-inset-top))',
+        borderBottom: '1px solid var(--border-hairline)',
+        backgroundColor: 'var(--bg-page)',
+        position: 'sticky', top: 0, zIndex: 10,
+      }}>
+        <button onClick={closeSubview} style={{ color: 'var(--text-primary)', display: 'flex', alignItems: 'center' }}><ArrowLeft size={24} /></button>
+        <div style={{ flex: 1, marginLeft: '12px' }}>
+          <h2 style={{ fontSize: 'var(--text-xl)', fontWeight: 700, color: 'var(--text-primary)' }}>Import Timetable JSON</h2>
+          <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
             {activeSem ? `${activeSem.label} (${activeSem.start_date} → ${activeSem.end_date})` : 'No active semester'}
           </p>
         </div>
       </header>
 
       {importedCount !== null && (
-        <div style={{ margin: 'var(--space-md)', padding: '14px', backgroundColor: 'rgba(22,163,74,0.12)', borderRadius: 'var(--radius-card)', border: '1px solid var(--color-success)', color: 'var(--color-success)', fontWeight: 600 }}>
+        <div style={{ margin: 'var(--space-md)', padding: '14px', backgroundColor: 'var(--color-success-bg)', borderRadius: 'var(--radius-card)', border: '1px solid var(--color-success)', color: 'var(--color-success-fg)', fontWeight: 600 }}>
           ✓ Successfully imported and generated {importedCount} lecture slots into IndexedDB!
           {commitSummary && (
             <div style={{ marginTop: '8px', fontSize: '0.82rem', fontWeight: 500 }}>
@@ -323,7 +332,7 @@ export const TimetableImportView: React.FC = () => {
                 <div>• Updated {commitSummary.updated.length} existing subject(s): {commitSummary.updated.join(', ')}</div>
               )}
               {commitSummary.skipped.length > 0 && (
-                <div style={{ color: 'var(--color-danger)', fontWeight: 600 }}>
+                <div style={{ color: 'var(--color-danger-fg)', fontWeight: 600 }}>
                   ⚠ Skipped {commitSummary.skipped.length} pattern(s) — unknown subject codes: {commitSummary.skipped.join(', ')}
                 </div>
               )}
@@ -334,24 +343,26 @@ export const TimetableImportView: React.FC = () => {
 
       <div style={{ padding: 'var(--space-md)', display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
         {/* Upload file or paste JSON */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <label style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--color-text-secondary)' }}>JSON Data</label>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+          <label style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-secondary)' }}>JSON Data</label>
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-            <button
+            <GlassButton
+              size="sm"
+              variant="subtle"
               onClick={copyConversionPrompt}
               title="Copies a prompt you can paste into any AI (ChatGPT/Gemini/Claude) with your timetable to get schema-correct JSON back"
-              style={{ fontSize: '0.78rem', padding: '4px 8px', borderRadius: '6px', backgroundColor: 'var(--color-info-bg)', color: 'var(--color-info)', border: '1px solid var(--color-info)', fontWeight: 600 }}
             >
-              <Copy size={12} style={{ display: 'inline', marginRight: '4px' }} />
+              <Copy size={12} />
               {copied ? 'Copied ✓' : 'Copy Conversion Prompt'}
-            </button>
-            <button
+            </GlassButton>
+            <GlassButton
+              size="sm"
+              variant="ghost"
               onClick={() => { setJsonText(sampleJSON); setError(null); setImportedCount(null); setCommitSummary(null); }}
-              style={{ fontSize: '0.78rem', padding: '4px 8px', borderRadius: '6px', backgroundColor: 'var(--color-bg-tertiary)', color: 'var(--color-text-secondary)', border: '1px solid var(--color-border)' }}
             >
               Load Sample JSON
-            </button>
-            <label style={{ fontSize: '0.78rem', padding: '4px 8px', borderRadius: '6px', backgroundColor: 'var(--color-accent-primary)', color: 'var(--color-on-accent)', cursor: 'pointer', fontWeight: 600 }}>
+            </GlassButton>
+            <label style={{ fontSize: '0.78rem', padding: '7px 12px', borderRadius: 'var(--radius-pill)', backgroundColor: 'var(--color-primary)', color: '#FFFFFF', cursor: 'pointer', fontWeight: 600 }}>
               <Upload size={12} style={{ display: 'inline', marginRight: '4px' }} /> Upload .json
               <input type="file" accept=".json" onChange={handleFileUpload} style={{ display: 'none' }} />
             </label>
@@ -363,46 +374,44 @@ export const TimetableImportView: React.FC = () => {
           onChange={e => setJsonText(e.target.value)}
           placeholder="Paste timetable JSON here..."
           rows={10}
-          style={{ width: '100%', padding: '12px', borderRadius: 'var(--radius-card)', border: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg-secondary)', color: 'var(--color-text-primary)', fontFamily: 'var(--font-family-mono)', fontSize: '0.82rem' }}
+          className="input"
+          style={{ marginTop: 4, fontFamily: 'var(--font-family-mono)', borderRadius: 'var(--radius-card)' }}
         />
 
         {error && (
-          <div style={{ padding: '12px', backgroundColor: 'var(--color-danger-bg)', borderRadius: 'var(--radius-card)', color: 'var(--color-danger)', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ padding: '12px', backgroundColor: 'var(--color-danger-bg)', borderRadius: 'var(--radius-card)', color: 'var(--color-danger-fg)', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <AlertCircle size={18} /> {error}
           </div>
         )}
 
-        <button
-          onClick={handleValidate}
-          style={{ padding: '12px', borderRadius: 'var(--radius-card)', backgroundColor: 'var(--color-bg-tertiary)', color: 'var(--color-text-primary)', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
-        >
+        <GlassButton onClick={handleValidate} variant="ghost" fullWidth>
           <FileCode size={16} /> Validate JSON Payload
-        </button>
+        </GlassButton>
 
         {/* Preview before commit */}
         {parsed && (
-          <div style={{ padding: 'var(--space-md)', backgroundColor: 'var(--color-bg-secondary)', borderRadius: 'var(--radius-card)', border: '1px solid var(--color-accent-primary)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--color-success)', fontWeight: 700 }}>
+          <div style={{ padding: 'var(--space-md)', backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius-card)', border: '1px solid var(--border-hairline)', boxShadow: 'var(--shadow-card)', display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--color-success-fg)', fontWeight: 700 }}>
               <CheckCircle2 size={20} /> Validated Payload Ready
             </div>
 
-            <div style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)' }}>
+            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
               <div>• <strong>{parsed.subjects?.length || 0}</strong> subjects defined (<strong>{preview ? `${preview.newSubjects} new` : '…'}</strong>)</div>
               <div>• <strong>{parsed.patterns?.length || 0}</strong> weekly recurring patterns → <strong>{preview ? `~${preview.projectedSlots} dated lecture slots` : '…'}</strong></div>
               {preview && preview.unresolvable.length > 0 && (
-                <div style={{ marginTop: '10px', padding: '10px', borderRadius: 'var(--radius-card)', backgroundColor: 'rgba(217,119,6,0.12)', border: '1px solid var(--color-warning)', color: 'var(--color-warning)', fontWeight: 600 }}>
+                <div style={{ marginTop: '10px', padding: '10px', borderRadius: 'var(--radius-card)', backgroundColor: 'var(--color-warning-bg)', border: '1px solid var(--color-warning)', color: 'var(--color-warning-fg)', fontWeight: 600 }}>
                   ⚠ {preview.unresolvable.length} pattern(s) reference subject codes that are neither in this payload nor in your database: {preview.unresolvable.join(', ')}
                 </div>
               )}
             </div>
 
-            <button
+            <GlassButton
               onClick={handleCommitImport}
               disabled={!activeSem}
-              style={{ padding: '12px', borderRadius: 'var(--radius-card)', backgroundColor: 'var(--color-accent-primary)', color: 'var(--color-on-accent)', fontWeight: 700, fontSize: '0.95rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', opacity: !activeSem ? 0.5 : 1 }}
+              fullWidth
             >
               <Play size={16} /> Commit Import & Generate Slots
-            </button>
+            </GlassButton>
           </div>
         )}
       </div>

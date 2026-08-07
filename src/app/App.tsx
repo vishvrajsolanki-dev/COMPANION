@@ -28,6 +28,7 @@ import { TimetableImportView }      from '../features/timetable/TimetableImportV
 import { AcademicCalendarImportView } from '../features/calendar/AcademicCalendarImportView';
 import { CalendarEventsView }        from '../features/calendar/CalendarEventsView';
 import { AdminPortalView }           from '../features/admin/AdminPortalView';
+import { StyleGuideView }            from '../features/design/StyleGuideView';
 
 export const App: React.FC = () => {
   const activeTab    = useUIStore(state => state.activeTab);
@@ -46,9 +47,9 @@ export const App: React.FC = () => {
 
   if (!isSeeded) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', gap: '12px', background: 'var(--bg-app)' }}>
-        <div style={{ width: '32px', height: '32px', borderRadius: '50%', border: '3px solid var(--color-accent-primary)', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} />
-        <p style={{ color: 'var(--color-text-secondary)', fontFamily: 'var(--font-family-mono)', fontSize: '0.85rem' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', gap: '12px', background: 'var(--bg-page)' }}>
+        <div style={{ width: '32px', height: '32px', borderRadius: '50%', border: '3px solid var(--color-primary)', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} />
+        <p style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-family-mono)', fontSize: '0.85rem' }}>
           Initialising local database…
         </p>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
@@ -66,7 +67,7 @@ export const App: React.FC = () => {
   return (
     <ErrorBoundary>
       <ToastProvider>
-      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-app)' }}>
+      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-page)' }}>
         <main style={{ flex: 1, overflowY: 'auto' }}>
           {/* Subviews take full screen — tab bar hides */}
           {activeSubview ? (
@@ -84,6 +85,7 @@ export const App: React.FC = () => {
               {activeSubview === 'calendar-import'   && <AcademicCalendarImportView />}
               {activeSubview === 'calendar-events'   && <CalendarEventsView        />}
               {activeSubview === 'admin-portal'      && <AdminPortalView           />}
+              {activeSubview === 'style-guide'       && <StyleGuideView            />}
             </>
           ) : (
             <>

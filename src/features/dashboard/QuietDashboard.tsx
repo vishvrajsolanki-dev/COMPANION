@@ -142,17 +142,17 @@ export const QuietDashboard: React.FC = () => {
       {/* Quick Access Grid Links */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 'var(--space-md)' }}>
         <button className={styles.quickLinkCard} onClick={() => navigateToSubview('attendance')}>
-          <Award size={20} className={styles.quickLinkIcon} style={{ color: 'var(--color-accent-primary)' }} />
+          <Award size={20} className={styles.quickLinkIcon} style={{ color: 'var(--color-primary)' }} />
           <span className={styles.quickLinkLabel}>Attendance</span>
         </button>
 
         <button className={styles.quickLinkCard} onClick={() => navigateToSubview('notes')}>
-          <BookOpen size={20} className={styles.quickLinkIcon} style={{ color: 'var(--color-accent-secondary)' }} />
+          <BookOpen size={20} className={styles.quickLinkIcon} style={{ color: 'var(--color-secondary)' }} />
           <span className={styles.quickLinkLabel}>Study Notes</span>
         </button>
 
         <button className={styles.quickLinkCard} onClick={() => navigateToSubview('exams')}>
-          <Calendar size={20} className={styles.quickLinkIcon} style={{ color: 'var(--color-accent-tertiary)' }} />
+          <Calendar size={20} className={styles.quickLinkIcon} style={{ color: 'var(--color-tertiary)' }} />
           <span className={styles.quickLinkLabel}>Exams & Quizzes</span>
         </button>
 
@@ -182,7 +182,7 @@ export const QuietDashboard: React.FC = () => {
               cy="32"
               r={radius}
               fill="transparent"
-              stroke="var(--color-bg-tertiary)"
+              stroke="var(--neutral-200)"
               strokeWidth="5"
             />
             <circle
@@ -190,7 +190,7 @@ export const QuietDashboard: React.FC = () => {
               cy="32"
               r={radius}
               fill="transparent"
-              stroke={overall.isAnyAtRisk ? 'var(--color-danger)' : 'var(--color-accent-primary)'}
+              stroke={overall.isAnyAtRisk ? 'var(--color-danger)' : 'var(--color-primary)'}
               strokeWidth="5"
               strokeDasharray={circumference}
               strokeDashoffset={strokeDashoffset}
@@ -242,11 +242,11 @@ export const QuietDashboard: React.FC = () => {
                     className={styles.priorityDot} 
                     style={{ 
                       backgroundColor: 
-                        t.priority === 'urgent' || t.priority === 'high' 
-                          ? 'var(--color-danger)' 
-                          : t.priority === 'medium' 
-                          ? 'var(--color-warning)' 
-                          : 'var(--color-text-tertiary)' 
+                        t.priority === 'urgent' || t.priority === 'high'
+                          ? 'var(--color-danger)'
+                          : t.priority === 'medium'
+                          ? 'var(--color-warning)'
+                          : 'var(--text-muted)'
                     }}
                   />
                   <div style={{ flex: 1 }}>

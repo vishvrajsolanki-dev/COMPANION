@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, Semester } from '../../db/index';
 import { useUIStore } from '../../store/uiStore';
+import { BottomSheet, EmptyState, Badge, GlassButton } from '../../components/ui';
 import { ArrowLeft, Plus, Check, Pencil, Trash2 } from 'lucide-react';
 
 function newId() { return `sem-${Date.now()}`; }
@@ -61,43 +62,78 @@ export const SemesterSetupView: React.FC = () => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: 'var(--color-bg-primary)', paddingBottom: '80px' }}>
-      <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'var(--space-md)', borderBottom: '1px solid var(--color-border)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button onClick={closeSubview}><ArrowLeft size={24} /></button>
-          <h2 style={{ fontSize: '1.2rem', fontWeight: 700 }}>Semesters</h2>
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: 'var(--bg-page)', paddingBottom: '80px' }}>
+      {/* Screen header */}
+      <header
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: 'var(--space-md)',
+          paddingTop: 'calc(var(--space-md) + env(safe-area-inset-top))',
+          borderBottom: '1px solid var(--border-hairline)',
+          backgroundColor: 'var(--bg-page)',
+          position: 'sticky',
+          top: 0,
+          zIndex: 10,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+          <button onClick={closeSubview} style={{ display: 'flex', alignItems: 'center', color: 'var(--text-primary)' }}><ArrowLeft size={24} /></button>
+          <h2 style={{ fontSize: 'var(--text-xl)', fontWeight: 700, color: 'var(--text-primary)' }}>Semesters</h2>
         </div>
-        <button onClick={openAdd} style={{ display: 'flex', alignItems: 'center', gap: '4px', backgroundColor: 'var(--color-accent-primary)', color: 'var(--color-on-accent)', padding: '8px 12px', borderRadius: 'var(--radius-chip)', fontWeight: 600, fontSize: '0.85rem' }}>
+        <GlassButton size="sm" onClick={openAdd}>
           <Plus size={16} /> New
-        </button>
+        </GlassButton>
       </header>
 
       <div style={{ padding: 'var(--space-md)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
         {semesters.length === 0 && (
-          <p style={{ color: 'var(--color-text-tertiary)', textAlign: 'center', padding: '40px 0' }}>No semesters yet — tap New to add one.</p>
+          <EmptyState title="No semesters yet" body="Tap New to add one." />
         )}
         {semesters.map(sem => (
-          <div key={sem.id} style={{ padding: 'var(--space-md)', backgroundColor: 'var(--color-bg-secondary)', borderRadius: 'var(--radius-card)', border: `1px solid ${sem.is_active ? 'var(--color-accent-primary)' : 'var(--color-border)'}` }}>
+          <div
+            key={sem.id}
+            style={{
+              padding: 'var(--space-md)',
+              backgroundColor: 'var(--bg-card)',
+              borderRadius: 'var(--radius-card)',
+              border: `1px solid ${sem.is_active ? 'var(--color-primary)' : 'var(--border-hairline)'}`,
+              boxShadow: 'var(--shadow-card)',
+            }}
+          >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div>
-                <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>{sem.label}</div>
-                <div style={{ fontSize: '0.78rem', fontFamily: 'var(--font-family-mono)', color: 'var(--color-text-secondary)', marginTop: '2px' }}>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sem.label}</div>
+                <div style={{ fontSize: '0.78rem', fontFamily: 'var(--font-family-mono)', color: 'var(--text-secondary)', marginTop: '2px' }}>
                   {sem.start_date} → {sem.end_date}
                 </div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
                 {sem.is_active && (
-                  <span style={{ fontSize: '0.7rem', fontWeight: 700, backgroundColor: 'var(--color-accent-primary)', color: 'var(--color-on-accent)', padding: '2px 8px', borderRadius: '10px' }}>ACTIVE</span>
+                  <Badge tone="accent">ACTIVE</Badge>
                 )}
                 {!sem.is_active && (
-                  <button onClick={() => setActive(sem)} title="Set as active" style={{ padding: '6px', borderRadius: '6px', backgroundColor: 'var(--color-bg-tertiary)', color: 'var(--color-success)' }}>
+                  <button
+                    onClick={() => setActive(sem)}
+                    title="Set as active"
+                    style={{ width: '34px', height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', backgroundColor: 'var(--color-success-bg)', color: 'var(--color-success)' }}
+                  >
                     <Check size={15} />
                   </button>
                 )}
-                <button onClick={() => openEdit(sem)} style={{ padding: '6px', borderRadius: '6px', backgroundColor: 'var(--color-bg-tertiary)', color: 'var(--color-text-secondary)' }}>
+                <button
+                  onClick={() => openEdit(sem)}
+                  title="Edit"
+                  style={{ width: '34px', height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', backgroundColor: 'var(--neutral-100)', color: 'var(--text-secondary)' }}
+                >
                   <Pencil size={15} />
                 </button>
-                <button onClick={() => deleteSemester(sem)} style={{ padding: '6px', borderRadius: '6px', backgroundColor: 'var(--color-bg-tertiary)', color: 'var(--color-danger)' }}>
+                <button
+                  onClick={() => deleteSemester(sem)}
+                  title="Delete"
+                  style={{ width: '34px', height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', backgroundColor: 'var(--color-danger-bg)', color: 'var(--color-danger)' }}
+                >
                   <Trash2 size={15} />
                 </button>
               </div>
@@ -107,35 +143,62 @@ export const SemesterSetupView: React.FC = () => {
       </div>
 
       {/* Add / Edit Sheet */}
-      {isAdding && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)', zIndex: 100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }} onClick={() => setIsAdding(false)}>
-          <form onSubmit={handleSave} onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: '500px', backgroundColor: 'var(--color-bg-primary)', borderTopLeftRadius: 'var(--radius-sheet)', borderTopRightRadius: 'var(--radius-sheet)', padding: 'var(--space-lg)', display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
-            <h3 style={{ fontWeight: 700, fontSize: '1.15rem' }}>{editing ? 'Edit Semester' : 'New Semester'}</h3>
-            <input value={label} onChange={e => setLabel(e.target.value)} placeholder="e.g. Semester 5 (Odd 2026)" required style={inputStyle} />
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-              <div>
-                <label style={labelStyle}>Start Date</label>
-                <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} required style={{ ...inputStyle, marginTop: '4px' }} />
-              </div>
-              <div>
-                <label style={labelStyle}>End Date</label>
-                <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} required style={{ ...inputStyle, marginTop: '4px' }} />
-              </div>
+      <BottomSheet open={isAdding} onClose={() => setIsAdding(false)}>
+        <form
+          onSubmit={handleSave}
+          style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}
+        >
+          <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-primary)' }}>{editing ? 'Edit Semester' : 'New Semester'}</h3>
+
+          <div>
+            <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Semester Label</label>
+            <input
+              value={label}
+              onChange={e => setLabel(e.target.value)}
+              placeholder="e.g. Semester 5 (Odd 2026)"
+              required
+              className="input"
+              style={{ marginTop: 4 }}
+            />
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-md)' }}>
+            <div>
+              <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Start Date</label>
+              <input
+                type="date"
+                value={startDate}
+                onChange={e => setStartDate(e.target.value)}
+                required
+                className="input"
+                style={{ marginTop: 4 }}
+              />
             </div>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button type="submit" style={primaryBtn}>Save</button>
-              <button type="button" onClick={() => setIsAdding(false)} style={ghostBtn}>Cancel</button>
+            <div>
+              <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>End Date</label>
+              <input
+                type="date"
+                value={endDate}
+                onChange={e => setEndDate(e.target.value)}
+                required
+                className="input"
+                style={{ marginTop: 4 }}
+              />
             </div>
-          </form>
-        </div>
-      )}
+          </div>
+
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <GlassButton type="submit" style={{ flex: 1 }}>
+              Save
+            </GlassButton>
+            <GlassButton type="button" variant="ghost" onClick={() => setIsAdding(false)}>
+              Cancel
+            </GlassButton>
+          </div>
+        </form>
+      </BottomSheet>
     </div>
   );
 };
-
-const inputStyle: React.CSSProperties = { width: '100%', padding: '11px 12px', borderRadius: 'var(--radius-card)', border: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg-secondary)', color: 'var(--color-text-primary)', fontSize: '0.95rem' };
-const labelStyle: React.CSSProperties = { fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-text-secondary)' };
-const primaryBtn: React.CSSProperties = { flex: 1, padding: '12px', borderRadius: 'var(--radius-card)', backgroundColor: 'var(--color-accent-primary)', color: 'var(--color-on-accent)', fontWeight: 600 };
-const ghostBtn: React.CSSProperties = { padding: '12px 20px', borderRadius: 'var(--radius-card)', backgroundColor: 'var(--color-bg-tertiary)', fontWeight: 600, color: 'var(--color-text-primary)' };
 
 export default SemesterSetupView;

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { db, CalendarEvent } from '../../db/index';
 import { useUIStore } from '../../store/uiStore';
+import { GlassButton } from '../../components/ui';
 import { ArrowLeft, Upload, CheckCircle2, AlertCircle, Calendar } from 'lucide-react';
 
 interface JSONSemesterDefaults {
@@ -150,42 +151,48 @@ export const AcademicCalendarImportView: React.FC = () => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: 'var(--color-bg-primary)', paddingBottom: '80px' }}>
-      <header style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: 'var(--space-md)', borderBottom: '1px solid var(--color-border)' }}>
-        <button onClick={closeSubview}><ArrowLeft size={24} /></button>
-        <div>
-          <h2 style={{ fontSize: '1.2rem', fontWeight: 700 }}>Import Academic Calendar</h2>
-          <p style={{ fontSize: '0.78rem', color: 'var(--color-text-secondary)' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: 'var(--bg-page)', paddingBottom: '80px' }}>
+      {/* Header */}
+      <header style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: 'var(--space-md)',
+        paddingTop: 'calc(var(--space-md) + env(safe-area-inset-top))',
+        borderBottom: '1px solid var(--border-hairline)',
+        backgroundColor: 'var(--bg-page)',
+        position: 'sticky', top: 0, zIndex: 10,
+      }}>
+        <button onClick={closeSubview} style={{ color: 'var(--text-primary)', display: 'flex', alignItems: 'center' }}><ArrowLeft size={24} /></button>
+        <div style={{ flex: 1, marginLeft: '12px' }}>
+          <h2 style={{ fontSize: 'var(--text-xl)', fontWeight: 700, color: 'var(--text-primary)' }}>Import Academic Calendar</h2>
+          <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
             Import semester boundaries, holidays & exam windows (pre-fills Semester Setup)
           </p>
         </div>
       </header>
 
       {successMsg && (
-        <div style={{ margin: 'var(--space-md)', padding: '14px', backgroundColor: 'rgba(22,163,74,0.12)', borderRadius: 'var(--radius-card)', border: '1px solid var(--color-success)', color: 'var(--color-success)', fontWeight: 600 }}>
+        <div style={{ margin: 'var(--space-md)', padding: '14px', backgroundColor: 'var(--color-success-bg)', borderRadius: 'var(--radius-card)', border: '1px solid var(--color-success)', color: 'var(--color-success-fg)', fontWeight: 600 }}>
           {successMsg}
           <div style={{ marginTop: '8px' }}>
-            <button
-              onClick={() => navigateToSubview('semester-setup')}
-              style={{ fontSize: '0.8rem', padding: '6px 12px', borderRadius: '6px', backgroundColor: 'var(--color-accent-primary)', color: 'var(--color-on-accent)', fontWeight: 600 }}
-            >
+            <GlassButton size="sm" onClick={() => navigateToSubview('semester-setup')}>
               Open Semester Setup to Edit
-            </button>
+            </GlassButton>
           </div>
         </div>
       )}
 
       <div style={{ padding: 'var(--space-md)', display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <label style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--color-text-secondary)' }}>Calendar JSON Data</label>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+          <label style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Calendar JSON Data</label>
           <div style={{ display: 'flex', gap: '8px' }}>
-            <button
+            <GlassButton
+              size="sm"
+              variant="ghost"
               onClick={() => { setJsonText(sampleCalendarJSON); setError(null); setSuccessMsg(null); }}
-              style={{ fontSize: '0.78rem', padding: '4px 8px', borderRadius: '6px', backgroundColor: 'var(--color-bg-tertiary)', color: 'var(--color-text-secondary)', border: '1px solid var(--color-border)' }}
             >
               Sample Calendar JSON
-            </button>
-            <label style={{ fontSize: '0.78rem', padding: '4px 8px', borderRadius: '6px', backgroundColor: 'var(--color-accent-primary)', color: 'var(--color-on-accent)', cursor: 'pointer', fontWeight: 600 }}>
+            </GlassButton>
+            <label style={{ fontSize: '0.78rem', padding: '7px 12px', borderRadius: 'var(--radius-pill)', backgroundColor: 'var(--color-primary)', color: '#FFFFFF', cursor: 'pointer', fontWeight: 600 }}>
               <Upload size={12} style={{ display: 'inline', marginRight: '4px' }} /> Upload .json
               <input type="file" accept=".json" onChange={handleFileUpload} style={{ display: 'none' }} />
             </label>
@@ -197,44 +204,39 @@ export const AcademicCalendarImportView: React.FC = () => {
           onChange={e => setJsonText(e.target.value)}
           placeholder="Paste Academic Calendar JSON here..."
           rows={10}
-          style={{ width: '100%', padding: '12px', borderRadius: 'var(--radius-card)', border: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg-secondary)', color: 'var(--color-text-primary)', fontFamily: 'var(--font-family-mono)', fontSize: '0.82rem' }}
+          className="input"
+          style={{ marginTop: 4, fontFamily: 'var(--font-family-mono)', borderRadius: 'var(--radius-card)' }}
         />
 
         {error && (
-          <div style={{ padding: '12px', backgroundColor: 'var(--color-danger-bg)', borderRadius: 'var(--radius-card)', color: 'var(--color-danger)', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ padding: '12px', backgroundColor: 'var(--color-danger-bg)', borderRadius: 'var(--radius-card)', color: 'var(--color-danger-fg)', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <AlertCircle size={18} /> {error}
           </div>
         )}
 
-        <button
-          onClick={handleValidate}
-          style={{ padding: '12px', borderRadius: 'var(--radius-card)', backgroundColor: 'var(--color-bg-tertiary)', color: 'var(--color-text-primary)', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
-        >
+        <GlassButton onClick={handleValidate} variant="ghost" fullWidth>
           <Calendar size={16} /> Validate Calendar Payload
-        </button>
+        </GlassButton>
 
         {parsed && (
-          <div style={{ padding: 'var(--space-md)', backgroundColor: 'var(--color-bg-secondary)', borderRadius: 'var(--radius-card)', border: '1px solid var(--color-accent-primary)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--color-success)', fontWeight: 700 }}>
+          <div style={{ padding: 'var(--space-md)', backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius-card)', border: '1px solid var(--border-hairline)', boxShadow: 'var(--shadow-card)', display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--color-success-fg)', fontWeight: 700 }}>
               <CheckCircle2 size={20} /> Validated Calendar Data
             </div>
 
             {parsed.semester_defaults && (
-              <div style={{ fontSize: '0.85rem' }}>
+              <div style={{ fontSize: '0.85rem', color: 'var(--text-primary)' }}>
                 Semester: <strong>{parsed.semester_defaults.label}</strong> ({parsed.semester_defaults.start_date} → {parsed.semester_defaults.end_date})
               </div>
             )}
 
-            <div style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)' }}>
+            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
               Events to import: <strong>{parsed.events?.length || 0}</strong>
             </div>
 
-            <button
-              onClick={handleCommitImport}
-              style={{ padding: '12px', borderRadius: 'var(--radius-card)', backgroundColor: 'var(--color-accent-primary)', color: 'var(--color-on-accent)', fontWeight: 700, fontSize: '0.95rem' }}
-            >
+            <GlassButton onClick={handleCommitImport} fullWidth>
               Import Academic Calendar Defaults
-            </button>
+            </GlassButton>
           </div>
         )}
       </div>

@@ -4,11 +4,11 @@ import { db } from '../../db/index';
 import { useUIStore } from '../../store/uiStore';
 import { useProfileStore } from '../../store/profileStore';
 import { useAuthStore } from '../../store/authStore';
-import { QuickLink, StatTile, GlassButton } from '../../components/ui';
+import { QuickLink, StatTile, GlassButton, BottomSheet, Badge } from '../../components/ui';
 import {
   Moon, Sun, HardDrive, Users, BookOpen, Calendar, CalendarDays,
   BookMarked, Sliders, Trash2, Download, AlertTriangle, FileCode, Upload, User,
-  ShieldCheck, LogOut, Settings2
+  ShieldCheck, LogOut, Settings2, Palette
 } from 'lucide-react';
 
 export const ProfileView: React.FC = () => {
@@ -119,30 +119,29 @@ export const ProfileView: React.FC = () => {
     fontWeight: 700,
     letterSpacing: '0.08em',
     textTransform: 'uppercase',
-    color: 'var(--color-text-tertiary)',
+    color: 'var(--text-muted)',
   };
   const overlineBar: React.CSSProperties = {
     width: 3,
     height: 14,
     borderRadius: 2,
-    background: 'var(--gradient-accent)',
+    background: 'var(--color-primary)',
     flexShrink: 0,
   };
 
   return (
     <div style={{ padding: 'var(--space-md)', paddingBottom: '90px', display: 'flex', flexDirection: 'column', gap: 'var(--space-lg)' }}>
 
-      {/* Profile Header — hero with avatar ring (identity from profile store; Phase B: real account) */}
+      {/* Profile Header — white card hero with avatar ring */}
       <div
         style={{
           display: 'flex',
           alignItems: 'center',
           gap: 'var(--space-md)',
-          borderRadius: 'var(--radius-blob)',
-          border: '1px solid transparent',
-          background:
-            'linear-gradient(var(--surface-glass), var(--surface-glass)) padding-box, linear-gradient(135deg, var(--gradient-accent)) border-box',
-          boxShadow: 'var(--shadow-glass), var(--shadow-glow)',
+          borderRadius: 'var(--radius-card)',
+          border: '1px solid var(--border-hairline)',
+          backgroundColor: 'var(--bg-card)',
+          boxShadow: 'var(--shadow-card)',
           padding: 'var(--space-lg)',
         }}
       >
@@ -152,7 +151,8 @@ export const ProfileView: React.FC = () => {
             height: 64,
             borderRadius: '50%',
             padding: 3,
-            background: 'conic-gradient(from 140deg, var(--color-accent-primary), var(--color-accent-tertiary), var(--color-accent-secondary), var(--color-accent-primary))',
+            background: 'var(--bg-card-tint)',
+            border: '1px solid var(--border-hairline)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -164,8 +164,8 @@ export const ProfileView: React.FC = () => {
               width: '100%',
               height: '100%',
               borderRadius: '50%',
-              background: 'var(--color-bg-primary)',
-              color: 'var(--color-accent-primary)',
+              background: 'var(--bg-card)',
+              color: 'var(--color-primary)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -177,10 +177,10 @@ export const ProfileView: React.FC = () => {
           </div>
         </div>
         <div style={{ minWidth: 0 }}>
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--color-text-primary)' }}>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)' }}>
             {profile?.name || 'Your Profile'}
           </h2>
-          <p style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)' }}>
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
             {activeSemester?.label || 'B.Tech AI & DS — ADIT'}
           </p>
         </div>
@@ -191,12 +191,10 @@ export const ProfileView: React.FC = () => {
         <div
           style={{
             padding: 'var(--space-md)',
-            borderRadius: 'var(--radius-squircle)',
-            backgroundColor: 'var(--surface-glass)',
-            backdropFilter: 'blur(var(--blur-glass)) saturate(1.4)',
-            WebkitBackdropFilter: 'blur(var(--blur-glass)) saturate(1.4)',
-            border: '1px solid var(--surface-glass-border)',
-            boxShadow: 'var(--shadow-glass)',
+            borderRadius: 'var(--radius-card)',
+            backgroundColor: 'var(--bg-card)',
+            border: '1px solid var(--border-hairline)',
+            boxShadow: 'var(--shadow-card)',
             display: 'flex',
             flexDirection: 'column',
             gap: 12,
@@ -209,8 +207,8 @@ export const ProfileView: React.FC = () => {
                   width: 38,
                   height: 38,
                   borderRadius: 12,
-                  background: 'var(--gradient-accent-soft)',
-                  color: 'var(--color-accent-primary)',
+                  background: 'var(--bg-card-tint)',
+                  color: 'var(--color-primary)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -220,29 +218,17 @@ export const ProfileView: React.FC = () => {
                 <ShieldCheck size={19} />
               </span>
               <div style={{ minWidth: 0 }}>
-                <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--color-text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {profile?.name || 'Activated device'}
                 </div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {profile?.email || `Key ${activation.codePreview}`}
                 </div>
               </div>
             </div>
-            <span
-              style={{
-                fontSize: '0.68rem',
-                fontWeight: 700,
-                textTransform: 'uppercase',
-                letterSpacing: '0.07em',
-                padding: '4px 11px',
-                borderRadius: 'var(--radius-pill)',
-                background: 'var(--gradient-accent-soft)',
-                color: 'var(--color-accent-primary)',
-                flexShrink: 0,
-              }}
-            >
+            <Badge tone={activation.role === 'owner' ? 'danger' : 'accent'}>
               {activation.role}
-            </span>
+            </Badge>
           </div>
 
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', paddingTop: 2 }}>
@@ -275,7 +261,7 @@ export const ProfileView: React.FC = () => {
           label="Manage Subjects"
           value={`${subjects.length} active`}
           icon={<BookMarked size={18} />}
-          accent="var(--color-accent-secondary)"
+          accent="var(--color-secondary)"
           onClick={() => navigateToSubview('manage-subjects')}
         />
         <QuickLink
@@ -293,14 +279,14 @@ export const ProfileView: React.FC = () => {
         <QuickLink
           label="Import Academic Calendar JSON"
           icon={<Calendar size={18} />}
-          accent="var(--color-accent-secondary)"
+          accent="var(--color-secondary)"
           onClick={() => navigateToSubview('calendar-import')}
         />
         <QuickLink
           label="Calendar Events"
           value={`${calendarEvents.length} events`}
           icon={<CalendarDays size={18} />}
-          accent="var(--color-accent-secondary)"
+          accent="var(--color-secondary)"
           onClick={() => navigateToSubview('calendar-events')}
         />
       </div>
@@ -320,7 +306,7 @@ export const ProfileView: React.FC = () => {
         <QuickLink
           label="Resources Shelf"
           icon={<BookOpen size={18} />}
-          accent="var(--color-accent-secondary)"
+          accent="var(--color-secondary)"
           onClick={() => navigateToSubview('resources')}
         />
       </div>
@@ -338,6 +324,12 @@ export const ProfileView: React.FC = () => {
           accent="var(--color-warning)"
           onClick={toggleTheme}
         />
+        <QuickLink
+          label="Design System (Academic Core)"
+          icon={<Palette size={18} />}
+          accent="var(--color-secondary)"
+          onClick={() => navigateToSubview('style-guide')}
+        />
       </div>
 
       {/* Stats */}
@@ -347,7 +339,7 @@ export const ProfileView: React.FC = () => {
           Semester Status
         </div>
         <div style={{ display: 'flex', gap: 12 }}>
-          <StatTile value={subjects.length} label="Courses" valueColor="var(--color-accent-primary)" />
+          <StatTile value={subjects.length} label="Courses" valueColor="var(--color-primary)" />
           <StatTile value={totalCredits} label="Credits" valueColor="var(--color-success)" />
           <StatTile value={calendarEvents.length} label="Events" />
         </div>
@@ -362,12 +354,10 @@ export const ProfileView: React.FC = () => {
         <div
           style={{
             padding: 'var(--space-md)',
-            borderRadius: 'var(--radius-squircle)',
-            backgroundColor: 'var(--surface-glass)',
-            backdropFilter: 'blur(var(--blur-glass)) saturate(1.4)',
-            WebkitBackdropFilter: 'blur(var(--blur-glass)) saturate(1.4)',
-            border: '1px solid var(--surface-glass-border)',
-            boxShadow: 'var(--shadow-glass)',
+            borderRadius: 'var(--radius-card)',
+            backgroundColor: 'var(--bg-card)',
+            border: '1px solid var(--border-hairline)',
+            boxShadow: 'var(--shadow-card)',
             display: 'flex',
             flexDirection: 'column',
             gap: 12,
@@ -382,16 +372,16 @@ export const ProfileView: React.FC = () => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                background: 'var(--gradient-accent-soft)',
-                color: 'var(--color-accent-primary)',
+                background: 'var(--bg-card-tint)',
+                color: 'var(--color-primary)',
                 flexShrink: 0,
               }}
             >
               <HardDrive size={20} />
             </span>
             <div>
-              <div style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--color-text-primary)' }}>Local IndexedDB Storage</div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginTop: 2 }}>All data is stored offline on this device. Zero cloud dependency.</div>
+              <div style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)' }}>Local IndexedDB Storage</div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: 2 }}>All data is stored offline on this device. Zero cloud dependency.</div>
             </div>
           </div>
 
@@ -410,12 +400,10 @@ export const ProfileView: React.FC = () => {
                 gap: 6,
                 padding: '7px 12px',
                 fontSize: 'var(--text-sm)',
-                borderRadius: 'var(--radius-chip)',
-                backgroundColor: 'var(--surface-glass)',
-                backdropFilter: 'blur(var(--blur-glass))',
-                WebkitBackdropFilter: 'blur(var(--blur-glass))',
-                border: '1px solid var(--surface-glass-border)',
-                color: 'var(--color-text-primary)',
+                borderRadius: 'var(--radius-pill)',
+                backgroundColor: 'var(--bg-card)',
+                border: '1px solid var(--border-hairline)',
+                color: 'var(--text-primary)',
                 fontWeight: 600,
                 cursor: 'pointer',
                 userSelect: 'none',
@@ -448,17 +436,17 @@ export const ProfileView: React.FC = () => {
           </div>
 
           {restoreError && (
-            <div style={{ padding: 10, borderRadius: 'var(--radius-chip)', backgroundColor: 'var(--color-danger-bg)', color: 'var(--color-danger)', fontSize: '0.85rem', fontWeight: 600 }}>
+            <div style={{ padding: 10, borderRadius: 'var(--radius-card)', backgroundColor: 'var(--color-danger-bg)', color: 'var(--color-danger)', fontSize: '0.85rem', fontWeight: 600 }}>
               {restoreError}
             </div>
           )}
           {restoreSuccess && (
-            <div style={{ padding: 10, borderRadius: 'var(--radius-chip)', backgroundColor: 'var(--color-success-bg)', color: 'var(--color-success)', fontSize: '0.85rem', fontWeight: 600 }}>
+            <div style={{ padding: 10, borderRadius: 'var(--radius-card)', backgroundColor: 'var(--color-success-bg)', color: 'var(--color-success)', fontSize: '0.85rem', fontWeight: 600 }}>
               ✓ Backup restored successfully! Data has been replaced.
             </div>
           )}
           {isExported && (
-            <div style={{ padding: 10, borderRadius: 'var(--radius-chip)', backgroundColor: 'var(--color-success-bg)', color: 'var(--color-success)', fontSize: '0.85rem', fontWeight: 600 }}>
+            <div style={{ padding: 10, borderRadius: 'var(--radius-card)', backgroundColor: 'var(--color-success-bg)', color: 'var(--color-success)', fontSize: '0.85rem', fontWeight: 600 }}>
               ✓ JSON backup downloaded to your device.
             </div>
           )}
@@ -472,7 +460,7 @@ export const ProfileView: React.FC = () => {
           Active Courses ({subjects.length})
         </div>
         {subjects.length === 0 ? (
-          <p style={{ fontSize: '0.85rem', color: 'var(--color-text-tertiary)', textAlign: 'center', padding: 12 }}>
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'center', padding: 12 }}>
             No courses. Go to Manage Subjects to add your real ADIT subjects.
           </p>
         ) : (
@@ -486,12 +474,11 @@ export const ProfileView: React.FC = () => {
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 padding: '12px var(--space-md)',
-                backgroundColor: 'var(--surface-glass)',
-                backdropFilter: 'blur(var(--blur-glass)) saturate(1.4)',
-                WebkitBackdropFilter: 'blur(var(--blur-glass)) saturate(1.4)',
-                borderRadius: 'var(--radius-squircle)',
-                border: '1px solid var(--surface-glass-border)',
-                boxShadow: 'var(--shadow-glass)',
+                paddingLeft: 'calc(var(--space-md) + 4px)',
+                backgroundColor: 'var(--bg-card)',
+                borderRadius: 'var(--radius-card)',
+                border: '1px solid var(--border-hairline)',
+                boxShadow: 'var(--shadow-card)',
               }}
             >
               <div
@@ -505,9 +492,9 @@ export const ProfileView: React.FC = () => {
                 }}
               />
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingLeft: 4 }}>
-                <span style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--color-text-primary)' }}>{s.name}</span>
+                <span style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)' }}>{s.name}</span>
               </div>
-              <span style={{ fontFamily: 'var(--font-family-mono)', fontSize: '0.78rem', color: 'var(--color-text-secondary)' }}>
+              <span style={{ fontFamily: 'var(--font-family-mono)', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
                 {s.code} · {s.credits}cr
               </span>
             </div>
@@ -517,101 +504,63 @@ export const ProfileView: React.FC = () => {
 
       {/* App info */}
       <div style={{ textAlign: 'center', paddingTop: 'var(--space-sm)' }}>
-        <p style={{ fontSize: '0.75rem', color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family-mono)' }}>
+        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontFamily: 'var(--font-family-mono)' }}>
           Student Academic OS · v0.1.0 · Phase 1.5
         </p>
       </div>
 
-      {/* Confirmation Modal */}
-      {isConfirmingClear && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            backgroundColor: 'rgba(0,0,0,0.5)',
-            backdropFilter: 'blur(4px)',
-            WebkitBackdropFilter: 'blur(4px)',
-            zIndex: 100,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: 'var(--space-md)',
-          }}
-          onClick={() => setIsConfirmingClear(false)}
-        >
-          <div
-            style={{
-              width: '100%',
-              maxWidth: '420px',
-              backgroundColor: 'var(--color-bg-primary)',
-              borderRadius: 'var(--radius-card)',
-              border: '1px solid var(--color-border)',
-              padding: 'var(--space-lg)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 'var(--space-md)',
-            }}
-            onClick={e => e.stopPropagation()}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'var(--color-danger)' }}>
-              <AlertTriangle size={24} />
-              <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--color-text-primary)' }}>Wipe All Local Data?</h3>
-            </div>
+      {/* Confirmation Sheet */}
+      <BottomSheet open={isConfirmingClear} onClose={() => setIsConfirmingClear(false)}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'var(--color-danger)' }}>
+            <AlertTriangle size={24} />
+            <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-primary)' }}>Wipe All Local Data?</h3>
+          </div>
 
-            <p style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)', lineHeight: 1.5 }}>
-              This will permanently delete <strong>all sample/local data</strong> including:
-            </p>
-            <ul style={{ fontSize: '0.82rem', color: 'var(--color-text-secondary)', paddingLeft: 20, display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <li>Semesters & Date ranges</li>
-              <li>Subjects & Course codes</li>
-              <li>Lecture Slots & Timetable patterns</li>
-              <li>Attendance Records & Edit histories</li>
-              <li>Tasks, Study Notes, Exams, & Resources</li>
-            </ul>
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+            This will permanently delete <strong>all sample/local data</strong> including:
+          </p>
+          <ul style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', paddingLeft: 20, display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <li>Semesters & Date ranges</li>
+            <li>Subjects & Course codes</li>
+            <li>Lecture Slots & Timetable patterns</li>
+            <li>Attendance Records & Edit histories</li>
+            <li>Tasks, Study Notes, Exams, & Resources</li>
+          </ul>
 
-            <div style={{ padding: 10, backgroundColor: 'var(--gradient-accent-soft)', borderRadius: 'var(--radius-chip)', fontSize: '0.8rem', color: 'var(--color-accent-primary)' }}>
-              ℹ A JSON backup will be exported automatically to your downloads folder before deletion.
-            </div>
+          <div style={{ padding: 10, backgroundColor: 'var(--color-info-bg)', borderRadius: 'var(--radius-card)', fontSize: '0.8rem', color: 'var(--color-primary)' }}>
+            ℹ A JSON backup will be exported automatically to your downloads folder before deletion.
+          </div>
 
-            <div>
-              <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-text-secondary)' }}>
-                Type <strong>DELETE</strong> to confirm:
-              </label>
-              <input
-                type="text"
-                value={confirmInput}
-                onChange={e => setConfirmInput(e.target.value)}
-                placeholder="DELETE"
-                style={{
-                  width: '100%',
-                  padding: 10,
-                  borderRadius: 'var(--radius-chip)',
-                  border: '1px solid var(--color-border)',
-                  backgroundColor: 'var(--color-bg-secondary)',
-                  color: 'var(--color-text-primary)',
-                  fontFamily: 'var(--font-family-mono)',
-                  fontSize: '0.95rem',
-                  marginTop: 4,
-                }}
-              />
-            </div>
+          <div>
+            <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+              Type <strong>DELETE</strong> to confirm:
+            </label>
+            <input
+              type="text"
+              value={confirmInput}
+              onChange={e => setConfirmInput(e.target.value)}
+              placeholder="DELETE"
+              className="input"
+              style={{ marginTop: 4 }}
+            />
+          </div>
 
-            <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-              <GlassButton
-                variant={confirmInput.trim().toUpperCase() === 'DELETE' ? 'danger' : 'subtle'}
-                style={{ flex: 1 }}
-                disabled={confirmInput.trim().toUpperCase() !== 'DELETE'}
-                onClick={handleClearAllData}
-              >
-                Export & Wipe All Data
-              </GlassButton>
-              <GlassButton variant="ghost" onClick={() => setIsConfirmingClear(false)}>
-                Cancel
-              </GlassButton>
-            </div>
+          <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+            <GlassButton
+              variant={confirmInput.trim().toUpperCase() === 'DELETE' ? 'danger' : 'subtle'}
+              style={{ flex: 1 }}
+              disabled={confirmInput.trim().toUpperCase() !== 'DELETE'}
+              onClick={handleClearAllData}
+            >
+              Export & Wipe All Data
+            </GlassButton>
+            <GlassButton variant="ghost" onClick={() => setIsConfirmingClear(false)}>
+              Cancel
+            </GlassButton>
           </div>
         </div>
-      )}
+      </BottomSheet>
     </div>
   );
 };

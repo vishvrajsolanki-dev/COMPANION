@@ -4,6 +4,7 @@ import { db, CalendarEvent } from '../../db/index';
 import { useActiveSemester } from '../../db/useDatabase';
 import { useUIStore } from '../../store/uiStore';
 import { ADIT_CALENDAR_EVENT_DEFAULTS, ADIT_SEMESTER_DEFAULT } from '../../data/aditCalendarDefaults';
+import { GlassButton, BottomSheet, EmptyState } from '../../components/ui';
 import { ArrowLeft, Plus, Pencil, Trash2, RotateCcw } from 'lucide-react';
 
 // Event-type styling pulled from the 8 locked design tokens (no free colors).
@@ -24,14 +25,7 @@ const fmtDate = (iso: string) => {
   return { day: `${months[m - 1]} ${d}`, year: String(y) };
 };
 
-const inputStyle: React.CSSProperties = {
-  width: '100%', padding: '11px 12px', borderRadius: 'var(--radius-card)',
-  border: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg-secondary)',
-  color: 'var(--color-text-primary)', fontSize: '0.95rem',
-};
-const labelStyle: React.CSSProperties = { fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-text-secondary)' };
-const primaryBtn: React.CSSProperties = { flex: 1, padding: '12px', borderRadius: 'var(--radius-card)', backgroundColor: 'var(--color-accent-primary)', color: 'var(--color-on-accent)', fontWeight: 600 };
-const ghostBtn: React.CSSProperties = { padding: '12px 20px', borderRadius: 'var(--radius-card)', backgroundColor: 'var(--color-bg-tertiary)', fontWeight: 600, color: 'var(--color-text-primary)' };
+const labelStyle: React.CSSProperties = { fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' };
 
 export const CalendarEventsView: React.FC = () => {
   const closeSubview = useUIStore(s => s.closeSubview);
@@ -150,52 +144,46 @@ export const CalendarEventsView: React.FC = () => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: 'var(--color-bg-primary)', paddingBottom: '80px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: 'var(--bg-page)', paddingBottom: '80px' }}>
       {/* Header */}
-      <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'var(--space-md)', borderBottom: '1px solid var(--color-border)' }}>
+      <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'var(--space-md)', paddingTop: 'calc(var(--space-md) + env(safe-area-inset-top))', borderBottom: '1px solid var(--border-hairline)', backgroundColor: 'var(--bg-page)', position: 'sticky', top: 0, zIndex: 10 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
-          <button onClick={closeSubview} style={{ color: 'var(--color-text-primary)' }}><ArrowLeft size={24} /></button>
+          <button onClick={closeSubview} style={{ color: 'var(--text-primary)', flexShrink: 0 }}><ArrowLeft size={24} /></button>
           <div>
-            <h2 style={{ fontSize: '1.2rem', fontWeight: 700 }}>Calendar Events</h2>
-            <p style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>
+            <h2 style={{ fontSize: 'var(--text-xl)', fontWeight: 700, color: 'var(--text-primary)' }}>Calendar Events</h2>
+            <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
               {events.length} events · {activeSem?.label || 'No active semester'}
             </p>
           </div>
         </div>
-        <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
-          <button
-            onClick={handleResetDefaults}
-            title="Restore the official ADIT Academic Calendar 2026-27 defaults"
-            style={{ display: 'flex', alignItems: 'center', gap: '4px', backgroundColor: 'var(--color-bg-tertiary)', color: 'var(--color-text-secondary)', padding: '8px 10px', borderRadius: 'var(--radius-chip)', fontWeight: 600, fontSize: '0.78rem' }}
-          >
+        <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+          <GlassButton size="sm" variant="ghost" onClick={handleResetDefaults} title="Restore the official ADIT Academic Calendar 2026-27 defaults">
             <RotateCcw size={14} /> Reset to ADIT
-          </button>
-          <button
-            onClick={openAdd}
-            style={{ display: 'flex', alignItems: 'center', gap: '4px', backgroundColor: 'var(--color-accent-primary)', color: 'var(--color-on-accent)', padding: '8px 12px', borderRadius: 'var(--radius-chip)', fontWeight: 600, fontSize: '0.85rem' }}
-          >
+          </GlassButton>
+          <GlassButton size="sm" onClick={openAdd}>
             <Plus size={16} /> Add
-          </button>
+          </GlassButton>
         </div>
       </header>
 
       {resetMsg && (
-        <div style={{ margin: 'var(--space-md) var(--space-md) 0', padding: '12px', borderRadius: 'var(--radius-card)', backgroundColor: 'rgba(22,163,74,0.12)', border: '1px solid var(--color-success)', color: 'var(--color-success)', fontWeight: 600, fontSize: '0.85rem' }}>
+        <div style={{ margin: 'var(--space-md) var(--space-md) 0', padding: '12px', borderRadius: 'var(--radius-card)', backgroundColor: 'var(--color-success-bg)', border: '1px solid var(--color-success)', color: 'var(--color-success)', fontWeight: 600, fontSize: '0.85rem' }}>
           ✓ {resetMsg}
         </div>
       )}
 
       {/* Source banner */}
-      <div style={{ margin: 'var(--space-md) var(--space-md) 0', padding: '10px 12px', borderRadius: 'var(--radius-card)', backgroundColor: 'var(--color-info-bg)', border: '1px solid var(--color-border)', fontSize: '0.78rem', color: 'var(--color-text-secondary)', lineHeight: 1.5 }}>
+      <div style={{ margin: 'var(--space-md) var(--space-md) 0', padding: '10px 12px', borderRadius: 'var(--radius-card)', backgroundColor: 'var(--color-info-bg)', border: '1px solid var(--border-hairline)', fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
         Ships with the official <strong>ADIT Academic Calendar 2026-27</strong> ({ADIT_CALENDAR_EVENT_DEFAULTS.length} defaults — source: adit.ac.in). Add your own events or edit/delete any row. "Reset to ADIT" restores the defaults.
       </div>
 
       {/* Event list */}
       <div style={{ padding: 'var(--space-md)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
         {events.length === 0 && (
-          <div style={{ padding: '50px 20px', textAlign: 'center', color: 'var(--color-text-tertiary)' }}>
-            No calendar events — tap Add to create one, or Reset to ADIT to load the college calendar.
-          </div>
+          <EmptyState
+            title="No calendar events"
+            body="Tap Add to create one, or Reset to ADIT to load the college calendar."
+          />
         )}
         {events.map(ev => {
           const meta = EVENT_TYPE_META[ev.type] || EVENT_TYPE_META.college_event;
@@ -203,37 +191,39 @@ export const CalendarEventsView: React.FC = () => {
           return (
             <div
               key={ev.id}
-              style={{ display: 'flex', alignItems: 'stretch', gap: '12px', padding: 'var(--space-md)', backgroundColor: 'var(--color-bg-secondary)', borderRadius: 'var(--radius-card)', border: '1px solid var(--color-border)' }}
+              style={{ display: 'flex', alignItems: 'stretch', gap: '12px', padding: 'var(--space-md)', backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius-card)', border: '1px solid var(--border-hairline)', boxShadow: 'var(--shadow-card)' }}
             >
               {/* Type color bar */}
               <div style={{ width: '5px', borderRadius: '3px', backgroundColor: meta.color, flexShrink: 0 }} />
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 700, fontSize: '0.95rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ev.title}</div>
+                <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ev.title}</div>
                 <div style={{ display: 'flex', gap: '8px', marginTop: '4px', alignItems: 'center', flexWrap: 'wrap' }}>
-                  <span style={{ fontFamily: 'var(--font-family-mono)', fontSize: '0.78rem', color: 'var(--color-text-secondary)' }}>{fd.day} {fd.year}</span>
+                  <span style={{ fontFamily: 'var(--font-family-mono)', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>{fd.day} {fd.year}</span>
                   <span style={{ fontSize: '0.7rem', fontWeight: 700, color: meta.color, backgroundColor: `${meta.color}18`, padding: '1px 7px', borderRadius: '4px' }}>{meta.label}</span>
                 </div>
                 {ev.description && (
-                  <div style={{ fontSize: '0.75rem', color: 'var(--color-text-tertiary)', marginTop: '4px', lineHeight: 1.4 }}>{ev.description}</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px', lineHeight: 1.4 }}>{ev.description}</div>
                 )}
               </div>
               <div style={{ display: 'flex', gap: '6px', flexShrink: 0, alignItems: 'flex-start' }}>
-                <button
+                <GlassButton
                   aria-label={`Edit ${ev.title}`}
+                  size="sm"
+                  variant="subtle"
                   onClick={() => openEdit(ev)}
-                  style={{ width: '34px', height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', backgroundColor: 'var(--color-bg-tertiary)', color: 'var(--color-text-secondary)' }}
                   title="Edit"
                 >
                   <Pencil size={15} />
-                </button>
-                <button
+                </GlassButton>
+                <GlassButton
                   aria-label={`Delete ${ev.title}`}
+                  size="sm"
+                  variant="danger"
                   onClick={() => handleDelete(ev)}
-                  style={{ width: '34px', height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', backgroundColor: 'var(--color-bg-tertiary)', color: 'var(--color-danger)' }}
                   title="Delete"
                 >
                   <Trash2 size={15} />
-                </button>
+                </GlassButton>
               </div>
             </div>
           );
@@ -242,17 +232,12 @@ export const CalendarEventsView: React.FC = () => {
 
       {/* Add / Edit bottom sheet */}
       {isEditing && (
-        <div
-          style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)', zIndex: 100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
-          onClick={() => setIsEditing(false)}
-        >
+        <BottomSheet open onClose={() => setIsEditing(false)}>
           <form
             onSubmit={handleSave}
-            onClick={e => e.stopPropagation()}
-            style={{ width: '100%', maxWidth: '500px', backgroundColor: 'var(--color-bg-primary)', borderTopLeftRadius: 'var(--radius-sheet)', borderTopRightRadius: 'var(--radius-sheet)', padding: 'var(--space-lg)', display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}
+            style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}
           >
-            <div style={{ width: '36px', height: '4px', borderRadius: '2px', backgroundColor: 'var(--color-border)', alignSelf: 'center' }} />
-            <h3 style={{ fontWeight: 700, fontSize: '1.15rem' }}>{editTarget ? 'Edit Event' : 'New Calendar Event'}</h3>
+            <h3 style={{ fontWeight: 700, fontSize: '1.15rem', color: 'var(--text-primary)' }}>{editTarget ? 'Edit Event' : 'New Calendar Event'}</h3>
 
             <div>
               <label style={labelStyle}>Title</label>
@@ -261,7 +246,8 @@ export const CalendarEventsView: React.FC = () => {
                 onChange={e => setTitle(e.target.value)}
                 placeholder="e.g. Holi Vacation"
                 required
-                style={{ ...inputStyle, marginTop: '4px' }}
+                className="input"
+                style={{ marginTop: 4 }}
               />
             </div>
 
@@ -273,7 +259,8 @@ export const CalendarEventsView: React.FC = () => {
                   value={date}
                   onChange={e => setDate(e.target.value)}
                   required
-                  style={{ ...inputStyle, marginTop: '4px' }}
+                  className="input"
+                  style={{ marginTop: 4 }}
                 />
               </div>
               <div>
@@ -281,7 +268,8 @@ export const CalendarEventsView: React.FC = () => {
                 <select
                   value={type}
                   onChange={e => setType(e.target.value as CalendarEvent['type'])}
-                  style={{ ...inputStyle, marginTop: '4px' }}
+                  className="input"
+                  style={{ marginTop: 4 }}
                 >
                   {EVENT_TYPES.map(t => (
                     <option key={t} value={t}>{EVENT_TYPE_META[t].label}</option>
@@ -296,7 +284,8 @@ export const CalendarEventsView: React.FC = () => {
                 value={description}
                 onChange={e => setDescription(e.target.value)}
                 placeholder="e.g. 8 days: 16 – 23 Nov 2026"
-                style={{ ...inputStyle, marginTop: '4px' }}
+                className="input"
+                style={{ marginTop: 4 }}
               />
             </div>
 
@@ -307,11 +296,11 @@ export const CalendarEventsView: React.FC = () => {
             )}
 
             <div style={{ display: 'flex', gap: '8px', paddingTop: '4px' }}>
-              <button type="submit" style={primaryBtn}>Save Event</button>
-              <button type="button" onClick={() => setIsEditing(false)} style={ghostBtn}>Cancel</button>
+              <GlassButton type="submit" style={{ flex: 1 }}>Save Event</GlassButton>
+              <GlassButton type="button" variant="ghost" onClick={() => setIsEditing(false)}>Cancel</GlassButton>
             </div>
           </form>
-        </div>
+        </BottomSheet>
       )}
     </div>
   );

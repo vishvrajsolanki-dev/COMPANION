@@ -1,18 +1,17 @@
+/* Academic Core bottom tab bar: white surface, hairline top border,
+   blue active icon+label, neutral-gray inactive. No glass, no pill glow. */
 .navBar {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
   height: var(--tabbar-height);
-  background-color: var(--surface-glass);
-  -webkit-backdrop-filter: blur(var(--blur-glass)) saturate(1.4);
-  backdrop-filter: blur(var(--blur-glass)) saturate(1.4);
-  border-top: 1px solid var(--surface-glass-border);
+  background-color: var(--bg-card);
+  border-top: 1px solid var(--border-hairline);
   display: flex;
   align-items: center;
   justify-content: space-around;
   z-index: 50;
-  box-shadow: var(--shadow-glass);
 }
 
 .tabItem {
@@ -23,39 +22,35 @@
   gap: 3px;
   flex: 1;
   height: 100%;
-  color: var(--color-text-secondary);
+  color: var(--text-muted);
   transition: color 0.15s ease;
 }
 
 .tabItemActive {
-  color: var(--color-accent-primary);
+  color: var(--color-primary);
 }
 
-/* Icon pill — gradient squircle behind the active icon */
+/* Icon container — no pill background in Academic Core; color carries state. */
 .tabPill {
   width: 34px;
   height: 30px;
-  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background-color 0.18s ease, box-shadow 0.18s ease, color 0.18s ease, transform 0.18s ease;
+  transition: color 0.18s ease;
 }
 
 .tabPillActive {
-  background: var(--gradient-accent);
-  color: var(--color-on-accent);
-  box-shadow: var(--shadow-glow);
-  transform: translateY(-1px);
+  color: var(--color-primary);
 }
 
 .tabLabel {
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   font-weight: 600;
   transition: color 0.15s ease;
 }
 
 .tabItemActive .tabLabel {
-  color: var(--color-text-primary);
+  color: var(--color-primary);
   font-weight: 700;
 }

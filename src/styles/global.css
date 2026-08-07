@@ -15,24 +15,16 @@ html {
 
 body {
   font-family: var(--font-family-base);
-  /* Frosted-glass backdrop: a fixed gradient that translucent cards blur. */
-  background: var(--bg-app);
+  /* Flat warm-gray page per DESIGN_SYSTEM.md — white cards do the contrast work. */
+  background: var(--bg-page);
   background-attachment: fixed;
-  color: var(--color-text-primary);
+  color: var(--text-primary);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   height: 100%;
   overflow: hidden;
   transition: background 0.25s ease;
-}
-
-/* Glass surface utility — the frosted card look. Views use it or <GlassCard>. */
-.glass {
-  background-color: var(--surface-glass);
-  -webkit-backdrop-filter: blur(var(--blur-glass)) saturate(1.4);
-  backdrop-filter: blur(var(--blur-glass)) saturate(1.4);
-  border: 1px solid var(--surface-glass-border);
 }
 
 button {
@@ -45,6 +37,25 @@ button {
 input, select, textarea {
   font-family: inherit;
 }
+
+/* Shared form-field style (global — referenced as className="input" across feature views).
+   Matches the Academic Core input: white field, hairline border, pill radius. */
+.input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: var(--radius-btn);
+  border: 1px solid var(--border-hairline);
+  background-color: var(--bg-card);
+  color: var(--text-primary);
+  font-size: var(--text-base);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+.input::placeholder { color: var(--text-muted); }
 
 a {
   color: inherit;
@@ -79,7 +90,7 @@ main {
 
 /* ── Focus ring for keyboard navigation ──────────────────────────────────── */
 :focus-visible {
-  outline: 2px solid var(--color-accent-primary);
+  outline: 2px solid var(--color-primary);
   outline-offset: 2px;
   border-radius: 4px;
 }
@@ -93,7 +104,7 @@ main {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--color-border);
+  background: var(--border-hairline);
   border-radius: 2px;
 }
 
@@ -105,43 +116,12 @@ input[type='number']::-webkit-outer-spin-button {
 }
 
 /* ── Shape & Surface Utilities ─────────────────────────────────────────── */
-/* Gradient-border glass card — colored edge on translucent glass */
-.card-grad-edge {
-  border: 1px solid transparent;
-  background:
-    linear-gradient(var(--surface-glass), var(--surface-glass)) padding-box,
-    linear-gradient(135deg, var(--gradient-accent)) border-box;
-  box-shadow: var(--shadow-glass);
-}
-
-/* Raised card with glow — "hero" feel */
-.surface-lift {
-  box-shadow: var(--shadow-glass), var(--shadow-glow);
-  transform: translateZ(0);
-}
-
-/* Inset / pressed surface */
-.surface-inset {
-  background-color: var(--color-bg-tertiary);
-  border: 1px solid var(--color-border);
-}
-
-/* Soft squircle shape (organic, non-rectangular) */
-.squircle {
-  border-radius: var(--radius-squircle);
-}
-
-/* Blob shape (hero cards) */
-.blob {
-  border-radius: var(--radius-blob);
-}
-
 /* Pill shape */
 .pill {
   border-radius: var(--radius-pill);
 }
 
-/* Section overline — 3px gradient bar + uppercase label */
+/* Section overline — 3px bar + uppercase label */
 .overline {
   display: flex;
   align-items: center;
@@ -150,7 +130,7 @@ input[type='number']::-webkit-outer-spin-button {
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--color-text-tertiary);
+  color: var(--text-muted);
 }
 .overline::before {
   content: '';
@@ -158,6 +138,6 @@ input[type='number']::-webkit-outer-spin-button {
   width: 3px;
   height: 14px;
   border-radius: 2px;
-  background: var(--gradient-accent);
+  background: var(--color-primary);
   flex-shrink: 0;
 }

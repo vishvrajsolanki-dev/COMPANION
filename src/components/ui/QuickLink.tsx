@@ -11,11 +11,11 @@ interface QuickLinkProps extends React.HTMLAttributes<HTMLButtonElement> {
   sub?: string;
   /** Optional trailing value shown before the chevron. */
   value?: string;
-  /** Optional accent color for the icon squircle. Defaults to theme accent. */
+  /** Optional accent color for the icon tile. Defaults to the Academic Core primary. */
   accent?: string;
 }
 
-/** Navigation row: icon in a tinted squircle, label + sub, value + chevron. Replaces flat list rows. */
+/** Navigation row: icon in a tinted tile, label + sub, value + chevron. Replaces flat list rows. */
 export const QuickLink: React.FC<QuickLinkProps> = ({
   icon,
   label,
@@ -29,8 +29,8 @@ export const QuickLink: React.FC<QuickLinkProps> = ({
     <span
       className={styles.quickLinkIcon}
       style={{
-        background: accent ? `${accent}1A` : 'var(--gradient-accent-soft)',
-        color: accent || 'var(--color-accent-primary)',
+        backgroundColor: accent ? `${accent}1A` : 'var(--bg-card-tint)',
+        color: accent || 'var(--color-primary)',
       }}
     >
       {icon}

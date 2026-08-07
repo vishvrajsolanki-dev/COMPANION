@@ -3,7 +3,8 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useSubjects } from '../../db/useDatabase';
 import { db, LectureSlot } from '../../db/index';
 import { useUIStore } from '../../store/uiStore';
-import { ArrowLeft, CalendarPlus, Trash2, Zap } from 'lucide-react';
+import { GlassButton, EmptyState } from '../../components/ui';
+import { ArrowLeft, CalendarPlus, Trash2, Zap, Calendar } from 'lucide-react';
 
 const DAYS = [
   { num: 1, name: 'Mon' },
@@ -144,13 +145,20 @@ export const TimetableBuilderView: React.FC = () => {
   const sub = (id: string) => subjects.find(s => s.id === id);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: 'var(--color-bg-primary)', paddingBottom: '100px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: 'var(--bg-page)', paddingBottom: '100px' }}>
       {/* Header */}
-      <header style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: 'var(--space-md)', borderBottom: '1px solid var(--color-border)' }}>
-        <button onClick={closeSubview} style={{ color: 'var(--color-text-primary)' }}><ArrowLeft size={24} /></button>
-        <div style={{ flex: 1 }}>
-          <h2 style={{ fontSize: '1.2rem', fontWeight: 700 }}>Build My Timetable</h2>
-          <p style={{ fontSize: '0.78rem', color: 'var(--color-text-secondary)', marginTop: '1px' }}>
+      <header style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: 'var(--space-md)',
+        paddingTop: 'calc(var(--space-md) + env(safe-area-inset-top))',
+        borderBottom: '1px solid var(--border-hairline)',
+        backgroundColor: 'var(--bg-page)',
+        position: 'sticky', top: 0, zIndex: 10,
+      }}>
+        <button onClick={closeSubview} style={{ color: 'var(--text-primary)', display: 'flex', alignItems: 'center' }}><ArrowLeft size={24} /></button>
+        <div style={{ flex: 1, marginLeft: '12px' }}>
+          <h2 style={{ fontSize: 'var(--text-xl)', fontWeight: 700, color: 'var(--text-primary)' }}>Build My Timetable</h2>
+          <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '1px' }}>
             {activeSem ? `${activeSem.label} · ${activeSem.start_date} → ${activeSem.end_date}` : 'No active semester — set one in Profile → Semesters'}
           </p>
         </div>
@@ -158,19 +166,19 @@ export const TimetableBuilderView: React.FC = () => {
 
       {/* Success banner */}
       {generated !== null && (
-        <div style={{ margin: 'var(--space-md)', padding: '12px var(--space-md)', backgroundColor: 'rgba(22,163,74,0.12)', borderRadius: 'var(--radius-card)', border: '1px solid var(--color-success)', color: 'var(--color-success)', fontWeight: 600, fontSize: '0.9rem' }}>
+        <div style={{ margin: 'var(--space-md)', padding: '12px var(--space-md)', backgroundColor: 'var(--color-success-bg)', borderRadius: 'var(--radius-card)', border: '1px solid var(--color-success)', color: 'var(--color-success-fg)', fontWeight: 600, fontSize: '0.9rem' }}>
           ✓ Generated {generated} lecture slots across the semester. Check the Schedule tab.
         </div>
       )}
 
       {/* Pattern builder form */}
       <div style={{ padding: 'var(--space-md)' }}>
-        <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--color-text-secondary)', marginBottom: '10px' }}>Add Recurring Pattern</h3>
-        <form onSubmit={addPattern} style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: 'var(--space-md)', backgroundColor: 'var(--color-bg-secondary)', borderRadius: 'var(--radius-card)', border: '1px solid var(--color-border)' }}>
+        <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '10px' }}>Add Recurring Pattern</h3>
+        <form onSubmit={addPattern} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)', padding: 'var(--space-md)', backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius-card)', border: '1px solid var(--border-hairline)', boxShadow: 'var(--shadow-card)' }}>
           {/* Subject picker */}
           <div>
             <label style={labelStyle}>Subject</label>
-            <select value={subjectId} onChange={e => setSubjectId(e.target.value)} required style={{ ...inputStyle, marginTop: '4px' }}>
+            <select value={subjectId} onChange={e => setSubjectId(e.target.value)} required className="input" style={{ marginTop: 4 }}>
               <option value="">Select subject…</option>
               {subjects.map(s => (
                 <option key={s.id} value={s.id}>{s.name} ({s.code})</option>
@@ -187,7 +195,17 @@ export const TimetableBuilderView: React.FC = () => {
                   key={d.num}
                   type="button"
                   onClick={() => setDayOfWeek(d.num)}
-                  style={{ padding: '7px 14px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600, border: '1px solid var(--color-border)', backgroundColor: dayOfWeek === d.num ? 'var(--color-accent-primary)' : 'var(--color-bg-tertiary)', color: dayOfWeek === d.num ? 'var(--color-on-accent)' : 'var(--color-text-secondary)', minWidth: '44px', minHeight: '36px' }}
+                  style={{
+                    padding: '7px 14px',
+                    borderRadius: 'var(--radius-pill)',
+                    fontSize: '0.85rem',
+                    fontWeight: 600,
+                    border: '1px solid var(--border-hairline)',
+                    backgroundColor: dayOfWeek === d.num ? 'var(--color-primary)' : 'var(--neutral-100)',
+                    color: dayOfWeek === d.num ? '#FFFFFF' : 'var(--text-secondary)',
+                    minWidth: '44px',
+                    minHeight: '36px',
+                  }}
                 >
                   {d.name}
                 </button>
@@ -196,46 +214,46 @@ export const TimetableBuilderView: React.FC = () => {
           </div>
 
           {/* Time pickers */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-md)' }}>
             <div>
               <label style={labelStyle}>Start Time</label>
-              <input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} required style={{ ...inputStyle, marginTop: '4px' }} />
+              <input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} required className="input" style={{ marginTop: 4 }} />
             </div>
             <div>
               <label style={labelStyle}>End Time</label>
-              <input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} required style={{ ...inputStyle, marginTop: '4px' }} />
+              <input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} required className="input" style={{ marginTop: 4 }} />
             </div>
           </div>
 
           {/* Room */}
           <div>
             <label style={labelStyle}>Room / Hall (optional)</label>
-            <input value={roomId} onChange={e => setRoomId(e.target.value)} placeholder="e.g. LH-301" style={{ ...inputStyle, marginTop: '4px' }} />
+            <input value={roomId} onChange={e => setRoomId(e.target.value)} placeholder="e.g. LH-301" className="input" style={{ marginTop: 4 }} />
           </div>
 
-          <button type="submit" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '11px', borderRadius: 'var(--radius-card)', backgroundColor: 'var(--color-bg-tertiary)', color: 'var(--color-text-primary)', fontWeight: 600, border: '1px dashed var(--color-border)' }}>
+          <GlassButton type="submit" variant="ghost" fullWidth>
             <CalendarPlus size={16} /> Add Pattern to List
-          </button>
+          </GlassButton>
         </form>
       </div>
 
       {/* Pattern preview list */}
       {patterns.length > 0 && (
-        <div style={{ padding: '0 var(--space-md)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <h3 style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--color-text-secondary)' }}>Patterns to Generate ({patterns.length})</h3>
+        <div style={{ padding: '0 var(--space-md)', display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
+          <h3 style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Patterns to Generate ({patterns.length})</h3>
           {patterns.map(pat => {
             const s = sub(pat.subjectId);
             const dayName = DAYS.find(d => d.num === pat.dayOfWeek)?.name;
             return (
-              <div key={pat.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px var(--space-md)', backgroundColor: 'var(--color-bg-secondary)', borderRadius: 'var(--radius-card)', border: '1px solid var(--color-border)' }}>
+              <div key={pat.id} style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)', padding: '10px var(--space-md)', backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius-card)', border: '1px solid var(--border-hairline)', boxShadow: 'var(--shadow-card)' }}>
                 {s && <div style={{ width: '8px', height: '36px', borderRadius: '4px', backgroundColor: s.color, flexShrink: 0 }} />}
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{s?.name ?? pat.subjectId}</div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginTop: '2px', fontFamily: 'var(--font-family-mono)' }}>
+                  <div style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)' }}>{s?.name ?? pat.subjectId}</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '2px', fontFamily: 'var(--font-family-mono)' }}>
                     {dayName} · {pat.startTime}–{pat.endTime} {pat.roomId ? `· ${pat.roomId}` : ''}
                   </div>
                 </div>
-                <button onClick={() => removePattern(pat.id)} style={{ width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', backgroundColor: 'var(--color-bg-tertiary)', color: 'var(--color-danger)' }}>
+                <button onClick={() => removePattern(pat.id)} style={{ width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 'var(--radius-pill)', backgroundColor: 'var(--color-danger-bg)', color: 'var(--color-danger-fg)' }}>
                   <Trash2 size={14} />
                 </button>
               </div>
@@ -243,30 +261,33 @@ export const TimetableBuilderView: React.FC = () => {
           })}
 
           {/* Generate CTA */}
-          <button
+          <GlassButton
             onClick={generateAll}
             disabled={generating || !activeSem}
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '14px', borderRadius: 'var(--radius-card)', backgroundColor: generating ? 'var(--color-bg-tertiary)' : 'var(--color-accent-primary)', color: generating ? 'var(--color-text-secondary)' : 'var(--color-on-accent)', fontWeight: 700, fontSize: '1rem', marginTop: '4px', opacity: !activeSem ? 0.5 : 1 }}
+            fullWidth
+            size="lg"
+            style={{ marginTop: '4px' }}
           >
             <Zap size={18} />
-            {generating ? 'Generating…' : `Generate Across Semester`}
-          </button>
-          <p style={{ fontSize: '0.75rem', color: 'var(--color-text-tertiary)', textAlign: 'center' }}>
+            {generating ? 'Generating…' : 'Generate Across Semester'}
+          </GlassButton>
+          <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center' }}>
             This creates one slot per week for each pattern above. Duplicate dates are skipped automatically.
           </p>
         </div>
       )}
 
       {patterns.length === 0 && generated === null && (
-        <div style={{ padding: '30px var(--space-md)', textAlign: 'center', color: 'var(--color-text-tertiary)', fontSize: '0.85rem' }}>
-          Add one or more patterns above, then tap "Generate Across Semester" to populate the Schedule.
-        </div>
+        <EmptyState
+          icon={<Calendar size={32} />}
+          title="No patterns yet"
+          body='Add one or more patterns above, then tap "Generate Across Semester" to populate the Schedule.'
+        />
       )}
     </div>
   );
 };
 
-const inputStyle: React.CSSProperties = { width: '100%', padding: '11px 12px', borderRadius: 'var(--radius-card)', border: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg-primary)', color: 'var(--color-text-primary)', fontSize: '0.95rem' };
-const labelStyle: React.CSSProperties = { fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-text-secondary)' };
+const labelStyle: React.CSSProperties = { fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' };
 
 export default TimetableBuilderView;

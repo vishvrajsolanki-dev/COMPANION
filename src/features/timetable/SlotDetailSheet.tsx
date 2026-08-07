@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { db, LectureSlot, Subject, AttendanceRecord } from '../../db/index';
-import styles from './WeeklyGrid.module.css';
-import { Check, X, Clock, FileText, Award, AlertCircle, Trash2, Calendar, RefreshCw } from 'lucide-react';
+import { GlassButton, BottomSheet } from '../../components/ui';
+import { Check, X, Clock, FileText, Award, AlertCircle, Trash2, RefreshCw } from 'lucide-react';
 
 interface SlotDetailSheetProps {
   slot: LectureSlot;
@@ -109,295 +109,248 @@ export const SlotDetailSheet: React.FC<SlotDetailSheetProps> = ({
   const currentStatus = record?.status;
 
   return (
-    <div className={styles.sheetOverlay} onClick={onClose}>
-      <div className={styles.sheetContent} onClick={e => e.stopPropagation()}>
-        <div className={styles.sheetHandle} />
-
-        {dbError && (
-          <div style={{ padding: '10px', borderRadius: 'var(--radius-card)', backgroundColor: 'var(--color-danger-bg)', color: 'var(--color-danger)', fontSize: '0.85rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <AlertCircle size={14} /> {dbError}
-          </div>
-        )}
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div
-            style={{
-              width: '12px',
-              height: '40px',
-              borderRadius: '6px',
-              backgroundColor: subject.color,
-            }}
-          />
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span
-                style={{
-                  backgroundColor: `${subject.color}20`,
-                  color: subject.color,
-                  fontFamily: 'var(--font-family-mono)',
-                  fontSize: '0.8rem',
-                  fontWeight: 700,
-                  padding: '2px 8px',
-                  borderRadius: '6px',
-                }}
-              >
-                {subject.code}
-              </span>
-              <span style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)' }}>
-                {slot.room_id || 'Classroom'}
-              </span>
-            </div>
-            <h3 style={{ fontSize: '1.15rem', fontWeight: 700, marginTop: '2px' }}>
-              {subject.name}
-            </h3>
-          </div>
+    <BottomSheet open onClose={onClose}>
+      {dbError && (
+        <div style={{ padding: '10px', borderRadius: 'var(--radius-card)', backgroundColor: 'var(--color-danger-bg)', color: 'var(--color-danger-fg)', fontSize: '0.85rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <AlertCircle size={14} /> {dbError}
         </div>
+      )}
 
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
         <div
           style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '12px var(--space-md)',
-            backgroundColor: 'var(--color-bg-secondary)',
-            borderRadius: 'var(--radius-card)',
-            border: '1px solid var(--color-border)',
-            fontFamily: 'var(--font-family-mono)',
-            fontSize: '0.9rem',
+            width: '12px',
+            height: '40px',
+            borderRadius: '6px',
+            backgroundColor: subject.color,
           }}
-        >
-          <span>Time Slot</span>
-          <span style={{ fontWeight: 600 }}>
-            {slot.start_time.split('T')[1].substring(0, 5)} - {slot.end_time.split('T')[1].substring(0, 5)}
-          </span>
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-text-secondary)' }}>
-            Mark Attendance (5-State Rule)
-          </span>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
-            <button
-              onClick={() => markStatus('present')}
+        />
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '12px',
-                borderRadius: 'var(--radius-card)',
-                border: currentStatus === 'present' ? '2px solid var(--color-success)' : '1px solid var(--color-border)',
-                backgroundColor: currentStatus === 'present' ? 'rgba(22, 163, 74, 0.1)' : 'var(--color-bg-secondary)',
-                color: 'var(--color-success)',
-                fontWeight: 600,
+                backgroundColor: `${subject.color}20`,
+                color: subject.color,
+                fontFamily: 'var(--font-family-mono)',
+                fontSize: '0.8rem',
+                fontWeight: 700,
+                padding: '2px 8px',
+                borderRadius: 'var(--radius-pill)',
               }}
             >
-              <Check size={18} />
-              <span>Present</span>
-            </button>
-
-            <button
-              onClick={() => markStatus('absent')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '12px',
-                borderRadius: 'var(--radius-card)',
-                border: currentStatus === 'absent' ? '2px solid var(--color-danger)' : '1px solid var(--color-border)',
-                backgroundColor: currentStatus === 'absent' ? 'var(--color-danger-bg)' : 'var(--color-bg-secondary)',
-                color: 'var(--color-danger)',
-                fontWeight: 600,
-              }}
-            >
-              <X size={18} />
-              <span>Absent</span>
-            </button>
-
-            <button
-              onClick={() => markStatus('late')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '12px',
-                borderRadius: 'var(--radius-card)',
-                border: currentStatus === 'late' ? '2px solid var(--color-warning)' : '1px solid var(--color-border)',
-                backgroundColor: currentStatus === 'late' ? 'rgba(217, 119, 6, 0.1)' : 'var(--color-bg-secondary)',
-                color: 'var(--color-warning)',
-                fontWeight: 600,
-              }}
-            >
-              <Clock size={18} />
-              <span>Late</span>
-            </button>
-
-            <button
-              onClick={() => markStatus('medical')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '12px',
-                borderRadius: 'var(--radius-card)',
-                border: currentStatus === 'medical' ? '2px solid var(--color-accent-primary)' : '1px solid var(--color-border)',
-                backgroundColor: currentStatus === 'medical' ? 'var(--color-info-bg)' : 'var(--color-bg-secondary)',
-                color: 'var(--color-accent-primary)',
-                fontWeight: 600,
-              }}
-            >
-              <FileText size={18} />
-              <span>Medical</span>
-            </button>
+              {subject.code}
+            </span>
+            <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+              {slot.room_id || 'Classroom'}
+            </span>
           </div>
+          <h3 style={{ fontSize: '1.15rem', fontWeight: 700, marginTop: '2px', color: 'var(--text-primary)' }}>
+            {subject.name}
+          </h3>
+        </div>
+      </div>
 
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '12px var(--space-md)',
+          backgroundColor: 'var(--bg-card)',
+          borderRadius: 'var(--radius-card)',
+          border: '1px solid var(--border-hairline)',
+          boxShadow: 'var(--shadow-card)',
+          fontFamily: 'var(--font-family-mono)',
+          fontSize: '0.9rem',
+        }}
+      >
+        <span>Time Slot</span>
+        <span style={{ fontWeight: 600 }}>
+          {slot.start_time.split('T')[1].substring(0, 5)} - {slot.end_time.split('T')[1].substring(0, 5)}
+        </span>
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+          Mark Attendance (5-State Rule)
+        </span>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
           <button
-            onClick={() => markStatus('onduty')}
+            onClick={() => markStatus('present')}
             style={{
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
               gap: '8px',
               padding: '12px',
               borderRadius: 'var(--radius-card)',
-              border: currentStatus === 'onduty' ? '2px solid var(--color-accent-primary)' : '1px solid var(--color-border)',
-              backgroundColor: currentStatus === 'onduty' ? 'var(--color-info-bg)' : 'var(--color-bg-secondary)',
-              color: 'var(--color-accent-primary)',
+              border: currentStatus === 'present' ? '2px solid var(--color-success-fg)' : '1px solid var(--border-hairline)',
+              backgroundColor: currentStatus === 'present' ? 'var(--color-success-bg)' : 'var(--bg-card)',
+              color: 'var(--color-success-fg)',
               fontWeight: 600,
             }}
           >
-            <Award size={18} />
-            <span>On-Duty Leave</span>
-          </button>
-        </div>
-
-        {/* Reschedule and Cancel Controls */}
-        <div style={{ display: 'flex', gap: '8px', marginTop: 'var(--space-xs)' }}>
-          <button
-            onClick={toggleCancelled}
-            style={{
-              flex: 1,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '6px',
-              padding: '10px',
-              borderRadius: 'var(--radius-chip)',
-              backgroundColor: 'var(--color-bg-tertiary)',
-              color: 'var(--color-text-secondary)',
-              fontSize: '0.85rem',
-              fontWeight: 600,
-            }}
-          >
-            <AlertCircle size={16} />
-            {slot.status === 'cancelled' ? 'Unmark Cancelled' : 'Faculty Cancelled'}
+            <Check size={18} />
+            <span>Present</span>
           </button>
 
           <button
-            onClick={() => setIsRescheduling(true)}
+            onClick={() => markStatus('absent')}
             style={{
-              flex: 1,
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              gap: '6px',
-              padding: '10px',
-              borderRadius: 'var(--radius-chip)',
-              backgroundColor: 'var(--color-bg-tertiary)',
-              color: 'var(--color-accent-primary)',
-              fontSize: '0.85rem',
-              fontWeight: 600,
-            }}
-          >
-            <RefreshCw size={16} />
-            <span>Reschedule</span>
-          </button>
-
-          {record && (
-            <button
-              onClick={clearRecord}
-              style={{
-                padding: '10px 14px',
-                borderRadius: 'var(--radius-chip)',
-                backgroundColor: 'var(--color-bg-tertiary)',
-                color: 'var(--color-danger)',
-                fontSize: '0.85rem',
-                fontWeight: 600,
-              }}
-              title="Clear marked attendance"
-            >
-              <Trash2 size={16} />
-            </button>
-          )}
-        </div>
-
-        {/* Reschedule Drawer Form */}
-        {isRescheduling && (
-          <form
-            onSubmit={handleReschedule}
-            style={{
-              marginTop: '12px',
+              gap: '8px',
               padding: '12px',
-              backgroundColor: 'var(--color-bg-secondary)',
               borderRadius: 'var(--radius-card)',
-              border: '1px solid var(--color-border)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '10px',
+              border: currentStatus === 'absent' ? '2px solid var(--color-danger-fg)' : '1px solid var(--border-hairline)',
+              backgroundColor: currentStatus === 'absent' ? 'var(--color-danger-bg)' : 'var(--bg-card)',
+              color: 'var(--color-danger-fg)',
+              fontWeight: 600,
             }}
           >
-            <h4 style={{ fontSize: '0.9rem', fontWeight: 700 }}>Reschedule Class</h4>
-            <div>
-              <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-text-secondary)' }}>New Date</label>
-              <input
-                type="date"
-                value={rescheduleDate}
-                onChange={e => setRescheduleDate(e.target.value)}
-                required
-                style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg-primary)', color: 'var(--color-text-primary)', marginTop: '2px' }}
-              />
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-              <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-text-secondary)' }}>Start Time</label>
-                <input
-                  type="time"
-                  value={rescheduleStartTime}
-                  onChange={e => setRescheduleStartTime(e.target.value)}
-                  required
-                  style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg-primary)', color: 'var(--color-text-primary)', marginTop: '2px' }}
-                />
-              </div>
-              <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-text-secondary)' }}>End Time</label>
-                <input
-                  type="time"
-                  value={rescheduleEndTime}
-                  onChange={e => setRescheduleEndTime(e.target.value)}
-                  required
-                  style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg-primary)', color: 'var(--color-text-primary)', marginTop: '2px' }}
-                />
-              </div>
-            </div>
+            <X size={18} />
+            <span>Absent</span>
+          </button>
 
-            <div style={{ display: 'flex', gap: '6px', marginTop: '4px' }}>
-              <button
-                type="submit"
-                style={{ flex: 1, padding: '8px', borderRadius: '6px', backgroundColor: 'var(--color-accent-primary)', color: 'var(--color-on-accent)', fontWeight: 600, fontSize: '0.85rem' }}
-              >
-                Confirm Reschedule
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsRescheduling(false)}
-                style={{ padding: '8px 12px', borderRadius: '6px', backgroundColor: 'var(--color-bg-tertiary)', fontWeight: 600, fontSize: '0.85rem' }}
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
+          <button
+            onClick={() => markStatus('late')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '12px',
+              borderRadius: 'var(--radius-card)',
+              border: currentStatus === 'late' ? '2px solid var(--color-warning-fg)' : '1px solid var(--border-hairline)',
+              backgroundColor: currentStatus === 'late' ? 'var(--color-warning-bg)' : 'var(--bg-card)',
+              color: 'var(--color-warning-fg)',
+              fontWeight: 600,
+            }}
+          >
+            <Clock size={18} />
+            <span>Late</span>
+          </button>
+
+          <button
+            onClick={() => markStatus('medical')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '12px',
+              borderRadius: 'var(--radius-card)',
+              border: currentStatus === 'medical' ? '2px solid var(--color-info-fg)' : '1px solid var(--border-hairline)',
+              backgroundColor: currentStatus === 'medical' ? 'var(--color-info-bg)' : 'var(--bg-card)',
+              color: 'var(--color-info-fg)',
+              fontWeight: 600,
+            }}
+          >
+            <FileText size={18} />
+            <span>Medical</span>
+          </button>
+        </div>
+
+        <button
+          onClick={() => markStatus('onduty')}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            padding: '12px',
+            borderRadius: 'var(--radius-card)',
+            border: currentStatus === 'onduty' ? '2px solid var(--color-info-fg)' : '1px solid var(--border-hairline)',
+            backgroundColor: currentStatus === 'onduty' ? 'var(--color-info-bg)' : 'var(--bg-card)',
+            color: 'var(--color-info-fg)',
+            fontWeight: 600,
+          }}
+        >
+          <Award size={18} />
+          <span>On-Duty Leave</span>
+        </button>
+      </div>
+
+      {/* Reschedule and Cancel Controls */}
+      <div style={{ display: 'flex', gap: '8px', marginTop: 'var(--space-xs)' }}>
+        <GlassButton variant="ghost" onClick={toggleCancelled} style={{ flex: 1 }}>
+          <AlertCircle size={16} />
+          {slot.status === 'cancelled' ? 'Unmark Cancelled' : 'Faculty Cancelled'}
+        </GlassButton>
+
+        <GlassButton variant="subtle" onClick={() => setIsRescheduling(true)} style={{ flex: 1 }}>
+          <RefreshCw size={16} />
+          <span>Reschedule</span>
+        </GlassButton>
+
+        {record && (
+          <GlassButton variant="danger" onClick={clearRecord} title="Clear marked attendance">
+            <Trash2 size={16} />
+          </GlassButton>
         )}
       </div>
-    </div>
+
+      {/* Reschedule Drawer Form */}
+      {isRescheduling && (
+        <form
+          onSubmit={handleReschedule}
+          style={{
+            marginTop: '12px',
+            padding: '12px',
+            backgroundColor: 'var(--bg-card)',
+            borderRadius: 'var(--radius-card)',
+            border: '1px solid var(--border-hairline)',
+            boxShadow: 'var(--shadow-card)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '10px',
+          }}
+        >
+          <h4 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-primary)' }}>Reschedule Class</h4>
+          <div>
+            <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>New Date</label>
+            <input
+              type="date"
+              value={rescheduleDate}
+              onChange={e => setRescheduleDate(e.target.value)}
+              required
+              className="input"
+              style={{ marginTop: 4 }}
+            />
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+            <div>
+              <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Start Time</label>
+              <input
+                type="time"
+                value={rescheduleStartTime}
+                onChange={e => setRescheduleStartTime(e.target.value)}
+                required
+                className="input"
+                style={{ marginTop: 4 }}
+              />
+            </div>
+            <div>
+              <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>End Time</label>
+              <input
+                type="time"
+                value={rescheduleEndTime}
+                onChange={e => setRescheduleEndTime(e.target.value)}
+                required
+                className="input"
+                style={{ marginTop: 4 }}
+              />
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: '6px', marginTop: '4px' }}>
+            <GlassButton type="submit" style={{ flex: 1 }}>
+              Confirm Reschedule
+            </GlassButton>
+            <GlassButton type="button" variant="ghost" onClick={() => setIsRescheduling(false)}>
+              Cancel
+            </GlassButton>
+          </div>
+        </form>
+      )}
+    </BottomSheet>
   );
 };

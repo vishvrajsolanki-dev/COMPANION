@@ -2,17 +2,35 @@ import React, { useState } from 'react';
 import { useAttendanceMath } from '../../hooks/useAttendanceMath';
 import { useSubjects, useLectureSlots, useAttendanceRecords } from '../../db/useDatabase';
 import { useUIStore } from '../../store/uiStore';
-import { ArrowLeft, BarChart2, CheckCircle, TrendingUp, Calendar, AlertCircle } from 'lucide-react';
+import { SegmentedControl, GlassCard, Banner } from '../../components/ui';
+import { ArrowLeft, TrendingUp, AlertCircle, CheckCircle, Calendar } from 'lucide-react';
+
+type AnalyticsTab = 'attendance' | 'tasks' | 'study';
+
+const TABS: { value: AnalyticsTab; label: string }[] = [
+  { value: 'attendance', label: 'Attendance' },
+  { value: 'tasks', label: 'Tasks' },
+  { value: 'study', label: 'Study' },
+];
+
+const cardTitleStyle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: 6,
+  fontSize: '0.9rem',
+  fontWeight: 700,
+  color: 'var(--text-primary)',
+};
 
 export const AnalyticsView: React.FC = () => {
-  const { subjectResults, overall } = useAttendanceMath();
+  const { overall } = useAttendanceMath();
   const subjects = useSubjects() || [];
   const lectureSlots = useLectureSlots() || [];
   const attendanceRecords = useAttendanceRecords() || [];
 
   const closeSubview = useUIStore(state => state.closeSubview);
-  
-  const [activeTab, setActiveTab] = useState<'attendance' | 'tasks' | 'study'>('attendance');
+
+  const [activeTab, setActiveTab] = useState<AnalyticsTab>('attendance');
 
   // Compute stats: weekday absence counts
   const weekdayAbsences = [0, 0, 0, 0, 0, 0, 0]; // Mon-Sun (0=Mon, 5=Sat, 6=Sun)
@@ -33,95 +51,111 @@ export const AnalyticsView: React.FC = () => {
   const cancelledSlots = lectureSlots.filter(s => s.status === 'cancelled' && !s.is_deleted);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: 'var(--color-bg-primary)', paddingBottom: '80px' }}>
-      
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: 'var(--bg-page)', paddingBottom: '80px' }}>
+
       {/* Header */}
-      <header style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: 'var(--space-md)', borderBottom: '1px solid var(--color-border)' }}>
-        <button onClick={closeSubview} style={{ color: 'var(--color-text-primary)' }}>
+      <header
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          padding: 'var(--space-md)',
+          paddingTop: 'calc(var(--space-md) + env(safe-area-inset-top))',
+          borderBottom: '1px solid var(--border-hairline)',
+          backgroundColor: 'var(--bg-page)',
+          position: 'sticky',
+          top: 0,
+          zIndex: 10,
+        }}
+      >
+        <button onClick={closeSubview} style={{ color: 'var(--text-primary)' }}>
           <ArrowLeft size={24} />
         </button>
-        <h2 style={{ fontSize: '1.2rem', fontWeight: 700 }}>Analytics Hub</h2>
+        <div>
+          <h2 style={{ fontSize: 'var(--text-xl)', fontWeight: 700, color: 'var(--text-primary)' }}>Analytics Hub</h2>
+          <div style={{ fontSize: 'var(--text-2xs)', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+            Performance overview
+          </div>
+        </div>
       </header>
 
       {/* Segmented Control */}
-      <div style={{ padding: 'var(--space-md)' }}>
-        <div style={{ display: 'flex', backgroundColor: 'var(--color-bg-tertiary)', borderRadius: '10px', padding: '3px', gap: '2px' }}>
-          {(['attendance', 'tasks', 'study'] as const).map(tab => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              style={{
-                flex: 1,
-                padding: '8px',
-                borderRadius: '8px',
-                fontSize: '0.85rem',
-                fontWeight: 600,
-                textTransform: 'capitalize',
-                color: activeTab === tab ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
-                backgroundColor: activeTab === tab ? 'var(--color-bg-primary)' : 'transparent',
-                boxShadow: activeTab === tab ? '0 1px 3px rgba(0,0,0,0.06)' : 'none'
-              }}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
+      <div style={{ padding: 'var(--space-sm) var(--space-md)' }}>
+        <SegmentedControl options={TABS} value={activeTab} onChange={setActiveTab} />
       </div>
 
       <div style={{ padding: '0 var(--space-md)', display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
-        
+
         {activeTab === 'attendance' && (
           <>
-            {/* Trend Line Chart (SVG Line Chart) */}
-            <div style={{ padding: 'var(--space-md)', backgroundColor: 'var(--color-bg-secondary)', borderRadius: 'var(--radius-card)', border: '1px solid var(--color-border)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.9rem', fontWeight: 700 }}>
-                <TrendingUp size={16} color="var(--color-accent-primary)" />
+            {/* Trend Line Chart — multi-series, no area fill per DESIGN_SYSTEM.md */}
+            <GlassCard>
+              <div style={cardTitleStyle}>
+                <TrendingUp size={16} color="var(--color-primary)" />
                 <span>Attendance Trend History</span>
+                <span style={{ marginLeft: 'auto', fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-muted)' }}>
+                  Last 6 weeks
+                </span>
               </div>
 
-              {/* Simple inline SVG chart */}
               <div style={{ height: '120px', width: '100%', position: 'relative' }}>
                 <svg width="100%" height="100%" viewBox="0 0 300 100" preserveAspectRatio="none">
                   {/* Grid Lines */}
-                  <line x1="0" y1="25" x2="300" y2="25" stroke="var(--color-border)" strokeWidth="0.5" strokeDasharray="4" />
-                  <line x1="0" y1="50" x2="300" y2="50" stroke="var(--color-border)" strokeWidth="0.5" strokeDasharray="4" />
-                  <line x1="0" y1="75" x2="300" y2="75" stroke="var(--color-border)" strokeWidth="0.5" strokeDasharray="4" />
-                  
-                  {/* Trend line paths */}
+                  <line x1="0" y1="25" x2="300" y2="25" stroke="var(--border-hairline)" strokeWidth="0.5" strokeDasharray="4" />
+                  <line x1="0" y1="50" x2="300" y2="50" stroke="var(--border-hairline)" strokeWidth="0.5" strokeDasharray="4" />
+                  <line x1="0" y1="75" x2="300" y2="75" stroke="var(--border-hairline)" strokeWidth="0.5" strokeDasharray="4" />
+
+                  {/* Multi-series thin lines (primary / secondary / tertiary accents) */}
                   <path
                     d="M 10,80 L 70,60 L 130,70 L 190,45 L 250,55 L 290,25"
                     fill="none"
-                    stroke="var(--color-accent-primary)"
-                    strokeWidth="2.5"
+                    stroke="var(--color-primary)"
+                    strokeWidth="2"
                     strokeLinecap="round"
                   />
-                  
-                  {/* Area fill */}
                   <path
-                    d="M 10,80 L 70,60 L 130,70 L 190,45 L 250,55 L 290,25 L 290,100 L 10,100 Z"
-                    fill="url(#accent-grad)"
-                    opacity="0.1"
+                    d="M 10,88 L 70,72 L 130,78 L 190,60 L 250,68 L 290,45"
+                    fill="none"
+                    stroke="var(--color-secondary)"
+                    strokeWidth="2"
+                    strokeLinecap="round"
                   />
-
-                  <defs>
-                    <linearGradient id="accent-grad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="var(--color-accent-primary)" />
-                      <stop offset="100%" stopColor="transparent" />
-                    </linearGradient>
-                  </defs>
+                  <path
+                    d="M 10,92 L 70,84 L 130,86 L 190,74 L 250,80 L 290,62"
+                    fill="none"
+                    stroke="var(--color-tertiary)"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
                 </svg>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--color-text-secondary)', fontFamily: 'var(--font-family-mono)' }}>
+              {/* Legend */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+                  {[
+                    { color: 'var(--color-primary)', code: 'CS301' },
+                    { color: 'var(--color-secondary)', code: 'MATH401' },
+                    { color: 'var(--color-tertiary)', code: 'PHY205' },
+                  ].map(s => (
+                    <span key={s.code} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                      <span style={{ width: 10, height: 10, borderRadius: 3, backgroundColor: s.color, display: 'inline-block' }} />
+                      {s.code}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-family-mono)' }}>
                 <span>Week 1</span>
                 <span>Week 2 (Current)</span>
               </div>
-            </div>
+            </GlassCard>
 
-            {/* Weekday Absence Frequency Bars */}
-            <div style={{ padding: 'var(--space-md)', backgroundColor: 'var(--color-bg-secondary)', borderRadius: 'var(--radius-card)', border: '1px solid var(--color-border)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.9rem', fontWeight: 700 }}>
-                <BarChart2 size={16} color="var(--color-danger)" />
+            {/* Weekday Absence Frequency Bars — lavender track, red intensity */}
+            <GlassCard>
+              <div style={cardTitleStyle}>
+                <AlertCircle size={16} color="var(--color-danger)" />
                 <span>Absence Frequency by Weekday</span>
               </div>
 
@@ -129,34 +163,34 @@ export const AnalyticsView: React.FC = () => {
                 {weekdayAbsences.map((count, index) => {
                   const maxVal = Math.max(...weekdayAbsences, 1);
                   const pctHeight = (count / maxVal) * 100;
-                  
+
                   return (
                     <div key={index} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, gap: '4px' }}>
-                      <span style={{ fontSize: '0.75rem', fontWeight: 700, color: count > 0 ? 'var(--color-danger)' : 'var(--color-text-tertiary)', fontFamily: 'var(--font-family-mono)' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 700, color: count > 0 ? 'var(--color-danger)' : 'var(--text-muted)', fontFamily: 'var(--font-family-mono)' }}>
                         {count}
                       </span>
-                      <div 
+                      <div
                         style={{
-                          width: '12px',
+                          width: '14px',
                           height: `${Math.max(4, pctHeight)}px`,
-                          backgroundColor: count > 0 ? 'var(--color-danger)' : 'var(--color-bg-tertiary)',
-                          borderRadius: '3px'
+                          backgroundColor: count > 0 ? 'var(--color-danger)' : 'var(--neutral-200, #E2E8F0)',
+                          borderRadius: '4px',
                         }}
                       />
-                      <span style={{ fontSize: '0.65rem', color: 'var(--color-text-secondary)', fontFamily: 'var(--font-family-mono)' }}>
+                      <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-family-mono)' }}>
                         {weekdays[index]}
                       </span>
                     </div>
                   );
                 })}
               </div>
-            </div>
+            </GlassCard>
 
             {/* Faculty Cancellations list */}
-            <div style={{ padding: 'var(--space-md)', backgroundColor: 'var(--color-bg-secondary)', borderRadius: 'var(--radius-card)', border: '1px solid var(--color-border)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <h3 style={{ fontSize: '0.9rem', fontWeight: 700 }}>Faculty Cancellation Records</h3>
+            <GlassCard>
+              <h3 style={cardTitleStyle}>Faculty Cancellation Records</h3>
               {cancelledSlots.length === 0 ? (
-                <div style={{ fontSize: '0.8rem', color: 'var(--color-text-tertiary)', textAlign: 'center' }}>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'center', padding: '8px 0' }}>
                   No cancelled sessions recorded.
                 </div>
               ) : (
@@ -164,16 +198,16 @@ export const AnalyticsView: React.FC = () => {
                   {cancelledSlots.map(slot => {
                     const sub = subjects.find(s => s.id === slot.subject_id);
                     const slotDate = new Date(slot.start_time);
-                    
+
                     return (
-                      <div key={slot.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px', backgroundColor: 'var(--color-bg-primary)', borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '0.8rem' }}>
+                      <div key={slot.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius-card)', border: '1px solid var(--border-hairline)', fontSize: '0.8rem' }}>
                         <div>
-                          <span style={{ fontWeight: 600 }}>{sub?.name || 'Subject'}</span>
-                          <div style={{ fontSize: '0.7rem', color: 'var(--color-text-secondary)' }}>
+                          <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{sub?.name || 'Subject'}</span>
+                          <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
                             Cancelled on {slotDate.toLocaleDateString()}
                           </div>
                         </div>
-                        <span style={{ fontFamily: 'var(--font-family-mono)', color: 'var(--color-text-tertiary)', textDecoration: 'line-through' }}>
+                        <span style={{ fontFamily: 'var(--font-family-mono)', color: 'var(--text-muted)', textDecoration: 'line-through' }}>
                           {slot.start_time.split('T')[1].substring(0, 5)}
                         </span>
                       </div>
@@ -181,24 +215,34 @@ export const AnalyticsView: React.FC = () => {
                   })}
                 </div>
               )}
-            </div>
+            </GlassCard>
+
+            {overall.isAnyAtRisk && (
+              <Banner tone="danger" title="Attendance Alert" icon={<AlertCircle size={18} />}>
+                {overall.atRiskSubjectIds.length} subject(s) below the 75% threshold.
+              </Banner>
+            )}
           </>
         )}
 
         {activeTab === 'tasks' && (
-          <div style={{ padding: 'var(--space-md)', backgroundColor: 'var(--color-bg-secondary)', borderRadius: 'var(--radius-card)', border: '1px solid var(--color-border)', textAlign: 'center', color: 'var(--color-text-secondary)' }}>
-            <CheckCircle size={32} style={{ color: 'var(--color-success)', marginBottom: '8px' }} />
-            <h4>Task Efficiency Analytics</h4>
-            <p style={{ fontSize: '0.8rem', marginTop: '4px' }}>Average completion speed: 18 hours before deadline.</p>
-          </div>
+          <GlassCard>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: 'var(--space-md)', textAlign: 'center', color: 'var(--text-secondary)' }}>
+              <CheckCircle size={32} style={{ color: 'var(--color-success)' }} />
+              <h4 style={{ color: 'var(--text-primary)', fontWeight: 700 }}>Task Efficiency Analytics</h4>
+              <p style={{ fontSize: '0.8rem', marginTop: '4px' }}>Average completion speed: 18 hours before deadline.</p>
+            </div>
+          </GlassCard>
         )}
 
         {activeTab === 'study' && (
-          <div style={{ padding: 'var(--space-md)', backgroundColor: 'var(--color-bg-secondary)', borderRadius: 'var(--radius-card)', border: '1px solid var(--color-border)', textAlign: 'center', color: 'var(--color-text-secondary)' }}>
-            <Calendar size={32} style={{ color: 'var(--color-accent-primary)', marginBottom: '8px' }} />
-            <h4>Study Hour Logs</h4>
-            <p style={{ fontSize: '0.8rem', marginTop: '4px' }}>Total study log tracking is currently synchronized locally.</p>
-          </div>
+          <GlassCard>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: 'var(--space-md)', textAlign: 'center', color: 'var(--text-secondary)' }}>
+              <Calendar size={32} style={{ color: 'var(--color-primary)' }} />
+              <h4 style={{ color: 'var(--text-primary)', fontWeight: 700 }}>Study Hour Logs</h4>
+              <p style={{ fontSize: '0.8rem', marginTop: '4px' }}>Total study log tracking is currently synchronized locally.</p>
+            </div>
+          </GlassCard>
         )}
 
       </div>

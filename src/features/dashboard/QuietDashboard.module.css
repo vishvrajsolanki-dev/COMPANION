@@ -1,3 +1,6 @@
+/* Academic OS — Home (Quiet Dashboard) matched to DESIGN_SYSTEM.md:
+   white cards on flat warm-gray page, hairline borders, soft shadows,
+   pill badges, semantic status colors. No gradients, no glass blur. */
 .container {
   display: flex;
   flex-direction: column;
@@ -16,17 +19,17 @@
 .greeting {
   font-size: 1.5rem;
   font-weight: 700;
-  color: var(--color-text-primary);
+  color: var(--text-primary);
   letter-spacing: -0.5px;
 }
 
 .dateSubtitle {
   font-size: 0.85rem;
   font-weight: 500;
-  color: var(--color-text-secondary);
+  color: var(--text-secondary);
 }
 
-/* Section overline — 3px gradient bar + uppercase label (global .overline) */
+/* Section overline — uppercase micro-label */
 .overline {
   display: flex;
   align-items: center;
@@ -35,22 +38,21 @@
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--color-text-tertiary);
+  color: var(--text-muted);
 }
 
-/* Alert Banner — glass danger */
+/* Alert Banner — soft danger pill card */
 .alertBanner {
   display: flex;
   align-items: center;
   gap: var(--space-sm);
   padding: var(--space-md);
-  border-radius: var(--radius-squircle);
+  border-radius: var(--radius-card);
   background-color: var(--color-danger-bg);
-  border: 1px solid var(--color-danger);
-  color: var(--color-danger);
+  border: 1px solid var(--color-danger-bg);
+  color: var(--color-danger-fg);
   cursor: pointer;
   animation: fadeIn 0.3s ease;
-  box-shadow: 0 0 0 3px rgba(229, 72, 77, 0.08);
   transition: transform 0.12s ease, box-shadow 0.15s ease;
 }
 
@@ -63,34 +65,18 @@
   font-weight: 600;
 }
 
-/* Hero Next Lecture Card — blob radius + gradient edge + glow */
+/* Hero Next Lecture Card — white card, hairline border, soft shadow */
 .heroCard {
-  border-radius: var(--radius-blob);
-  border: 1px solid transparent;
-  background:
-    linear-gradient(var(--surface-glass), var(--surface-glass)) padding-box,
-    linear-gradient(135deg, var(--gradient-accent)) border-box;
-  box-shadow: var(--shadow-glass), var(--shadow-glow);
+  border-radius: var(--radius-card);
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-hairline);
+  box-shadow: var(--shadow-card);
   padding: var(--space-lg);
   display: flex;
   flex-direction: column;
   gap: var(--space-sm);
   position: relative;
   overflow: hidden;
-}
-
-/* Soft radial orb behind the hero title */
-.heroCard::after {
-  content: '';
-  position: absolute;
-  right: -40px;
-  top: -40px;
-  width: 160px;
-  height: 160px;
-  border-radius: 50%;
-  background: var(--gradient-accent-soft);
-  filter: blur(2px);
-  pointer-events: none;
 }
 
 .heroTop {
@@ -105,16 +91,16 @@
   font-size: 0.75rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--color-text-secondary);
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
 }
 
 .countdownBadge {
   font-family: var(--font-family-mono);
   font-size: 0.8rem;
   font-weight: 700;
-  color: var(--color-accent-primary);
-  background-color: var(--gradient-accent-soft);
+  color: var(--color-primary);
+  background-color: var(--bg-card-tint);
   padding: 4px 12px;
   border-radius: var(--radius-pill);
 }
@@ -122,7 +108,7 @@
 .heroTitle {
   font-size: 1.25rem;
   font-weight: 700;
-  color: var(--color-text-primary);
+  color: var(--text-primary);
   position: relative;
   z-index: 1;
 }
@@ -133,7 +119,7 @@
   gap: var(--space-md);
   font-family: var(--font-family-mono);
   font-size: 0.85rem;
-  color: var(--color-text-secondary);
+  color: var(--text-secondary);
   flex-wrap: wrap;
   position: relative;
   z-index: 1;
@@ -154,14 +140,12 @@
   font-size: 0.75rem;
 }
 
-/* Quick Links Grid — squircle cards with tinted icon squircle */
+/* Quick Links Grid — white cards with tinted icon tile */
 .quickLinkCard {
-  background-color: var(--surface-glass);
-  -webkit-backdrop-filter: blur(var(--blur-glass)) saturate(1.4);
-  backdrop-filter: blur(var(--blur-glass)) saturate(1.4);
-  border: 1px solid var(--surface-glass-border);
-  border-radius: var(--radius-squircle);
-  box-shadow: var(--shadow-glass);
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
   padding: var(--space-md);
   display: flex;
   flex-direction: column;
@@ -183,13 +167,13 @@
   align-items: center;
   justify-content: center;
   border-radius: 12px;
-  background: var(--gradient-accent-soft);
+  background-color: var(--bg-card-tint);
 }
 
 .quickLinkLabel {
   font-size: 0.9rem;
   font-weight: 600;
-  color: var(--color-text-primary);
+  color: var(--text-primary);
 }
 
 /* Metric tiles row */
@@ -198,14 +182,12 @@
   gap: var(--space-sm);
 }
 
-/* Attendance Summary Card — gradient-soft wash */
+/* Attendance Summary Card — white card, tinted ring wrapper */
 .attendanceCard {
-  border-radius: var(--radius-squircle);
-  background: var(--gradient-accent-soft);
-  border: 1px solid transparent;
-  background-origin: border-box;
-  background-clip: padding-box;
-  box-shadow: var(--shadow-glass);
+  border-radius: var(--radius-card);
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-hairline);
+  box-shadow: var(--shadow-card);
   padding: var(--space-md);
   display: flex;
   align-items: center;
@@ -232,7 +214,7 @@
   font-family: var(--font-family-mono);
   font-size: 0.9rem;
   font-weight: 700;
-  color: var(--color-text-primary);
+  color: var(--text-primary);
   position: absolute;
 }
 
@@ -257,7 +239,7 @@
 
 .attendanceSubtext {
   font-size: 0.8rem;
-  color: var(--color-text-secondary);
+  color: var(--text-secondary);
 }
 
 /* Sections */
@@ -276,43 +258,42 @@
 .sectionTitle {
   font-size: var(--text-md);
   font-weight: 700;
-  color: var(--color-text-primary);
+  color: var(--text-primary);
 }
 
 .viewAllButton {
   font-size: 0.85rem;
   font-weight: 600;
-  color: var(--color-accent-primary);
+  color: var(--color-primary);
   display: flex;
   align-items: center;
   gap: 4px;
   padding: 6px 12px;
   border-radius: var(--radius-pill);
-  background: var(--gradient-accent-soft);
+  background-color: var(--bg-card-tint);
 }
 
 .emptyTaskCard {
-  background-color: var(--color-bg-secondary);
-  border-radius: var(--radius-squircle);
-  border: 1px dashed var(--color-border);
+  background-color: var(--bg-card);
+  border-radius: var(--radius-card);
+  border: 1px dashed var(--border-hairline);
   padding: var(--space-md);
   display: flex;
   align-items: center;
   justify-content: center;
   gap: var(--space-sm);
-  color: var(--color-text-secondary);
+  color: var(--text-secondary);
   font-size: 0.85rem;
 }
 
-/* Task cards — left gradient accent bar + glass */
+/* Task cards — white card, solid accent bar */
 .taskCard {
   position: relative;
   overflow: hidden;
-  background-color: var(--surface-glass);
-  -webkit-backdrop-filter: blur(var(--blur-glass)) saturate(1.4);
-  backdrop-filter: blur(var(--blur-glass)) saturate(1.4);
-  border: 1px solid var(--surface-glass-border);
-  border-radius: var(--radius-squircle);
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
   padding: var(--space-md);
   display: flex;
   align-items: center;
@@ -328,7 +309,7 @@
   top: 0;
   bottom: 0;
   width: 3px;
-  background: var(--gradient-accent);
+  background: var(--color-primary);
 }
 
 .taskCard:active {
@@ -345,7 +326,7 @@
 .taskTitle {
   font-size: 0.9rem;
   font-weight: 600;
-  color: var(--color-text-primary);
+  color: var(--text-primary);
 }
 
 .taskSubjectCode {
@@ -358,26 +339,24 @@
 .taskDueText {
   font-family: var(--font-family-mono);
   font-size: 0.75rem;
-  color: var(--color-text-secondary);
+  color: var(--text-secondary);
   margin-left: auto;
 }
 
-/* Timeline — accent bar + glass */
+/* Timeline — white cards with solid subject color bar */
 .timelineItem {
   display: flex;
-  background-color: var(--surface-glass);
-  -webkit-backdrop-filter: blur(var(--blur-glass)) saturate(1.4);
-  backdrop-filter: blur(var(--blur-glass)) saturate(1.4);
-  border: 1px solid var(--surface-glass-border);
-  border-radius: var(--radius-squircle);
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-card);
   overflow: hidden;
-  box-shadow: var(--shadow-glass);
+  box-shadow: var(--shadow-card);
 }
 
 .timelineColorBar {
   width: 5px;
   flex-shrink: 0;
-  background: var(--gradient-accent);
+  background: var(--color-primary);
 }
 
 .timelineBody {
@@ -405,18 +384,18 @@
 .timelineTime {
   font-family: var(--font-family-mono);
   font-size: 0.75rem;
-  color: var(--color-text-secondary);
+  color: var(--text-secondary);
 }
 
 .timelineSubjectName {
   font-size: 0.95rem;
   font-weight: 600;
-  color: var(--color-text-primary);
+  color: var(--text-primary);
 }
 
 .lineThrough {
   text-decoration: line-through;
-  color: var(--color-text-tertiary);
+  color: var(--text-muted);
 }
 
 .timelineFooter {
@@ -429,7 +408,7 @@
 .timelineRoom {
   font-family: var(--font-family-mono);
   font-size: 0.75rem;
-  color: var(--color-text-secondary);
+  color: var(--text-secondary);
   display: flex;
   align-items: center;
 }
@@ -452,8 +431,8 @@
 }
 
 .badgeExtra {
-  background-color: var(--gradient-accent-soft);
-  color: var(--color-accent-primary);
+  background-color: var(--bg-card-tint);
+  color: var(--color-primary);
 }
 
 @keyframes fadeIn {

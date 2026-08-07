@@ -1,206 +1,167 @@
-/* Student Academic OS — Design Tokens v3 ("Two Distinct UIs")
+/* Academic OS — Academic Core design tokens (LOCKED)
+ * Source of truth: DESIGN_SYSTEM.md.
  *
- * Light = "Paper & Ink"  — warm ink-on-paper, indigo-violet accent, airy glass
- * Dark  = "Midnight Study" — deep navy/indigo, electric periwinkle, luminous glass
- *
- * Every theme-scoped token resolves differently per mode so light and dark
- * are two deliberate designs, not inverted copies.
+ * This replaces the previous glass/gradient theme with the screenshot-matched
+ * mobile productivity SaaS system: flat warm-gray page, white cards, royal-blue
+ * primary, violet secondary, rust tertiary, slate neutral, pill controls, and
+ * soft semantic badges/rings.
  */
-:root {
-  /* ═══════════════════════════════════════════════════════════════════════════
-     LIGHT THEME — "Paper & Ink"
-     ═══════════════════════════════════════════════════════════════════════════ */
+:root,
+[data-theme="light"],
+[data-theme="dark"] {
+  color-scheme: light;
 
-  /* ── Neutral Palette ──────────────────────────────────────────────────────── */
-  --color-bg-primary: #FFFFFF;
-  --color-bg-secondary: #F8F7FC;   /* card backgrounds — faint violet tint */
-  --color-bg-tertiary: #F0EEF7;    /* nested/inset elements */
-  --color-border: #E9E7F4;         /* warm violet-tinted border */
+  /* ── Brand palette ─────────────────────────────────────────────────────── */
+  --color-primary: #2563EB;
+  --color-secondary: #7C3AED;
+  --color-tertiary: #BC4800;
+  --color-neutral: #64748B;
 
-  --color-text-primary: #211E3C;   /* warm ink w/ violet undertone */
-  --color-text-secondary: #575371; /* readable metadata */
-  --color-text-tertiary: #8A86A5;  /* placeholder, ≈4.6:1 on white */
+  --primary-900: #102A66;
+  --primary-800: #173F99;
+  --primary-700: #1D4ED8;
+  --primary-600: #2563EB;
+  --primary-500: #3B82F6;
+  --primary-400: #60A5FA;
+  --primary-300: #93C5FD;
+  --primary-200: #BFDBFE;
+  --primary-100: #DBEAFE;
+  --primary-50:  #EFF6FF;
 
-  /* ── Accent / Brand ───────────────────────────────────────────────────────── */
-  --color-accent-primary: #6D5DF6; /* indigo-violet brand */
-  --color-accent-primary-pressed: #5A4AE0;
-  --color-accent-secondary: #A855F7; /* purple — icon accents, tinted chips */
-  --color-accent-tertiary: #EC4899;  /* pink — lighter accent */
+  --secondary-900: #32145F;
+  --secondary-800: #4C1D95;
+  --secondary-700: #6D28D9;
+  --secondary-600: #7C3AED;
+  --secondary-500: #8B5CF6;
+  --secondary-400: #A78BFA;
+  --secondary-300: #C4B5FD;
+  --secondary-200: #DDD6FE;
+  --secondary-100: #EDE9FE;
+  --secondary-50:  #F5F3FF;
 
-  /* ── Semantic / Status Colors ───────────────────────────────────────────── */
-  --color-success: #16A34A;
-  --color-warning: #D97706;
-  --color-danger: #E5484D;
-  --color-info: #6D5DF6;
+  --tertiary-900: #4A1C00;
+  --tertiary-800: #783000;
+  --tertiary-700: #9A3C00;
+  --tertiary-600: #BC4800;
+  --tertiary-500: #D97706;
+  --tertiary-400: #F59E0B;
+  --tertiary-300: #FBBF24;
+  --tertiary-200: #FDE68A;
+  --tertiary-100: #FEF3C7;
+  --tertiary-50:  #FFFBEB;
 
-  --color-danger-bg: #FDE8E8;
-  --color-success-bg: #DDFBEC;
-  --color-warning-bg: #FEF5DC;
-  --color-info-bg: #E9E8FD;
+  --neutral-900: #0F172A;
+  --neutral-800: #1E293B;
+  --neutral-700: #334155;
+  --neutral-600: #475569;
+  --neutral-500: #64748B;
+  --neutral-400: #94A3B8;
+  --neutral-300: #CBD5E1;
+  --neutral-200: #E2E8F0;
+  --neutral-100: #F1F5F9;
+  --neutral-50:  #F8FAFC;
 
-  /* Text on gradient buttons — always high-contrast */
+  /* ── Surfaces / text ───────────────────────────────────────────────────── */
+  --bg-page: #F1F3F4;
+  --bg-card: #FFFFFF;
+  --bg-card-tint: #E5EEFF;
+  --border-hairline: #E5E7EB;
+  --text-primary: #0F172A;
+  --text-secondary: #64748B;
+  --text-muted: #94A3B8;
+
+  /* Compatibility aliases for existing code. */
+  --color-bg-primary: var(--bg-page);
+  --color-bg-secondary: var(--bg-card);
+  --color-bg-tertiary: var(--neutral-100);
+  --color-border: var(--border-hairline);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-muted);
+  --color-accent-primary: var(--color-primary);
+  --color-accent-primary-pressed: #1D4ED8;
+  --color-accent-secondary: var(--color-secondary);
+  --color-accent-tertiary: var(--color-tertiary);
   --color-on-accent: #FFFFFF;
 
-  /* ── Frosted Glass Surfaces ─────────────────────────────────────────────── */
-  --surface-glass-light: rgba(255, 255, 255, 0.66);
-  --surface-glass-border-light: rgba(255, 255, 255, 0.7);
-  --surface-glass-dark: rgba(255, 255, 255, 0.07);
-  --surface-glass-border-dark: rgba(255, 255, 255, 0.14);
-  --surface-glass: var(--surface-glass-light);
-  --surface-glass-border: var(--surface-glass-border-light);
-  --blur-glass: 16px;
+  /* ── Semantic colors ───────────────────────────────────────────────────── */
+  --color-danger-bg: #FEE2E2;
+  --color-danger-fg: #DC2626;
+  --color-warning-bg: #FEF3C7;
+  --color-warning-fg: #D97706;
+  --color-success-bg: #DCFCE7;
+  --color-success-fg: #16A34A;
+  --color-info-bg: #DBEAFE;
+  --color-info-fg: #2563EB;
 
-  /* Bottom sheets — more opaque than cards */
-  --surface-sheet-light: rgba(255, 255, 255, 0.92);
-  --surface-sheet-dark: rgba(14, 12, 24, 0.92);
-  --surface-sheet: var(--surface-sheet-light);
+  --color-danger: var(--color-danger-fg);
+  --color-warning: var(--color-warning-fg);
+  --color-success: var(--color-success-fg);
+  --color-info: var(--color-info-fg);
 
-  /* App backdrop (the gradient body blurs behind cards) */
-  --bg-app-light: linear-gradient(165deg, #F5F7FF 0%, #F0EDFB 45%, #FDF3F8 100%);
-  --bg-app-dark: linear-gradient(165deg, #0A0C18 0%, #100E1E 50%, #150F1D 100%);
-  --bg-app: var(--bg-app-light);
+  /* ── Page/system surfaces ──────────────────────────────────────────────── */
+  --bg-app: var(--bg-page);
+  --surface-glass: var(--bg-card);
+  --surface-glass-border: var(--border-hairline);
+  --surface-sheet: var(--bg-card);
+  --blur-glass: 0px;
 
-  /* ── Gradients ──────────────────────────────────────────────────────────── */
-  --gradient-accent: linear-gradient(135deg, #6D5DF6 0%, #A855F7 50%, #EC4899 100%);
-  --gradient-accent-soft: linear-gradient(135deg, rgba(109,93,246,0.12), rgba(168,85,247,0.12), rgba(236,72,153,0.12));
+  /* Gradients are kept only as compatibility fallbacks. UI components should
+     prefer solid/tinted Academic Core tokens. */
+  --gradient-accent: var(--color-primary);
+  --gradient-accent-soft: var(--color-info-bg);
 
-  /* ── Elevation & Glow ───────────────────────────────────────────────────── */
-  --shadow-card: 0 1px 3px rgba(33, 30, 60, 0.04);
-  --shadow-glass: 0 8px 32px rgba(33, 30, 60, 0.08);
-  --shadow-glass-dark: 0 8px 32px rgba(0, 0, 0, 0.45);
-  --shadow-glow: 0 0 24px rgba(109, 93, 246, 0.22);
-  --shadow-glow-dark: 0 0 28px rgba(124, 140, 255, 0.25);
-  --shadow-sheet: 0 -4px 20px rgba(33, 30, 60, 0.08);
-  --shadow-sheet-dark: 0 -4px 24px rgba(0, 0, 0, 0.5);
-  --shadow-glass: var(--shadow-glass-light, 0 8px 32px rgba(33, 30, 60, 0.08));
-  --shadow-sheet: var(--shadow-sheet-light, 0 -4px 20px rgba(33, 30, 60, 0.08));
+  --shadow-card: 0 1px 2px rgba(15,23,42,0.04), 0 4px 12px rgba(15,23,42,0.05);
+  --shadow-glass: var(--shadow-card);
+  --shadow-glow: 0 1px 2px rgba(15,23,42,0.04), 0 4px 12px rgba(15,23,42,0.05);
+  --shadow-sheet: 0 -1px 2px rgba(15,23,42,0.04), 0 -8px 24px rgba(15,23,42,0.08);
 
-  /* ── Shape System (kills the "rectangles") ─────────────────────────────── */
-  --radius-card: 16px;
+  /* ── Shape ─────────────────────────────────────────────────────────────── */
+  --radius-card: 18px;
   --radius-sheet: 24px;
-  --radius-chip: 10px;
-  --radius-btn: 12px;
-  --radius-squircle: 20px 14px 20px 14px; /* organic card shape */
-  --radius-blob: 16px 30px 16px 30px;     /* hero card */
-  --radius-pill: 999px;                   /* pill / tag */
-  --radius-pill-lg: 999px;               /* large pill (segments) */
+  --radius-chip: 999px;
+  --radius-btn: 999px;
+  --radius-squircle: 18px;
+  --radius-blob: 20px;
+  --radius-pill: 999px;
+  --radius-pill-lg: 999px;
 
-  /* ── Typography Scale ────────────────────────────────────────────────────── */
-  --text-2xs: 0.625rem;  /* 10px — badges, overlines */
-  --text-xs: 0.72rem;    /* 11.5px — captions */
-  --text-sm: 0.8rem;     /* 12.8px — metadata */
-  --text-base: 0.875rem; /* 14px — body */
-  --text-md: 0.95rem;    /* 15.2px — emphasized body */
-  --text-lg: 1.125rem;   /* 18px — card titles */
-  --text-xl: 1.375rem;   /* 22px — section headers */
-  --text-2xl: 1.75rem;   /* 28px — page headers */
+  /* ── Typography ───────────────────────────────────────────────────────── */
+  --font-family-base: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-family-mono: 'Inter', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --font-family: var(--font-family-base);
 
-  /* ── Priority Scale (Tasks) ─────────────────────────────────────────────── */
-  --priority-low: #8A86A5;
-  --priority-medium: #D97706;
-  --priority-high: #E5484D;
-  --priority-urgent: #E5484D;
+  --text-2xs: 0.6875rem; /* 11px label */
+  --text-xs: 0.75rem;
+  --text-sm: 0.8125rem;
+  --text-base: 0.9375rem;
+  --text-md: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.5rem;
+  --text-2xl: 1.75rem;
 
-  /* ── Subject Color Palette (rotating, assigned per subject) ──────────────── */
-  --subject-1: #7C3AED;
-  --subject-2: #DB2777;
-  --subject-3: #2563EB;
-  --subject-4: #0D9488;
-  --subject-5: #D97706;
-  --subject-6: #059669;
-  --subject-7: #E5484D;
-  --subject-8: #8A86A5;
-
-  /* ── Typography Families ────────────────────────────────────────────────── */
-  --font-family-base: -apple-system, "SF Pro Text", "Inter", system-ui, sans-serif;
-  --font-family-mono: "SF Mono", "JetBrains Mono", monospace;
-
-  /* ── Spacing ────────────────────────────────────────────────────────────── */
+  /* ── Spacing ──────────────────────────────────────────────────────────── */
   --space-xs: 4px;
   --space-sm: 8px;
   --space-md: 16px;
   --space-lg: 24px;
   --space-xl: 32px;
 
-  /* ── Tab-bar ────────────────────────────────────────────────────────────── */
-  --tabbar-height: 64px;
-  --tabbar-clear: 88px;
-}
+  /* ── Status/subject helpers ───────────────────────────────────────────── */
+  --priority-low: var(--text-secondary);
+  --priority-medium: var(--color-warning-fg);
+  --priority-high: var(--color-danger-fg);
+  --priority-urgent: var(--color-danger-fg);
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   DARK THEME — "Midnight Study"
-   ═══════════════════════════════════════════════════════════════════════════ */
-[data-theme="dark"] {
-  /* ── Neutral Palette (cool navy/indigo) ──────────────────────────────────── */
-  --color-bg-primary: #0E0C18;
-  --color-bg-secondary: #161422;
-  --color-bg-tertiary: #1E1C2A;
-  --color-border: #2A2840;
+  --subject-1: var(--color-secondary);
+  --subject-2: #DB2777;
+  --subject-3: var(--color-primary);
+  --subject-4: #0D9488;
+  --subject-5: var(--color-tertiary);
+  --subject-6: var(--color-success-fg);
+  --subject-7: var(--color-danger-fg);
+  --subject-8: var(--color-neutral);
 
-  --color-text-primary: #F4F6FC;
-  --color-text-secondary: #B8BDD0;
-  --color-text-tertiary: #9096AE;
-
-  /* ── Accent / Brand (electric periwinkle) ────────────────────────────────── */
-  --color-accent-primary: #7C8CFF;
-  --color-accent-primary-pressed: #96A3FF;
-  --color-accent-secondary: #B47EFF;
-  --color-accent-tertiary: #FF6BB5;
-
-  /* ── Status (brighter, glow-friendly) ──────────────────────────────────── */
-  --color-success: #34D399;
-  --color-warning: #FBBF24;
-  --color-danger: #F87171;
-  --color-info: #7C8CFF;
-
-  --color-danger-bg: #2E1618;
-  --color-success-bg: #12241A;
-  --color-warning-bg: #282010;
-  --color-info-bg: #1C1B33;
-
-  /* Text on gradient — dark on luminous neon */
-  --color-on-accent: #0A0C18;
-
-  /* ── Glass (cool, translucent) ──────────────────────────────────────────── */
-  --surface-glass: var(--surface-glass-dark);
-  --surface-glass-border: var(--surface-glass-border-dark);
-  --surface-sheet: var(--surface-sheet-dark);
-  --bg-app: var(--bg-app-dark);
-
-  /* ── Gradients (luminous neon) ──────────────────────────────────────────── */
-  --gradient-accent: linear-gradient(135deg, #8B7CFF 0%, #D26BFF 50%, #FF6BB5 100%);
-  --gradient-accent-soft: linear-gradient(135deg, rgba(139,124,255,0.15), rgba(210,107,255,0.15), rgba(255,107,181,0.15));
-
-  /* ── Elevation (light-based, not shadow) ────────────────────────────────── */
-  --shadow-glass: var(--shadow-glass-dark);
-  --shadow-glow: var(--shadow-glow-dark);
-  --shadow-sheet: var(--shadow-sheet-dark);
-
-  /* ── Priority (brighter on dark) ────────────────────────────────────────── */
-  --priority-low: #9096AE;
-  --priority-medium: #FBBF24;
-  --priority-high: #F87171;
-  --priority-urgent: #F87171;
-
-  /* ── Subject palette (slightly brightened for dark) ──────────────────────── */
-  --subject-1: #A78BFA;
-  --subject-2: #F472B6;
-  --subject-3: #60A5FA;
-  --subject-4: #2DD4BF;
-  --subject-5: #FBBF24;
-  --subject-6: #34D399;
-  --subject-7: #F87171;
-  --subject-8: #94A3B8;
-}
-
-/* ── No-backdrop-filter fallback (low-end / old browsers) ──────────────────── */
-@supports not (backdrop-filter: blur(1px)) {
-  :root {
-    --surface-glass: rgba(255, 255, 255, 0.94);
-    --surface-glass-border: rgba(255, 255, 255, 0.7);
-  }
-  [data-theme="dark"] {
-    --surface-glass: #161422;
-    --surface-glass-border: #2A2840;
-  }
+  --tabbar-height: 68px;
+  --tabbar-clear: 92px;
 }

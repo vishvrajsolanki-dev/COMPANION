@@ -4,6 +4,7 @@ import { db, LectureSlot, Subject, AttendanceRecord } from '../../db/index';
 import styles from './WeeklyGrid.module.css';
 import { SlotDetailSheet } from './SlotDetailSheet';
 import { useUIStore } from '../../store/uiStore';
+import { GlassButton, BottomSheet, EmptyState, Badge } from '../../components/ui';
 import { Calendar, MapPin, Clock, Plus, CalendarPlus } from 'lucide-react';
 
 const DAYS = [
@@ -19,7 +20,7 @@ const DAYS = [
 export const WeeklyGrid: React.FC = () => {
   const [selectedDay, setSelectedDay] = useState<number>(1); // 1 = Mon
   const [activeSlot, setActiveSlot] = useState<{ slot: LectureSlot; subject: Subject; record?: AttendanceRecord } | null>(null);
-  
+
   // Extra class form state
   const [isAddingExtra, setIsAddingExtra] = useState(false);
   const [extraSubjectId, setExtraSubjectId] = useState('');
@@ -73,46 +74,31 @@ export const WeeklyGrid: React.FC = () => {
 
   return (
     <div className={styles.container}>
-      <div className={styles.header}>
-        <div>
-          <h2 className={styles.title}>Weekly Timetable (7-Day Grid)</h2>
-        </div>
+      {/* Screen header */}
+      <header
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: 'var(--space-md)',
+          paddingTop: 'calc(var(--space-md) + env(safe-area-inset-top))',
+          borderBottom: '1px solid var(--border-hairline)',
+          backgroundColor: 'var(--bg-page)',
+          position: 'sticky',
+          top: 0,
+          zIndex: 10,
+        }}
+      >
+        <h2 style={{ fontSize: 'var(--text-xl)', fontWeight: 700, color: 'var(--text-primary)' }}>Weekly Timetable (7-Day Grid)</h2>
         <div style={{ display: 'flex', gap: '6px' }}>
-          <button
-            onClick={() => setIsAddingExtra(true)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              backgroundColor: 'var(--color-bg-tertiary)',
-              color: 'var(--color-text-primary)',
-              padding: '6px 10px',
-              borderRadius: 'var(--radius-chip)',
-              fontWeight: 600,
-              fontSize: '0.8rem',
-              border: '1px solid var(--color-border)'
-            }}
-          >
+          <GlassButton size="sm" variant="ghost" onClick={() => setIsAddingExtra(true)}>
             <Plus size={14} /> Extra Class
-          </button>
-          <button
-            onClick={() => navigateToSubview('timetable-builder')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              backgroundColor: 'var(--color-accent-primary)',
-              color: 'var(--color-on-accent)',
-              padding: '6px 10px',
-              borderRadius: 'var(--radius-chip)',
-              fontWeight: 600,
-              fontSize: '0.8rem'
-            }}
-          >
+          </GlassButton>
+          <GlassButton size="sm" onClick={() => navigateToSubview('timetable-builder')}>
             <CalendarPlus size={14} /> Builder
-          </button>
+          </GlassButton>
         </div>
-      </div>
+      </header>
 
       {/* 7-Day Selector Strip (Mon-Sun) */}
       <div className={styles.dayStrip}>
@@ -130,11 +116,11 @@ export const WeeklyGrid: React.FC = () => {
       {/* Grid Slot List */}
       <div className={styles.gridWrapper}>
         {daySlots.length === 0 ? (
-          <div className={styles.emptyState}>
-            <Calendar size={32} />
-            <p style={{ fontWeight: 600 }}>No lectures scheduled for {DAYS.find(d => d.dayNum === selectedDay)?.fullName}</p>
-            <p style={{ fontSize: '0.85rem' }}>Tap "+ Extra Class" or "Builder" to add classes.</p>
-          </div>
+          <EmptyState
+            icon={<Calendar size={32} />}
+            title={`No lectures scheduled for ${DAYS.find(d => d.dayNum === selectedDay)?.fullName}`}
+            body='Tap "+ Extra Class" or "Builder" to add classes.'
+          />
         ) : (
           daySlots.map(slot => {
             const subject = subjectMap.get(slot.subject_id);
@@ -183,23 +169,23 @@ export const WeeklyGrid: React.FC = () => {
                       {slot.room_id || 'Classroom'}
                     </span>
 
-                    <span
-                      className={`${styles.statusBadge} ${
+                    <Badge
+                      tone={
                         isCancelled
-                          ? styles.badgeCancelled
+                          ? 'neutral'
                           : record?.status === 'present'
-                          ? styles.badgePresent
+                          ? 'success'
                           : record?.status === 'absent'
-                          ? styles.badgeAbsent
+                          ? 'danger'
                           : record?.status === 'late'
-                          ? styles.badgeLate
+                          ? 'warning'
                           : record?.status === 'medical' || record?.status === 'onduty'
-                          ? styles.badgeMedical
-                          : styles.badgeScheduled
-                      }`}
+                          ? 'accent'
+                          : 'neutral'
+                      }
                     >
                       {statusLabel}
-                    </span>
+                    </Badge>
                   </div>
                 </div>
               </div>
@@ -209,112 +195,84 @@ export const WeeklyGrid: React.FC = () => {
       </div>
 
       {/* Add Extra Class Sheet */}
-      {isAddingExtra && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            backgroundColor: 'rgba(0,0,0,0.4)',
-            backdropFilter: 'blur(4px)',
-            zIndex: 100,
-            display: 'flex',
-            alignItems: 'flex-end',
-            justifyContent: 'center',
-          }}
-          onClick={() => setIsAddingExtra(false)}
+      <BottomSheet open={isAddingExtra} onClose={() => setIsAddingExtra(false)}>
+        <form
+          onSubmit={handleAddExtraClass}
+          style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}
         >
-          <form
-            onSubmit={handleAddExtraClass}
-            onClick={e => e.stopPropagation()}
-            style={{
-              width: '100%',
-              maxWidth: '500px',
-              backgroundColor: 'var(--color-bg-primary)',
-              borderTopLeftRadius: 'var(--radius-sheet)',
-              borderTopRightRadius: 'var(--radius-sheet)',
-              padding: 'var(--space-lg)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 'var(--space-md)',
-            }}
-          >
-            <h3 style={{ fontSize: '1.15rem', fontWeight: 700 }}>Add Extra Lecture</h3>
+          <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-primary)' }}>Add Extra Lecture</h3>
 
-            <div>
-              <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-text-secondary)' }}>Subject</label>
-              <select
-                value={extraSubjectId}
-                onChange={e => setExtraSubjectId(e.target.value)}
-                required
-                style={{ width: '100%', padding: '12px', borderRadius: 'var(--radius-card)', border: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg-secondary)', color: 'var(--color-text-primary)', marginTop: '4px' }}
-              >
-                <option value="">Select subject…</option>
-                {subjects.map(s => (
-                  <option key={s.id} value={s.id}>{s.name} ({s.code})</option>
-                ))}
-              </select>
-            </div>
+          <div>
+            <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Subject</label>
+            <select
+              value={extraSubjectId}
+              onChange={e => setExtraSubjectId(e.target.value)}
+              required
+              className="input"
+              style={{ marginTop: 4 }}
+            >
+              <option value="">Select subject…</option>
+              {subjects.map(s => (
+                <option key={s.id} value={s.id}>{s.name} ({s.code})</option>
+              ))}
+            </select>
+          </div>
 
+          <div>
+            <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Date</label>
+            <input
+              type="date"
+              value={extraDate}
+              onChange={e => setExtraDate(e.target.value)}
+              required
+              className="input"
+              style={{ marginTop: 4 }}
+            />
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-md)' }}>
             <div>
-              <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-text-secondary)' }}>Date</label>
+              <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Start Time</label>
               <input
-                type="date"
-                value={extraDate}
-                onChange={e => setExtraDate(e.target.value)}
+                type="time"
+                value={extraStartTime}
+                onChange={e => setExtraStartTime(e.target.value)}
                 required
-                style={{ width: '100%', padding: '12px', borderRadius: 'var(--radius-card)', border: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg-secondary)', color: 'var(--color-text-primary)', marginTop: '4px' }}
+                className="input"
+                style={{ marginTop: 4 }}
               />
             </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-              <div>
-                <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-text-secondary)' }}>Start Time</label>
-                <input
-                  type="time"
-                  value={extraStartTime}
-                  onChange={e => setExtraStartTime(e.target.value)}
-                  required
-                  style={{ width: '100%', padding: '12px', borderRadius: 'var(--radius-card)', border: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg-secondary)', color: 'var(--color-text-primary)', marginTop: '4px' }}
-                />
-              </div>
-              <div>
-                <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-text-secondary)' }}>End Time</label>
-                <input
-                  type="time"
-                  value={extraEndTime}
-                  onChange={e => setExtraEndTime(e.target.value)}
-                  required
-                  style={{ width: '100%', padding: '12px', borderRadius: 'var(--radius-card)', border: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg-secondary)', color: 'var(--color-text-primary)', marginTop: '4px' }}
-                />
-              </div>
+            <div>
+              <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>End Time</label>
+              <input
+                type="time"
+                value={extraEndTime}
+                onChange={e => setExtraEndTime(e.target.value)}
+                required
+                className="input"
+                style={{ marginTop: 4 }}
+              />
             </div>
+          </div>
 
-            <input
-              type="text"
-              placeholder="Room / Hall (e.g. CL-101)"
-              value={extraRoomId}
-              onChange={e => setExtraRoomId(e.target.value)}
-              style={{ width: '100%', padding: '12px', borderRadius: 'var(--radius-card)', border: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg-secondary)', color: 'var(--color-text-primary)' }}
-            />
+          <input
+            type="text"
+            placeholder="Room / Hall (e.g. CL-101)"
+            value={extraRoomId}
+            onChange={e => setExtraRoomId(e.target.value)}
+            className="input"
+          />
 
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button
-                type="submit"
-                style={{ flex: 1, padding: '12px', borderRadius: 'var(--radius-card)', backgroundColor: 'var(--color-accent-primary)', color: 'var(--color-on-accent)', fontWeight: 600, fontSize: '0.9rem' }}
-              >
-                Create Extra Class
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsAddingExtra(false)}
-                style={{ padding: '12px 20px', borderRadius: 'var(--radius-card)', backgroundColor: 'var(--color-bg-tertiary)', fontWeight: 600 }}
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <GlassButton type="submit" style={{ flex: 1 }}>
+              Create Extra Class
+            </GlassButton>
+            <GlassButton type="button" variant="ghost" onClick={() => setIsAddingExtra(false)}>
+              Cancel
+            </GlassButton>
+          </div>
+        </form>
+      </BottomSheet>
 
       {/* Quick Attendance Mark Sheet */}
       {activeSlot && (

@@ -3,6 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useSubjects } from '../../db/useDatabase';
 import { db, Subject } from '../../db/index';
 import { useUIStore } from '../../store/uiStore';
+import { BottomSheet, EmptyState, GlassButton } from '../../components/ui';
 import { ArrowLeft, Plus, Pencil, Trash2 } from 'lucide-react';
 
 // The 8 locked token colors — no free color picker allowed (design system constraint)
@@ -16,15 +17,6 @@ export const SUBJECT_COLORS = [
   { hex: '#DC2626', label: 'Red'     },
   { hex: '#64748B', label: 'Slate'   },
 ];
-
-const inputStyle: React.CSSProperties = {
-  width: '100%', padding: '11px 12px', borderRadius: 'var(--radius-card)',
-  border: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg-secondary)',
-  color: 'var(--color-text-primary)', fontSize: '0.95rem',
-};
-const labelStyle: React.CSSProperties = { fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-text-secondary)' };
-const primaryBtn: React.CSSProperties = { flex: 1, padding: '12px', borderRadius: 'var(--radius-card)', backgroundColor: 'var(--color-accent-primary)', color: 'var(--color-on-accent)', fontWeight: 600 };
-const ghostBtn: React.CSSProperties = { padding: '12px 20px', borderRadius: 'var(--radius-card)', backgroundColor: 'var(--color-bg-tertiary)', fontWeight: 600, color: 'var(--color-text-primary)' };
 
 export const ManageSubjectsView: React.FC = () => {
   const subjects = useSubjects() || [];
@@ -88,47 +80,55 @@ export const ManageSubjectsView: React.FC = () => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: 'var(--color-bg-primary)', paddingBottom: '80px' }}>
-      {/* Header */}
-      <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'var(--space-md)', borderBottom: '1px solid var(--color-border)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button onClick={closeSubview} style={{ color: 'var(--color-text-primary)' }}><ArrowLeft size={24} /></button>
-          <h2 style={{ fontSize: '1.2rem', fontWeight: 700 }}>Manage Subjects</h2>
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: 'var(--bg-page)', paddingBottom: '80px' }}>
+      {/* Screen header */}
+      <header
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: 'var(--space-md)',
+          paddingTop: 'calc(var(--space-md) + env(safe-area-inset-top))',
+          borderBottom: '1px solid var(--border-hairline)',
+          backgroundColor: 'var(--bg-page)',
+          position: 'sticky',
+          top: 0,
+          zIndex: 10,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+          <button onClick={closeSubview} style={{ display: 'flex', alignItems: 'center', color: 'var(--text-primary)' }}><ArrowLeft size={24} /></button>
+          <h2 style={{ fontSize: 'var(--text-xl)', fontWeight: 700, color: 'var(--text-primary)' }}>Manage Subjects</h2>
         </div>
-        <button
-          onClick={openAdd}
-          style={{ display: 'flex', alignItems: 'center', gap: '4px', backgroundColor: 'var(--color-accent-primary)', color: 'var(--color-on-accent)', padding: '8px 12px', borderRadius: 'var(--radius-chip)', fontWeight: 600, fontSize: '0.85rem' }}
-        >
+        <GlassButton size="sm" onClick={openAdd}>
           <Plus size={16} /> Add
-        </button>
+        </GlassButton>
       </header>
 
       {/* Subject list */}
       <div style={{ padding: 'var(--space-md)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
         {subjects.length === 0 && (
-          <div style={{ padding: '50px 20px', textAlign: 'center', color: 'var(--color-text-tertiary)' }}>
-            No subjects yet — tap Add to create one.
-          </div>
+          <EmptyState title="No subjects yet" body="Tap Add to create one." />
         )}
         {subjects.map(sub => (
           <div
             key={sub.id}
-            style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: 'var(--space-md)', backgroundColor: 'var(--color-bg-secondary)', borderRadius: 'var(--radius-card)', border: '1px solid var(--color-border)' }}
+            style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: 'var(--space-md)', backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius-card)', border: '1px solid var(--border-hairline)', boxShadow: 'var(--shadow-card)' }}
           >
             {/* Color swatch derived from sub.color */}
             <div style={{ width: '12px', height: '48px', borderRadius: '6px', backgroundColor: sub.color, flexShrink: 0 }} />
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontWeight: 700, fontSize: '0.95rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sub.name}</div>
+              <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sub.name}</div>
               <div style={{ display: 'flex', gap: '8px', marginTop: '4px', alignItems: 'center' }}>
                 <span style={{ fontFamily: 'var(--font-family-mono)', fontSize: '0.72rem', fontWeight: 700, color: sub.color, backgroundColor: `${sub.color}18`, padding: '1px 7px', borderRadius: '4px' }}>{sub.code}</span>
-                <span style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>{sub.credits} cr</span>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{sub.credits} cr</span>
               </div>
             </div>
             <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
-              <button onClick={() => openEdit(sub)} style={{ width: '34px', height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', backgroundColor: 'var(--color-bg-tertiary)', color: 'var(--color-text-secondary)' }} title="Edit">
+              <button onClick={() => openEdit(sub)} style={{ width: '34px', height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', backgroundColor: 'var(--neutral-100)', color: 'var(--text-secondary)' }} title="Edit">
                 <Pencil size={15} />
               </button>
-              <button onClick={() => handleDelete(sub)} style={{ width: '34px', height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', backgroundColor: 'var(--color-bg-tertiary)', color: 'var(--color-danger)' }} title="Delete">
+              <button onClick={() => handleDelete(sub)} style={{ width: '34px', height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', backgroundColor: 'var(--color-danger-bg)', color: 'var(--color-danger)' }} title="Delete">
                 <Trash2 size={15} />
               </button>
             </div>
@@ -137,89 +137,85 @@ export const ManageSubjectsView: React.FC = () => {
       </div>
 
       {/* Add / Edit bottom sheet */}
-      {isEditing && (
-        <div
-          style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)', zIndex: 100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
-          onClick={() => setIsEditing(false)}
+      <BottomSheet open={isEditing} onClose={() => setIsEditing(false)}>
+        <form
+          onSubmit={handleSave}
+          style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}
         >
-          <form
-            onSubmit={handleSave}
-            onClick={e => e.stopPropagation()}
-            style={{ width: '100%', maxWidth: '500px', backgroundColor: 'var(--color-bg-primary)', borderTopLeftRadius: 'var(--radius-sheet)', borderTopRightRadius: 'var(--radius-sheet)', padding: 'var(--space-lg)', display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}
-          >
-            <div style={{ width: '36px', height: '4px', borderRadius: '2px', backgroundColor: 'var(--color-border)', alignSelf: 'center' }} />
-            <h3 style={{ fontWeight: 700, fontSize: '1.15rem' }}>{editTarget ? 'Edit Subject' : 'New Subject'}</h3>
+          <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-primary)' }}>{editTarget ? 'Edit Subject' : 'New Subject'}</h3>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '100px 1fr', gap: '10px' }}>
-              <div>
-                <label style={labelStyle}>Code</label>
-                <input
-                  value={code}
-                  onChange={e => setCode(e.target.value.toUpperCase())}
-                  placeholder="2AI501"
-                  maxLength={10}
-                  required
-                  style={{ ...inputStyle, marginTop: '4px' }}
-                />
-              </div>
-              <div>
-                <label style={labelStyle}>Subject Name</label>
-                <input
-                  value={name}
-                  onChange={e => setName(e.target.value)}
-                  placeholder="Machine Learning"
-                  required
-                  style={{ ...inputStyle, marginTop: '4px' }}
-                />
-              </div>
-            </div>
-
+          <div style={{ display: 'grid', gridTemplateColumns: '100px 1fr', gap: '10px' }}>
             <div>
-              <label style={labelStyle}>Credits (1–6)</label>
+              <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Code</label>
               <input
-                type="number"
-                value={credits}
-                onChange={e => setCredits(e.target.value)}
-                min="1"
-                max="6"
+                value={code}
+                onChange={e => setCode(e.target.value.toUpperCase())}
+                placeholder="2AI501"
+                maxLength={10}
                 required
-                style={{ ...inputStyle, marginTop: '4px', width: '90px' }}
+                className="input"
+                style={{ marginTop: 4 }}
               />
             </div>
-
-            {/* Locked 8-color palette — no free <input type="color"> anywhere */}
             <div>
-              <label style={labelStyle}>Subject Color — 8 locked tokens</label>
-              <div style={{ display: 'flex', gap: '10px', marginTop: '10px', flexWrap: 'wrap' }}>
-                {SUBJECT_COLORS.map(c => (
-                  <button
-                    key={c.hex}
-                    type="button"
-                    title={c.label}
-                    onClick={() => setColor(c.hex)}
-                    style={{
-                      width: '40px', height: '40px', borderRadius: '50%',
-                      backgroundColor: c.hex,
-                      border: color === c.hex ? '3px solid var(--color-text-primary)' : '3px solid transparent',
-                      outline: color === c.hex ? `2px solid ${c.hex}` : 'none',
-                      outlineOffset: '2px',
-                      cursor: 'pointer',
-                    }}
-                  />
-                ))}
-              </div>
-              <p style={{ marginTop: '6px', fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>
-                Selected: <strong style={{ color }}>{SUBJECT_COLORS.find(c => c.hex === color)?.label ?? color}</strong>
-              </p>
+              <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Subject Name</label>
+              <input
+                value={name}
+                onChange={e => setName(e.target.value)}
+                placeholder="Machine Learning"
+                required
+                className="input"
+                style={{ marginTop: 4 }}
+              />
             </div>
+          </div>
 
-            <div style={{ display: 'flex', gap: '8px', paddingTop: '4px' }}>
-              <button type="submit" style={primaryBtn}>Save Subject</button>
-              <button type="button" onClick={() => setIsEditing(false)} style={ghostBtn}>Cancel</button>
+          <div>
+            <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Credits (1–6)</label>
+            <input
+              type="number"
+              value={credits}
+              onChange={e => setCredits(e.target.value)}
+              min="1"
+              max="6"
+              required
+              className="input"
+              style={{ marginTop: 4, width: '90px' }}
+            />
+          </div>
+
+          {/* Locked 8-color palette — no free <input type="color"> anywhere */}
+          <div>
+            <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Subject Color — 8 locked tokens</label>
+            <div style={{ display: 'flex', gap: '10px', marginTop: '10px', flexWrap: 'wrap' }}>
+              {SUBJECT_COLORS.map(c => (
+                <button
+                  key={c.hex}
+                  type="button"
+                  title={c.label}
+                  onClick={() => setColor(c.hex)}
+                  style={{
+                    width: '40px', height: '40px', borderRadius: '50%',
+                    backgroundColor: c.hex,
+                    border: color === c.hex ? '3px solid var(--text-primary)' : '3px solid transparent',
+                    outline: color === c.hex ? `2px solid ${c.hex}` : 'none',
+                    outlineOffset: '2px',
+                    cursor: 'pointer',
+                  }}
+                />
+              ))}
             </div>
-          </form>
-        </div>
-      )}
+            <p style={{ marginTop: '6px', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+              Selected: <strong style={{ color }}>{SUBJECT_COLORS.find(c => c.hex === color)?.label ?? color}</strong>
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', gap: '8px', paddingTop: '4px' }}>
+            <GlassButton type="submit" style={{ flex: 1 }}>Save Subject</GlassButton>
+            <GlassButton type="button" variant="ghost" onClick={() => setIsEditing(false)}>Cancel</GlassButton>
+          </div>
+        </form>
+      </BottomSheet>
     </div>
   );
 };

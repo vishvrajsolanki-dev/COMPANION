@@ -5,9 +5,10 @@ const THEME_STORAGE_KEY = 'academic_os_theme';
 const readTheme = (): 'light' | 'dark' => {
   try {
     const stored = localStorage.getItem(THEME_STORAGE_KEY);
-    return stored === 'light' ? 'light' : 'dark'; // dark is the primary experience
+    // Academic Core is a light-first system; only respect an explicit dark choice.
+    return stored === 'dark' ? 'dark' : 'light';
   } catch {
-    return 'dark';
+    return 'light';
   }
 };
 
@@ -25,7 +26,8 @@ export type SubviewType =
   | 'timetable-import'
   | 'calendar-import'
   | 'calendar-events'
-  | 'admin-portal';
+  | 'admin-portal'
+  | 'style-guide';
 
 interface UIState {
   activeTab: TabType;
@@ -47,7 +49,7 @@ export const useUIStore = create<UIState>((set) => ({
   selectedSubjectId: null,
   selectedExamId: null,
   selectedNoteId: null,
-  theme: typeof window !== 'undefined' ? readTheme() : 'dark',
+  theme: typeof window !== 'undefined' ? readTheme() : 'light',
 
   setActiveTab: (tab) => set({ activeTab: tab, activeSubview: null }),
   navigateToSubview: (subview, data) => set({

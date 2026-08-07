@@ -26,7 +26,7 @@ export const ActivationView: React.FC = () => {
   };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'var(--space-lg)', background: 'var(--bg-app)' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'var(--space-lg)', background: 'var(--bg-page)' }}>
       <div style={{ width: '100%', maxWidth: 420, display: 'flex', flexDirection: 'column', gap: 'var(--space-lg)' }}>
 
         {/* Logo mark + pitch */}
@@ -35,20 +35,21 @@ export const ActivationView: React.FC = () => {
             style={{
               width: 72,
               height: 72,
-              borderRadius: 'var(--radius-blob)',
-              background: 'var(--gradient-accent)',
-              color: 'var(--color-on-accent)',
+              borderRadius: 'var(--radius-card)',
+              background: 'var(--bg-card-tint)',
+              color: 'var(--color-primary)',
+              border: '1px solid var(--border-hairline)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              boxShadow: 'var(--shadow-glow)',
+              boxShadow: 'var(--shadow-card)',
             }}
           >
             <GraduationCap size={34} />
           </div>
           <div>
-            <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--color-text-primary)' }}>Student Academic OS</h1>
-            <p style={{ fontSize: '0.9rem', color: 'var(--color-text-secondary)', marginTop: 4 }}>
+            <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)' }}>Student Academic OS</h1>
+            <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginTop: 4 }}>
               Enter your access key to unlock your timetable, attendance &amp; study hub.
             </p>
           </div>
@@ -58,13 +59,10 @@ export const ActivationView: React.FC = () => {
         <form
           onSubmit={handleSubmit}
           style={{
-            borderRadius: 'var(--radius-blob)',
-            border: '1px solid transparent',
-            background:
-              'linear-gradient(var(--surface-glass), var(--surface-glass)) padding-box, linear-gradient(135deg, var(--gradient-accent)) border-box',
-            boxShadow: 'var(--shadow-glass), var(--shadow-glow)',
-            backdropFilter: 'blur(var(--blur-glass)) saturate(1.4)',
-            WebkitBackdropFilter: 'blur(var(--blur-glass)) saturate(1.4)',
+            borderRadius: 'var(--radius-card)',
+            border: '1px solid var(--border-hairline)',
+            backgroundColor: 'var(--bg-card)',
+            boxShadow: 'var(--shadow-card)',
             padding: 'var(--space-lg)',
             display: 'flex',
             flexDirection: 'column',
@@ -77,8 +75,8 @@ export const ActivationView: React.FC = () => {
                 width: 40,
                 height: 40,
                 borderRadius: 12,
-                background: 'var(--gradient-accent-soft)',
-                color: 'var(--color-accent-primary)',
+                background: 'var(--bg-card-tint)',
+                color: 'var(--color-primary)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -88,8 +86,8 @@ export const ActivationView: React.FC = () => {
               <KeyRound size={20} />
             </span>
             <div>
-              <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--color-text-primary)' }}>Activate this device</div>
-              <div style={{ fontSize: '0.78rem', color: 'var(--color-text-tertiary)' }}>One key per device · works offline after activation</div>
+              <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)' }}>Activate this device</div>
+              <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>One key per device · works offline after activation</div>
             </div>
           </div>
 
@@ -103,17 +101,11 @@ export const ActivationView: React.FC = () => {
             autoCapitalize="characters"
             autoCorrect="off"
             spellCheck={false}
+            className="input"
             style={{
-              width: '100%',
-              padding: '13px 14px',
-              borderRadius: 'var(--radius-card)',
-              border: '1px solid var(--color-border)',
-              backgroundColor: 'var(--color-bg-secondary)',
-              color: 'var(--color-text-primary)',
               fontFamily: 'var(--font-family-mono)',
               fontSize: '1rem',
               letterSpacing: '0.06em',
-              outline: 'none',
             }}
           />
 
@@ -121,7 +113,7 @@ export const ActivationView: React.FC = () => {
             <div
               style={{
                 padding: '10px 12px',
-                borderRadius: 'var(--radius-chip)',
+                borderRadius: 'var(--radius-pill)',
                 backgroundColor: 'var(--color-danger-bg)',
                 color: 'var(--color-danger)',
                 fontSize: '0.82rem',
@@ -156,10 +148,10 @@ export const ActivationView: React.FC = () => {
 
         {/* Trust footer */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'center', textAlign: 'center' }}>
-          <p style={{ fontSize: '0.75rem', color: 'var(--color-text-tertiary)', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 6 }}>
             <ShieldCheck size={14} /> Protected by access-key activation
           </p>
-          <p style={{ fontSize: '0.7rem', color: 'var(--color-text-tertiary)', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 6 }}>
             <WifiOff size={13} /> Once activated, everything works offline — no account needed.
           </p>
         </div>

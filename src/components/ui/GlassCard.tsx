@@ -9,7 +9,7 @@ interface GlassCardProps extends React.HTMLAttributes<HTMLDivElement> {
   variant?: GlassCardVariant;
 }
 
-/** Frosted-glass card surface with variant shapes. */
+/** White card surface aligned to the Academic Core card pattern. */
 export const GlassCard: React.FC<GlassCardProps> = ({
   children,
   className,
@@ -27,7 +27,7 @@ export const GlassCard: React.FC<GlassCardProps> = ({
   return (
     <div
       className={[
-        styles.glassCard,
+        styles.card,
         padded ? styles.padded : '',
         liftable ? styles.liftable : '',
         variantClass,
