@@ -1,8 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { seedDatabaseIfEmpty } from '../db/seeds';
 import { useUIStore } from '../store/uiStore';
+import { useAuthStore } from '../store/authStore';
+import { supabaseConfigured } from '../lib/supabase';
 import { TabBar } from '../components/layout/TabBar';
 import { ErrorBoundary } from '../components/ErrorBoundary';
+import { ToastProvider } from '../components/ui';
+import { ActivationView } from '../features/auth/ActivationView';
 
 // Main tab views
 import { QuietDashboard }  from '../features/dashboard/QuietDashboard';
@@ -23,12 +27,14 @@ import { TimetableBuilderView }     from '../features/timetable/TimetableBuilder
 import { TimetableImportView }      from '../features/timetable/TimetableImportView';
 import { AcademicCalendarImportView } from '../features/calendar/AcademicCalendarImportView';
 import { CalendarEventsView }        from '../features/calendar/CalendarEventsView';
+import { AdminPortalView }           from '../features/admin/AdminPortalView';
 
 export const App: React.FC = () => {
   const activeTab    = useUIStore(state => state.activeTab);
   const setActiveTab = useUIStore(state => state.setActiveTab);
   const activeSubview = useUIStore(state => state.activeSubview);
   const theme = useUIStore(state => state.theme);
+  const authStatus = useAuthStore(state => state.status);
 
   const [isSeeded, setIsSeeded] = useState(false);
 
@@ -40,7 +46,7 @@ export const App: React.FC = () => {
 
   if (!isSeeded) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', gap: '12px', backgroundColor: 'var(--color-bg-primary)' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', gap: '12px', background: 'var(--bg-app)' }}>
         <div style={{ width: '32px', height: '32px', borderRadius: '50%', border: '3px solid var(--color-accent-primary)', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} />
         <p style={{ color: 'var(--color-text-secondary)', fontFamily: 'var(--font-family-mono)', fontSize: '0.85rem' }}>
           Initialising local database…
@@ -50,9 +56,17 @@ export const App: React.FC = () => {
     );
   }
 
+  // Phase B gate: once a Supabase backend is configured, a device must activate
+  // with an access key before the app opens. Unconfigured builds (no env vars)
+  // render the app exactly as before — the gate is inert until wired up.
+  if (supabaseConfigured && authStatus !== 'activated') {
+    return <ActivationView />;
+  }
+
   return (
     <ErrorBoundary>
-      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--color-bg-primary)' }}>
+      <ToastProvider>
+      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-app)' }}>
         <main style={{ flex: 1, overflowY: 'auto' }}>
           {/* Subviews take full screen — tab bar hides */}
           {activeSubview ? (
@@ -69,6 +83,7 @@ export const App: React.FC = () => {
               {activeSubview === 'timetable-import'  && <TimetableImportView  />}
               {activeSubview === 'calendar-import'   && <AcademicCalendarImportView />}
               {activeSubview === 'calendar-events'   && <CalendarEventsView        />}
+              {activeSubview === 'admin-portal'      && <AdminPortalView           />}
             </>
           ) : (
             <>
@@ -85,6 +100,7 @@ export const App: React.FC = () => {
           <TabBar activeTab={activeTab} onSelectTab={setActiveTab} />
         )}
       </div>
+      </ToastProvider>
     </ErrorBoundary>
   );
 };
