@@ -187,7 +187,7 @@ export const TimetableBuilderView: React.FC = () => {
                   key={d.num}
                   type="button"
                   onClick={() => setDayOfWeek(d.num)}
-                  style={{ padding: '7px 14px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600, border: '1px solid var(--color-border)', backgroundColor: dayOfWeek === d.num ? 'var(--color-accent-primary)' : 'var(--color-bg-tertiary)', color: dayOfWeek === d.num ? '#fff' : 'var(--color-text-secondary)', minWidth: '44px', minHeight: '36px' }}
+                  style={{ padding: '7px 14px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600, border: '1px solid var(--color-border)', backgroundColor: dayOfWeek === d.num ? 'var(--color-accent-primary)' : 'var(--color-bg-tertiary)', color: dayOfWeek === d.num ? 'var(--color-on-accent)' : 'var(--color-text-secondary)', minWidth: '44px', minHeight: '36px' }}
                 >
                   {d.name}
                 </button>
@@ -246,7 +246,7 @@ export const TimetableBuilderView: React.FC = () => {
           <button
             onClick={generateAll}
             disabled={generating || !activeSem}
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '14px', borderRadius: 'var(--radius-card)', backgroundColor: generating ? 'var(--color-bg-tertiary)' : 'var(--color-accent-primary)', color: generating ? 'var(--color-text-secondary)' : '#fff', fontWeight: 700, fontSize: '1rem', marginTop: '4px', opacity: !activeSem ? 0.5 : 1 }}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '14px', borderRadius: 'var(--radius-card)', backgroundColor: generating ? 'var(--color-bg-tertiary)' : 'var(--color-accent-primary)', color: generating ? 'var(--color-text-secondary)' : 'var(--color-on-accent)', fontWeight: 700, fontSize: '1rem', marginTop: '4px', opacity: !activeSem ? 0.5 : 1 }}
           >
             <Zap size={18} />
             {generating ? 'Generating…' : `Generate Across Semester`}

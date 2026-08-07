@@ -13,11 +13,11 @@ const TYPE_ICON = {
 };
 
 const TYPE_COLOR: Record<string, string> = {
-  pdf:    '#EF4444',
-  drive:  '#3B82F6',
-  github: '#8B5CF6',
-  url:    '#10B981',
-  other:  '#F59E0B',
+  pdf:    'var(--color-danger)',
+  drive:  'var(--color-info)',
+  github: 'var(--color-accent-secondary)',
+  url:    'var(--color-success)',
+  other:  'var(--color-warning)',
 };
 
 export const ResourcesView: React.FC = () => {
@@ -93,7 +93,7 @@ export const ResourcesView: React.FC = () => {
         </div>
         <button
           onClick={() => setIsAdding(true)}
-          style={{ display: 'flex', alignItems: 'center', gap: '4px', backgroundColor: 'var(--color-accent-primary)', color: '#ffffff', padding: '8px 12px', borderRadius: 'var(--radius-chip)', fontWeight: 600, fontSize: '0.85rem' }}
+          style={{ display: 'flex', alignItems: 'center', gap: '4px', backgroundColor: 'var(--color-accent-primary)', color: 'var(--color-on-accent)', padding: '8px 12px', borderRadius: 'var(--radius-chip)', fontWeight: 600, fontSize: '0.85rem' }}
         >
           <Plus size={16} /> Add
         </button>
@@ -103,7 +103,7 @@ export const ResourcesView: React.FC = () => {
       <div style={{ padding: 'var(--space-md) var(--space-md) 0', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
         <button
           onClick={() => setFilterSubjectId('')}
-          style={{ padding: '6px 12px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 600, backgroundColor: filterSubjectId === '' ? 'var(--color-accent-primary)' : 'var(--color-bg-secondary)', color: filterSubjectId === '' ? '#ffffff' : 'var(--color-text-secondary)', border: '1px solid var(--color-border)' }}
+          style={{ padding: '6px 12px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 600, backgroundColor: filterSubjectId === '' ? 'var(--color-accent-primary)' : 'var(--color-bg-secondary)', color: filterSubjectId === '' ? 'var(--color-on-accent)' : 'var(--color-text-secondary)', border: '1px solid var(--color-border)' }}
         >
           All
         </button>
@@ -223,7 +223,7 @@ export const ResourcesView: React.FC = () => {
             )}
 
             <div style={{ display: 'flex', gap: '8px' }}>
-              <button type="submit" style={{ flex: 1, padding: '12px', borderRadius: 'var(--radius-card)', backgroundColor: 'var(--color-accent-primary)', color: '#ffffff', fontWeight: 600, fontSize: '0.9rem' }}>Save Resource</button>
+              <button type="submit" style={{ flex: 1, padding: '12px', borderRadius: 'var(--radius-card)', backgroundColor: 'var(--color-accent-primary)', color: 'var(--color-on-accent)', fontWeight: 600, fontSize: '0.9rem' }}>Save Resource</button>
               <button type="button" onClick={() => setIsAdding(false)} style={{ padding: '12px 20px', borderRadius: 'var(--radius-card)', backgroundColor: 'var(--color-bg-tertiary)', fontWeight: 600 }}>Cancel</button>
             </div>
           </form>

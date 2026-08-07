@@ -23,7 +23,7 @@ const inputStyle: React.CSSProperties = {
   color: 'var(--color-text-primary)', fontSize: '0.95rem',
 };
 const labelStyle: React.CSSProperties = { fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-text-secondary)' };
-const primaryBtn: React.CSSProperties = { flex: 1, padding: '12px', borderRadius: 'var(--radius-card)', backgroundColor: 'var(--color-accent-primary)', color: '#fff', fontWeight: 600 };
+const primaryBtn: React.CSSProperties = { flex: 1, padding: '12px', borderRadius: 'var(--radius-card)', backgroundColor: 'var(--color-accent-primary)', color: 'var(--color-on-accent)', fontWeight: 600 };
 const ghostBtn: React.CSSProperties = { padding: '12px 20px', borderRadius: 'var(--radius-card)', backgroundColor: 'var(--color-bg-tertiary)', fontWeight: 600, color: 'var(--color-text-primary)' };
 
 export const ManageSubjectsView: React.FC = () => {
@@ -97,7 +97,7 @@ export const ManageSubjectsView: React.FC = () => {
         </div>
         <button
           onClick={openAdd}
-          style={{ display: 'flex', alignItems: 'center', gap: '4px', backgroundColor: 'var(--color-accent-primary)', color: '#fff', padding: '8px 12px', borderRadius: 'var(--radius-chip)', fontWeight: 600, fontSize: '0.85rem' }}
+          style={{ display: 'flex', alignItems: 'center', gap: '4px', backgroundColor: 'var(--color-accent-primary)', color: 'var(--color-on-accent)', padding: '8px 12px', borderRadius: 'var(--radius-chip)', fontWeight: 600, fontSize: '0.85rem' }}
         >
           <Plus size={16} /> Add
         </button>

@@ -2,10 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useAttendanceMath } from '../../hooks/useAttendanceMath';
 import { useSubjects, useLectureSlots, useTasks } from '../../db/useDatabase';
 import { useUIStore } from '../../store/uiStore';
+import { useProfileStore, profileFirstName } from '../../store/profileStore';
+import { todayISO, isToday, nowMinutes, timePart, datePart, formatHeaderDate } from '../../utils/date';
 import styles from './QuietDashboard.module.css';
-import { 
-  AlertTriangle, Clock, MapPin, CheckCircle, ArrowRight, 
-  BookOpen, BarChart2, Award, Calendar, CheckSquare 
+import { StatTile } from '../../components/ui';
+import {
+  AlertTriangle, Clock, MapPin, CheckCircle, ArrowRight,
+  BookOpen, BarChart2, Award, Calendar
 } from 'lucide-react';
 
 export const QuietDashboard: React.FC = () => {
@@ -17,7 +20,7 @@ export const QuietDashboard: React.FC = () => {
   const navigateToSubview = useUIStore(state => state.navigateToSubview);
   const setActiveTab = useUIStore(state => state.setActiveTab);
 
-  // Time-of-day greeting & counting
+  // Real-time clock — ticks every minute so the "Starts at HH:MM" label stays live
   const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
@@ -25,43 +28,49 @@ export const QuietDashboard: React.FC = () => {
     return () => clearInterval(timer);
   }, []);
 
-  // Today is Wednesday Aug 5, 2026 in our mock universe
-  // We can simulate today's date based on 2026-08-05 local time
-  const simulatedToday = new Date('2026-08-05T11:30:00');
-  const todayDayNum = 3; // Wednesday
+  // Real-date engine — no simulated "Aug 5 2026" hardcoding anymore
+  const profile = useProfileStore(s => s.profile);
+  const firstName = profileFirstName(profile);
+  const now = currentTime;
 
-  // Format date header
-  const dateStr = simulatedToday.toLocaleDateString('en-US', {
-    weekday: 'long',
-    month: 'short',
-    day: 'numeric'
-  });
+  // Format date header from the actual clock
+  const dateStr = formatHeaderDate(now);
 
-  // Filter slots for today (day_of_week 3 = Wednesday)
+  // Slots for the real current date
   const todaySlots = lectureSlots
     .filter(slot => {
       if (slot.is_deleted) return false;
-      const slotDate = new Date(slot.start_time);
-      return slotDate.getFullYear() === 2026 && 
-             slotDate.getMonth() === 7 && // August (0-indexed 7)
-             slotDate.getDate() === 5;
+      return isToday(slot.start_time, now);
     })
     .sort((a, b) => a.start_time.localeCompare(b.start_time));
 
-  // Determine next lecture today (whose start time is after current time 11:30 AM)
-  const nextSlot = todaySlots.find(slot => {
-    const slotTimeStr = slot.start_time.split('T')[1].substring(0, 5); // "10:30"
-    return slotTimeStr > "11:30" && slot.status !== 'cancelled';
-  });
+  // When the seeded semester has no class on today's real date (demo data is
+  // anchored to the ADIT ODD 2026 semester), fall back to the nearest upcoming
+  // slot so the hero card is never dead.
+  const upcomingSlots = lectureSlots
+    .filter(s => !s.is_deleted)
+    .filter(s => datePart(s.start_time) >= todayISO())
+    .sort((a, b) => a.start_time.localeCompare(b.start_time));
+  const fallbackSlot = todaySlots.length > 0 ? null : upcomingSlots[0] || null;
+  const isFallback = !!fallbackSlot;
+
+  // Next lecture today (start time after the real current time)
+  const candidates = isFallback ? [fallbackSlot] : todaySlots;
+  const nextSlot = candidates.find(
+    slot => slot && timePart(slot.start_time) > nowMinutes() && slot.status !== 'cancelled'
+  ) || null;
 
   const nextSubject = nextSlot ? subjects.find(s => s.id === nextSlot.subject_id) : null;
 
   // Compute countdown display if next class exists
   let countdownText = '';
   if (nextSlot) {
-    const slotTimeStr = nextSlot.start_time.split('T')[1].substring(0, 5); // "13:00"
-    countdownText = `Starts at ${slotTimeStr}`;
+    countdownText = `Starts at ${timePart(nextSlot.start_time)}`;
   }
+
+  // Time-of-day greeting
+  const hour = now.getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
 
   // Active tasks due soon (max 2-3)
   const activeTasks = tasks
@@ -77,7 +86,7 @@ export const QuietDashboard: React.FC = () => {
     <div className={styles.container}>
       {/* Header Greeting */}
       <div className={styles.header}>
-        <h1 className={styles.greeting}>Good morning, Vishvraj</h1>
+        <h1 className={styles.greeting}>{greeting}{firstName ? `, ${firstName}` : ''}</h1>
         <p className={styles.dateSubtitle}>{dateStr}</p>
       </div>
 
@@ -96,28 +105,23 @@ export const QuietDashboard: React.FC = () => {
       {nextSlot && nextSubject ? (
         <div className={styles.heroCard}>
           <div className={styles.heroTop}>
-            <span className={styles.heroTag}>Next Class Today</span>
+            <span className={styles.heroTag}>{isFallback ? 'Next Up' : 'Next Class Today'}</span>
             {countdownText && (
               <span className={styles.countdownBadge}>{countdownText}</span>
             )}
           </div>
           <h3 className={styles.heroTitle}>{nextSubject.name}</h3>
           <div className={styles.heroMeta}>
-            <span 
-              style={{
-                backgroundColor: `${nextSubject.color}20`,
-                color: nextSubject.color,
-                fontWeight: 700,
-                padding: '2px 8px',
-                borderRadius: '6px',
-                fontSize: '0.75rem'
-              }}
+            <span
+              className={styles.subjectPill}
+              style={{ backgroundColor: `${nextSubject.color}20`, color: nextSubject.color }}
             >
               {nextSubject.code}
             </span>
             <span className={styles.heroMetaItem}>
               <Clock size={14} />
-              {nextSlot.start_time.split('T')[1].substring(0, 5)} - {nextSlot.end_time.split('T')[1].substring(0, 5)}
+              {isFallback ? `${datePart(nextSlot.start_time).slice(5)} · ` : ''}
+              {timePart(nextSlot.start_time)} - {timePart(nextSlot.end_time)}
             </span>
             <span className={styles.heroMetaItem}>
               <MapPin size={14} />
@@ -143,19 +147,30 @@ export const QuietDashboard: React.FC = () => {
         </button>
 
         <button className={styles.quickLinkCard} onClick={() => navigateToSubview('notes')}>
-          <BookOpen size={20} className={styles.quickLinkIcon} style={{ color: '#8B5CF6' }} />
+          <BookOpen size={20} className={styles.quickLinkIcon} style={{ color: 'var(--color-accent-secondary)' }} />
           <span className={styles.quickLinkLabel}>Study Notes</span>
         </button>
 
         <button className={styles.quickLinkCard} onClick={() => navigateToSubview('exams')}>
-          <Calendar size={20} className={styles.quickLinkIcon} style={{ color: '#EC4899' }} />
+          <Calendar size={20} className={styles.quickLinkIcon} style={{ color: 'var(--color-accent-tertiary)' }} />
           <span className={styles.quickLinkLabel}>Exams & Quizzes</span>
         </button>
 
         <button className={styles.quickLinkCard} onClick={() => navigateToSubview('analytics')}>
-          <BarChart2 size={20} className={styles.quickLinkIcon} style={{ color: '#10B981' }} />
+          <BarChart2 size={20} className={styles.quickLinkIcon} style={{ color: 'var(--color-success)' }} />
           <span className={styles.quickLinkLabel}>Performance</span>
         </button>
+      </div>
+
+      {/* Metric tiles */}
+      <div className={styles.statRow}>
+        <StatTile value={todaySlots.length} label="Classes Today" />
+        <StatTile value={activeTasks.length} label="Active Tasks" />
+        <StatTile
+          value={`${Math.round(overall.overallPercentage)}%`}
+          label="Attendance"
+          valueColor={overall.isAnyAtRisk ? 'var(--color-danger)' : 'var(--color-success)'}
+        />
       </div>
 
       {/* Attendance Ring and Summary */}
@@ -206,7 +221,7 @@ export const QuietDashboard: React.FC = () => {
       {/* Tasks Section */}
       <div className={styles.section}>
         <div className={styles.sectionHeader}>
-          <h3 className={styles.sectionTitle}>Tasks Due Soon</h3>
+          <h3 className={styles.overline}>Tasks Due Soon</h3>
           <button className={styles.viewAllButton} onClick={() => setActiveTab('tasks')}>
             View All <ArrowRight size={14} />
           </button>
@@ -251,7 +266,7 @@ export const QuietDashboard: React.FC = () => {
       {/* Today's Timeline */}
       <div className={styles.section}>
         <div className={styles.sectionHeader}>
-          <h3 className={styles.sectionTitle}>Today's Schedule</h3>
+          <h3 className={styles.overline}>Today's Schedule</h3>
           <button className={styles.viewAllButton} onClick={() => setActiveTab('schedule')}>
             Timetable <ArrowRight size={14} />
           </button>
@@ -291,9 +306,9 @@ export const QuietDashboard: React.FC = () => {
                         <MapPin size={12} style={{ marginRight: '4px' }} />
                         {slot.room_id || 'Classroom'}
                       </span>
-                      {isCancelled && <span className={styles.badgeCancelled}>Cancelled</span>}
-                      {isRescheduled && <span className={styles.badgeRescheduled}>Rescheduled</span>}
-                      {isExtra && <span className={styles.badgeExtra}>Extra Class</span>}
+                      {isCancelled && <span className={`${styles.badge} ${styles.badgeCancelled}`}>Cancelled</span>}
+                      {isRescheduled && <span className={`${styles.badge} ${styles.badgeRescheduled}`}>Rescheduled</span>}
+                      {isExtra && <span className={`${styles.badge} ${styles.badgeExtra}`}>Extra Class</span>}
                     </div>
                   </div>
                 </div>

@@ -167,7 +167,7 @@ export const AcademicCalendarImportView: React.FC = () => {
           <div style={{ marginTop: '8px' }}>
             <button
               onClick={() => navigateToSubview('semester-setup')}
-              style={{ fontSize: '0.8rem', padding: '6px 12px', borderRadius: '6px', backgroundColor: 'var(--color-accent-primary)', color: '#fff', fontWeight: 600 }}
+              style={{ fontSize: '0.8rem', padding: '6px 12px', borderRadius: '6px', backgroundColor: 'var(--color-accent-primary)', color: 'var(--color-on-accent)', fontWeight: 600 }}
             >
               Open Semester Setup to Edit
             </button>
@@ -185,7 +185,7 @@ export const AcademicCalendarImportView: React.FC = () => {
             >
               Sample Calendar JSON
             </button>
-            <label style={{ fontSize: '0.78rem', padding: '4px 8px', borderRadius: '6px', backgroundColor: 'var(--color-accent-primary)', color: '#fff', cursor: 'pointer', fontWeight: 600 }}>
+            <label style={{ fontSize: '0.78rem', padding: '4px 8px', borderRadius: '6px', backgroundColor: 'var(--color-accent-primary)', color: 'var(--color-on-accent)', cursor: 'pointer', fontWeight: 600 }}>
               <Upload size={12} style={{ display: 'inline', marginRight: '4px' }} /> Upload .json
               <input type="file" accept=".json" onChange={handleFileUpload} style={{ display: 'none' }} />
             </label>
@@ -231,7 +231,7 @@ export const AcademicCalendarImportView: React.FC = () => {
 
             <button
               onClick={handleCommitImport}
-              style={{ padding: '12px', borderRadius: 'var(--radius-card)', backgroundColor: 'var(--color-accent-primary)', color: '#fff', fontWeight: 700, fontSize: '0.95rem' }}
+              style={{ padding: '12px', borderRadius: 'var(--radius-card)', backgroundColor: 'var(--color-accent-primary)', color: 'var(--color-on-accent)', fontWeight: 700, fontSize: '0.95rem' }}
             >
               Import Academic Calendar Defaults
             </button>

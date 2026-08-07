@@ -2,15 +2,26 @@ import React, { useState } from 'react';
 import { useActiveSemester, useSubjects, useCalendarEvents } from '../../db/useDatabase';
 import { db } from '../../db/index';
 import { useUIStore } from '../../store/uiStore';
-import { Moon, Sun, HardDrive, Users, BookOpen, ChevronRight, Calendar, CalendarDays, BookMarked, Sliders, Trash2, Download, AlertTriangle, FileCode, Upload } from 'lucide-react';
+import { useProfileStore } from '../../store/profileStore';
+import { useAuthStore } from '../../store/authStore';
+import { QuickLink, StatTile, GlassButton } from '../../components/ui';
+import {
+  Moon, Sun, HardDrive, Users, BookOpen, Calendar, CalendarDays,
+  BookMarked, Sliders, Trash2, Download, AlertTriangle, FileCode, Upload, User,
+  ShieldCheck, LogOut, Settings2
+} from 'lucide-react';
 
 export const ProfileView: React.FC = () => {
   const activeSemester    = useActiveSemester();
   const subjects          = useSubjects() || [];
   const calendarEvents    = useCalendarEvents() || [];
+  const profile           = useProfileStore(state => state.profile);
   const theme             = useUIStore(state => state.theme);
   const toggleTheme       = useUIStore(state => state.toggleTheme);
   const navigateToSubview = useUIStore(state => state.navigateToSubview);
+  const authStatus        = useAuthStore(state => state.status);
+  const activation        = useAuthStore(state => state.activation);
+  const signOut           = useAuthStore(state => state.signOut);
 
   const [isConfirmingClear, setIsConfirmingClear] = useState(false);
   const [confirmInput, setConfirmInput]           = useState('');
@@ -100,165 +111,314 @@ export const ProfileView: React.FC = () => {
     navigateToSubview('semester-setup');
   };
 
-  const Row: React.FC<{ label: string; value?: string; onClick?: () => void; icon: React.ReactNode }> = ({ label, value, onClick, icon }) => (
-    <button
-      onClick={onClick}
-      style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'var(--space-md)', backgroundColor: 'var(--color-bg-secondary)', borderRadius: 'var(--radius-card)', border: '1px solid var(--color-border)', width: '100%', textAlign: 'left' }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontWeight: 600, fontSize: '0.9rem' }}>
-        {icon}
-        <span>{label}</span>
-      </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>
-        {value && <span>{value}</span>}
-        {onClick && <ChevronRight size={16} />}
-      </div>
-    </button>
-  );
+  const overline: React.CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 10,
+    fontSize: 'var(--text-2xs)',
+    fontWeight: 700,
+    letterSpacing: '0.08em',
+    textTransform: 'uppercase',
+    color: 'var(--color-text-tertiary)',
+  };
+  const overlineBar: React.CSSProperties = {
+    width: 3,
+    height: 14,
+    borderRadius: 2,
+    background: 'var(--gradient-accent)',
+    flexShrink: 0,
+  };
 
   return (
     <div style={{ padding: 'var(--space-md)', paddingBottom: '90px', display: 'flex', flexDirection: 'column', gap: 'var(--space-lg)' }}>
 
-      {/* Profile Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)' }}>
-        <div style={{ width: '60px', height: '60px', borderRadius: '50%', backgroundColor: 'var(--color-accent-primary)', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '1.5rem' }}>
-          V
+      {/* Profile Header — hero with avatar ring (identity from profile store; Phase B: real account) */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 'var(--space-md)',
+          borderRadius: 'var(--radius-blob)',
+          border: '1px solid transparent',
+          background:
+            'linear-gradient(var(--surface-glass), var(--surface-glass)) padding-box, linear-gradient(135deg, var(--gradient-accent)) border-box',
+          boxShadow: 'var(--shadow-glass), var(--shadow-glow)',
+          padding: 'var(--space-lg)',
+        }}
+      >
+        <div
+          style={{
+            width: 64,
+            height: 64,
+            borderRadius: '50%',
+            padding: 3,
+            background: 'conic-gradient(from 140deg, var(--color-accent-primary), var(--color-accent-tertiary), var(--color-accent-secondary), var(--color-accent-primary))',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+          }}
+        >
+          <div
+            style={{
+              width: '100%',
+              height: '100%',
+              borderRadius: '50%',
+              background: 'var(--color-bg-primary)',
+              color: 'var(--color-accent-primary)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontWeight: 700,
+              fontSize: '1.4rem',
+            }}
+          >
+            {profile?.name?.trim()?.charAt(0)?.toUpperCase() || <User size={28} />}
+          </div>
         </div>
-        <div>
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Vishvraj Solanki</h2>
+        <div style={{ minWidth: 0 }}>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--color-text-primary)' }}>
+            {profile?.name || 'Your Profile'}
+          </h2>
           <p style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)' }}>
             {activeSemester?.label || 'B.Tech AI & DS — ADIT'}
           </p>
         </div>
       </div>
 
+      {/* Account (Phase B — only when activated via Supabase) */}
+      {authStatus === 'activated' && activation && (
+        <div
+          style={{
+            padding: 'var(--space-md)',
+            borderRadius: 'var(--radius-squircle)',
+            backgroundColor: 'var(--surface-glass)',
+            backdropFilter: 'blur(var(--blur-glass)) saturate(1.4)',
+            WebkitBackdropFilter: 'blur(var(--blur-glass)) saturate(1.4)',
+            border: '1px solid var(--surface-glass-border)',
+            boxShadow: 'var(--shadow-glass)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 12,
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+              <span
+                style={{
+                  width: 38,
+                  height: 38,
+                  borderRadius: 12,
+                  background: 'var(--gradient-accent-soft)',
+                  color: 'var(--color-accent-primary)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}
+              >
+                <ShieldCheck size={19} />
+              </span>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--color-text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {profile?.name || 'Activated device'}
+                </div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {profile?.email || `Key ${activation.codePreview}`}
+                </div>
+              </div>
+            </div>
+            <span
+              style={{
+                fontSize: '0.68rem',
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                letterSpacing: '0.07em',
+                padding: '4px 11px',
+                borderRadius: 'var(--radius-pill)',
+                background: 'var(--gradient-accent-soft)',
+                color: 'var(--color-accent-primary)',
+                flexShrink: 0,
+              }}
+            >
+              {activation.role}
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', paddingTop: 2 }}>
+            {(activation.role === 'admin' || activation.role === 'owner') && (
+              <GlassButton variant="subtle" size="sm" onClick={() => navigateToSubview('admin-portal')}>
+                <Settings2 size={14} /> Admin Portal
+              </GlassButton>
+            )}
+            <GlassButton variant="ghost" size="sm" onClick={signOut}>
+              <LogOut size={14} /> Sign out (remove from this device)
+            </GlassButton>
+          </div>
+        </div>
+      )}
+
       {/* Academic Setup & Management */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
-        <h3 style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--color-text-secondary)', paddingBottom: '4px' }}>Academic Management</h3>
+        <div style={overline}>
+          <span style={overlineBar} />
+          Academic Management
+        </div>
 
-        <Row
+        <QuickLink
           label="Semesters & Dates"
           value={activeSemester?.label || 'None Active'}
-          icon={<Calendar size={18} color="var(--color-accent-primary)" />}
+          icon={<Calendar size={18} />}
           onClick={() => navigateToSubview('semester-setup')}
         />
-        <Row
+        <QuickLink
           label="Manage Subjects"
           value={`${subjects.length} active`}
-          icon={<BookMarked size={18} color="#06B6D4" />}
+          icon={<BookMarked size={18} />}
+          accent="var(--color-accent-secondary)"
           onClick={() => navigateToSubview('manage-subjects')}
         />
-        <Row
+        <QuickLink
           label="Build Timetable Pattern"
-          icon={<Sliders size={18} color="#10B981" />}
+          icon={<Sliders size={18} />}
+          accent="var(--color-success)"
           onClick={() => navigateToSubview('timetable-builder')}
         />
-        <Row
+        <QuickLink
           label="Import Timetable JSON"
-          icon={<FileCode size={18} color="#F59E0B" />}
+          icon={<FileCode size={18} />}
+          accent="var(--color-warning)"
           onClick={() => navigateToSubview('timetable-import')}
         />
-        <Row
+        <QuickLink
           label="Import Academic Calendar JSON"
-          icon={<Calendar size={18} color="#8B5CF6" />}
+          icon={<Calendar size={18} />}
+          accent="var(--color-accent-secondary)"
           onClick={() => navigateToSubview('calendar-import')}
         />
-        <Row
+        <QuickLink
           label="Calendar Events"
           value={`${calendarEvents.length} events`}
-          icon={<CalendarDays size={18} color="#8B5CF6" />}
+          icon={<CalendarDays size={18} />}
+          accent="var(--color-accent-secondary)"
           onClick={() => navigateToSubview('calendar-events')}
         />
       </div>
 
       {/* Academic Directory & Resources */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
-        <h3 style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--color-text-secondary)', paddingBottom: '4px' }}>Directory & Shelf</h3>
+        <div style={overline}>
+          <span style={overlineBar} />
+          Directory & Shelf
+        </div>
 
-        <Row
+        <QuickLink
           label="Faculty Directory"
-          icon={<Users size={18} color="var(--color-accent-primary)" />}
+          icon={<Users size={18} />}
           onClick={() => navigateToSubview('directory')}
         />
-        <Row
+        <QuickLink
           label="Resources Shelf"
-          icon={<BookOpen size={18} color="#8B5CF6" />}
+          icon={<BookOpen size={18} />}
+          accent="var(--color-accent-secondary)"
           onClick={() => navigateToSubview('resources')}
         />
       </div>
 
       {/* Preferences */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
-        <h3 style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--color-text-secondary)', paddingBottom: '4px' }}>Preferences</h3>
-        <Row
+        <div style={overline}>
+          <span style={overlineBar} />
+          Preferences
+        </div>
+        <QuickLink
           label="Appearance"
           value={`${theme.charAt(0).toUpperCase() + theme.slice(1)} Mode`}
           icon={theme === 'dark' ? <Moon size={18} /> : <Sun size={18} />}
+          accent="var(--color-warning)"
           onClick={toggleTheme}
         />
       </div>
 
       {/* Stats */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
-        <h3 style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--color-text-secondary)', paddingBottom: '4px' }}>Semester Status</h3>
-        <div style={{ display: 'flex', gap: '12px' }}>
-          <div style={{ flex: 1, padding: 'var(--space-md)', backgroundColor: 'var(--color-bg-secondary)', borderRadius: 'var(--radius-card)', border: '1px solid var(--color-border)', textAlign: 'center' }}>
-            <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--color-accent-primary)' }}>{subjects.length}</div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginTop: '2px' }}>Courses</div>
-          </div>
-          <div style={{ flex: 1, padding: 'var(--space-md)', backgroundColor: 'var(--color-bg-secondary)', borderRadius: 'var(--radius-card)', border: '1px solid var(--color-border)', textAlign: 'center' }}>
-            <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--color-success)' }}>{totalCredits}</div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginTop: '2px' }}>Credits</div>
-          </div>
+        <div style={overline}>
+          <span style={overlineBar} />
+          Semester Status
+        </div>
+        <div style={{ display: 'flex', gap: 12 }}>
+          <StatTile value={subjects.length} label="Courses" valueColor="var(--color-accent-primary)" />
+          <StatTile value={totalCredits} label="Credits" valueColor="var(--color-success)" />
+          <StatTile value={calendarEvents.length} label="Events" />
         </div>
       </div>
 
       {/* Storage & Reset */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
-        <h3 style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--color-text-secondary)', paddingBottom: '4px' }}>Storage & Data Setup</h3>
-        <div style={{ padding: 'var(--space-md)', backgroundColor: 'var(--color-bg-secondary)', borderRadius: 'var(--radius-card)', border: '1px solid var(--color-border)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <HardDrive size={20} color="var(--color-accent-primary)" />
-            <div>
-              <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>Local IndexedDB Storage</div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginTop: '2px' }}>All data is stored offline on this device. Zero cloud dependency.</div>
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', gap: '8px', paddingTop: '4px' }}>
-            <button
-              onClick={exportBackupJSON}
+        <div style={overline}>
+          <span style={overlineBar} />
+          Storage & Data
+        </div>
+        <div
+          style={{
+            padding: 'var(--space-md)',
+            borderRadius: 'var(--radius-squircle)',
+            backgroundColor: 'var(--surface-glass)',
+            backdropFilter: 'blur(var(--blur-glass)) saturate(1.4)',
+            WebkitBackdropFilter: 'blur(var(--blur-glass)) saturate(1.4)',
+            border: '1px solid var(--surface-glass-border)',
+            boxShadow: 'var(--shadow-glass)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 12,
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span
               style={{
-                flex: 1,
+                width: 40,
+                height: 40,
+                borderRadius: 12,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '6px',
-                padding: '10px',
-                borderRadius: 'var(--radius-chip)',
-                backgroundColor: 'var(--color-bg-tertiary)',
-                color: 'var(--color-text-primary)',
-                fontWeight: 600,
-                fontSize: '0.85rem'
+                background: 'var(--gradient-accent-soft)',
+                color: 'var(--color-accent-primary)',
+                flexShrink: 0,
               }}
             >
-              <Download size={15} /> Backup Data (JSON)
-            </button>
+              <HardDrive size={20} />
+            </span>
+            <div>
+              <div style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--color-text-primary)' }}>Local IndexedDB Storage</div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginTop: 2 }}>All data is stored offline on this device. Zero cloud dependency.</div>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: 8, paddingTop: 4, flexWrap: 'wrap' }}>
+            <GlassButton variant="ghost" size="sm" onClick={exportBackupJSON} style={{ flex: 1, minWidth: 130 }}>
+              <Download size={15} /> Backup Data
+            </GlassButton>
 
             <label
               style={{
                 flex: 1,
+                minWidth: 130,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '6px',
-                padding: '10px',
+                gap: 6,
+                padding: '7px 12px',
+                fontSize: 'var(--text-sm)',
                 borderRadius: 'var(--radius-chip)',
-                backgroundColor: 'var(--color-bg-tertiary)',
+                backgroundColor: 'var(--surface-glass)',
+                backdropFilter: 'blur(var(--blur-glass))',
+                WebkitBackdropFilter: 'blur(var(--blur-glass))',
+                border: '1px solid var(--surface-glass-border)',
                 color: 'var(--color-text-primary)',
                 fontWeight: 600,
-                fontSize: '0.85rem',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                userSelect: 'none',
               }}
             >
               <Upload size={15} /> Restore from JSON
@@ -274,52 +434,78 @@ export const ProfileView: React.FC = () => {
               />
             </label>
 
-            {restoreError && (
-              <div style={{ padding: '10px', borderRadius: 'var(--radius-card)', backgroundColor: 'var(--color-danger-bg)', color: 'var(--color-danger)', fontSize: '0.85rem', fontWeight: 600, flexBasis: '100%' }}>
-                {restoreError}
-              </div>
-            )}
-            {restoreSuccess && (
-              <div style={{ padding: '10px', borderRadius: 'var(--radius-card)', backgroundColor: 'var(--color-success-bg, #dcfce7)', color: 'var(--color-success, #16a34a)', fontSize: '0.85rem', fontWeight: 600, flexBasis: '100%' }}>
-                ✓ Backup restored successfully! Data has been replaced.
-              </div>
-            )}
-
-            <button
+            <GlassButton
+              variant="danger"
+              size="sm"
+              style={{ flex: 1, minWidth: 150 }}
               onClick={() => {
                 setConfirmInput('');
                 setIsConfirmingClear(true);
               }}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '6px',
-                padding: '10px 14px',
-                borderRadius: 'var(--radius-chip)',
-                backgroundColor: 'var(--color-danger-bg)',
-                color: 'var(--color-danger)',
-                fontWeight: 600,
-                fontSize: '0.85rem'
-              }}
             >
-              <Trash2 size={15} /> Clear All Data & Start Fresh
-            </button>
+              <Trash2 size={15} /> Clear All Data
+            </GlassButton>
           </div>
+
+          {restoreError && (
+            <div style={{ padding: 10, borderRadius: 'var(--radius-chip)', backgroundColor: 'var(--color-danger-bg)', color: 'var(--color-danger)', fontSize: '0.85rem', fontWeight: 600 }}>
+              {restoreError}
+            </div>
+          )}
+          {restoreSuccess && (
+            <div style={{ padding: 10, borderRadius: 'var(--radius-chip)', backgroundColor: 'var(--color-success-bg)', color: 'var(--color-success)', fontSize: '0.85rem', fontWeight: 600 }}>
+              ✓ Backup restored successfully! Data has been replaced.
+            </div>
+          )}
+          {isExported && (
+            <div style={{ padding: 10, borderRadius: 'var(--radius-chip)', backgroundColor: 'var(--color-success-bg)', color: 'var(--color-success)', fontSize: '0.85rem', fontWeight: 600 }}>
+              ✓ JSON backup downloaded to your device.
+            </div>
+          )}
         </div>
       </div>
 
       {/* Active Courses */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
-        <h3 style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--color-text-secondary)', paddingBottom: '4px' }}>Active Courses ({subjects.length})</h3>
+        <div style={overline}>
+          <span style={overlineBar} />
+          Active Courses ({subjects.length})
+        </div>
         {subjects.length === 0 ? (
-          <p style={{ fontSize: '0.85rem', color: 'var(--color-text-tertiary)', textAlign: 'center', padding: '12px' }}>No courses. Go to Manage Subjects to add your real ADIT subjects.</p>
+          <p style={{ fontSize: '0.85rem', color: 'var(--color-text-tertiary)', textAlign: 'center', padding: 12 }}>
+            No courses. Go to Manage Subjects to add your real ADIT subjects.
+          </p>
         ) : (
           subjects.map(s => (
-            <div key={s.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px var(--space-md)', backgroundColor: 'var(--color-bg-secondary)', borderRadius: 'var(--radius-card)', border: '1px solid var(--color-border)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: s.color }} />
-                <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{s.name}</span>
+            <div
+              key={s.id}
+              style={{
+                position: 'relative',
+                overflow: 'hidden',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '12px var(--space-md)',
+                backgroundColor: 'var(--surface-glass)',
+                backdropFilter: 'blur(var(--blur-glass)) saturate(1.4)',
+                WebkitBackdropFilter: 'blur(var(--blur-glass)) saturate(1.4)',
+                borderRadius: 'var(--radius-squircle)',
+                border: '1px solid var(--surface-glass-border)',
+                boxShadow: 'var(--shadow-glass)',
+              }}
+            >
+              <div
+                style={{
+                  position: 'absolute',
+                  left: 0,
+                  top: 0,
+                  bottom: 0,
+                  width: 3,
+                  background: s.color,
+                }}
+              />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingLeft: 4 }}>
+                <span style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--color-text-primary)' }}>{s.name}</span>
               </div>
               <span style={{ fontFamily: 'var(--font-family-mono)', fontSize: '0.78rem', color: 'var(--color-text-secondary)' }}>
                 {s.code} · {s.credits}cr
@@ -344,11 +530,12 @@ export const ProfileView: React.FC = () => {
             inset: 0,
             backgroundColor: 'rgba(0,0,0,0.5)',
             backdropFilter: 'blur(4px)',
+            WebkitBackdropFilter: 'blur(4px)',
             zIndex: 100,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            padding: 'var(--space-md)'
+            padding: 'var(--space-md)',
           }}
           onClick={() => setIsConfirmingClear(false)}
         >
@@ -362,11 +549,11 @@ export const ProfileView: React.FC = () => {
               padding: 'var(--space-lg)',
               display: 'flex',
               flexDirection: 'column',
-              gap: 'var(--space-md)'
+              gap: 'var(--space-md)',
             }}
             onClick={e => e.stopPropagation()}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--color-danger)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'var(--color-danger)' }}>
               <AlertTriangle size={24} />
               <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--color-text-primary)' }}>Wipe All Local Data?</h3>
             </div>
@@ -374,7 +561,7 @@ export const ProfileView: React.FC = () => {
             <p style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)', lineHeight: 1.5 }}>
               This will permanently delete <strong>all sample/local data</strong> including:
             </p>
-            <ul style={{ fontSize: '0.82rem', color: 'var(--color-text-secondary)', paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <ul style={{ fontSize: '0.82rem', color: 'var(--color-text-secondary)', paddingLeft: 20, display: 'flex', flexDirection: 'column', gap: 4 }}>
               <li>Semesters & Date ranges</li>
               <li>Subjects & Course codes</li>
               <li>Lecture Slots & Timetable patterns</li>
@@ -382,7 +569,7 @@ export const ProfileView: React.FC = () => {
               <li>Tasks, Study Notes, Exams, & Resources</li>
             </ul>
 
-            <div style={{ padding: '10px', backgroundColor: 'rgba(37,99,235,0.08)', borderRadius: '8px', fontSize: '0.8rem', color: 'var(--color-accent-primary)' }}>
+            <div style={{ padding: 10, backgroundColor: 'var(--gradient-accent-soft)', borderRadius: 'var(--radius-chip)', fontSize: '0.8rem', color: 'var(--color-accent-primary)' }}>
               ℹ A JSON backup will be exported automatically to your downloads folder before deletion.
             </div>
 
@@ -397,47 +584,30 @@ export const ProfileView: React.FC = () => {
                 placeholder="DELETE"
                 style={{
                   width: '100%',
-                  padding: '10px',
+                  padding: 10,
                   borderRadius: 'var(--radius-chip)',
                   border: '1px solid var(--color-border)',
                   backgroundColor: 'var(--color-bg-secondary)',
                   color: 'var(--color-text-primary)',
                   fontFamily: 'var(--font-family-mono)',
                   fontSize: '0.95rem',
-                  marginTop: '4px'
+                  marginTop: 4,
                 }}
               />
             </div>
 
-            <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
-              <button
-                onClick={handleClearAllData}
+            <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+              <GlassButton
+                variant={confirmInput.trim().toUpperCase() === 'DELETE' ? 'danger' : 'subtle'}
+                style={{ flex: 1 }}
                 disabled={confirmInput.trim().toUpperCase() !== 'DELETE'}
-                style={{
-                  flex: 1,
-                  padding: '12px',
-                  borderRadius: 'var(--radius-card)',
-                  backgroundColor: confirmInput.trim().toUpperCase() === 'DELETE' ? 'var(--color-danger)' : 'var(--color-bg-tertiary)',
-                  color: confirmInput.trim().toUpperCase() === 'DELETE' ? '#ffffff' : 'var(--color-text-tertiary)',
-                  fontWeight: 700,
-                  fontSize: '0.9rem',
-                  cursor: confirmInput.trim().toUpperCase() === 'DELETE' ? 'pointer' : 'not-allowed'
-                }}
+                onClick={handleClearAllData}
               >
                 Export & Wipe All Data
-              </button>
-              <button
-                onClick={() => setIsConfirmingClear(false)}
-                style={{
-                  padding: '12px 18px',
-                  borderRadius: 'var(--radius-card)',
-                  backgroundColor: 'var(--color-bg-tertiary)',
-                  fontWeight: 600,
-                  fontSize: '0.9rem'
-                }}
-              >
+              </GlassButton>
+              <GlassButton variant="ghost" onClick={() => setIsConfirmingClear(false)}>
                 Cancel
-              </button>
+              </GlassButton>
             </div>
           </div>
         </div>

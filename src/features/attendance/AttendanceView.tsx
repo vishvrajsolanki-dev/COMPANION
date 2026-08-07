@@ -239,7 +239,7 @@ export const AttendanceView: React.FC = () => {
                       if (record.status === 'present') bg = 'rgba(22, 163, 74, 0.2)';
                       if (record.status === 'absent') bg = 'rgba(220, 38, 38, 0.2)';
                       if (record.status === 'late') bg = 'rgba(217, 119, 6, 0.2)';
-                      if (record.status === 'medical' || record.status === 'onduty') bg = 'rgba(37, 99, 235, 0.2)';
+                      if (record.status === 'medical' || record.status === 'onduty') bg = 'var(--color-info-bg)';
                     }
 
                     return (
@@ -285,7 +285,7 @@ export const AttendanceView: React.FC = () => {
                         padding: '6px',
                         borderRadius: '6px',
                         border: backfillStatus === st ? '2px solid var(--color-accent-primary)' : '1px solid var(--color-border)',
-                        backgroundColor: backfillStatus === st ? 'rgba(37, 99, 235, 0.1)' : 'var(--color-bg-primary)',
+                        backgroundColor: backfillStatus === st ? 'var(--color-info-bg)' : 'var(--color-bg-primary)',
                         fontSize: '0.75rem',
                         fontWeight: 600,
                         textTransform: 'capitalize'
@@ -301,7 +301,7 @@ export const AttendanceView: React.FC = () => {
                       <AlertCircle size={14} /> {dbError}
                     </div>
                   )}
-                  <button onClick={handleBackfill} style={{ flex: 1, padding: '8px', borderRadius: '6px', backgroundColor: 'var(--color-accent-primary)', color: '#ffffff', fontWeight: 600, fontSize: '0.85rem' }}>
+                  <button onClick={handleBackfill} style={{ flex: 1, padding: '8px', borderRadius: '6px', backgroundColor: 'var(--color-accent-primary)', color: 'var(--color-on-accent)', fontWeight: 600, fontSize: '0.85rem' }}>
                     Save Backfill
                   </button>
                   <button onClick={() => setBackfillSlotId(null)} style={{ padding: '8px 12px', borderRadius: '6px', backgroundColor: 'var(--color-bg-tertiary)', fontSize: '0.85rem' }}>

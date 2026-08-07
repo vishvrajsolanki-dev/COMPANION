@@ -2,10 +2,9 @@ import React, { useState } from 'react';
 import { useTasks, useSubjects } from '../../db/useDatabase';
 import { db, Task, Subject } from '../../db/index';
 import { useUIStore } from '../../store/uiStore';
-import { 
-  CheckSquare, Plus, Clock, AlertCircle, Trash2, Check,
-  ChevronRight, Calendar, ArrowLeft
-} from 'lucide-react';
+import { todayISO, datePart } from '../../utils/date';
+import { BottomSheet, SegmentedControl, GlassButton } from '../../components/ui';
+import { Plus, Trash2, Check } from 'lucide-react';
 
 export const TasksView: React.FC = () => {
   const tasks = useTasks() || [];
@@ -18,7 +17,7 @@ export const TasksView: React.FC = () => {
   const [isAdding, setIsAdding] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [newSubjectId, setNewSubjectId] = useState('');
-  const [newDueAt, setNewDueAt] = useState('2026-08-05T23:59:00');
+  const [newDueAt, setNewDueAt] = useState(() => `${todayISO()}T23:59:00`);
   const [newPriority, setNewPriority] = useState<'low' | 'medium' | 'high' | 'urgent'>('medium');
 
   const selectedTask = tasks.find(t => t.id === selectedTaskId);
@@ -64,7 +63,7 @@ export const TasksView: React.FC = () => {
 
       setNewTitle('');
       setNewSubjectId('');
-      setNewDueAt('2026-08-05T23:59:00');
+      setNewDueAt(`${todayISO()}T23:59:00`);
       setNewPriority('medium');
       setIsAdding(false);
     } catch (err) {
@@ -73,17 +72,16 @@ export const TasksView: React.FC = () => {
     }
   };
 
-  // Filter computation
+  // Filter computation — real date engine (no simulated "Aug 5 2026")
   const filteredTasks = tasks.filter(t => {
     if (t.is_deleted) return false;
-    
-    // We assume current simulated local date is Aug 5, 2026
-    const taskDateStr = t.due_at.split('T')[0];
-    
+
+    const taskDateStr = datePart(t.due_at);
+
     if (activeFilter === 'today') {
-      return taskDateStr === '2026-08-05';
+      return taskDateStr === todayISO();
     } else if (activeFilter === 'upcoming') {
-      return taskDateStr > '2026-08-05';
+      return taskDateStr > todayISO();
     }
     return true;
   });
@@ -92,47 +90,22 @@ export const TasksView: React.FC = () => {
     <div style={{ padding: 'var(--space-md)', paddingBottom: '90px', display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
       
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Tasks</h2>
-        <button 
-          onClick={() => setIsAdding(true)}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px',
-            backgroundColor: 'var(--color-accent-primary)',
-            color: '#ffffff',
-            padding: '8px 12px',
-            borderRadius: 'var(--radius-chip)',
-            fontWeight: 600,
-            fontSize: '0.85rem'
-          }}
-        >
+        <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--color-text-primary)' }}>Tasks</h2>
+        <GlassButton size="sm" onClick={() => setIsAdding(true)}>
           <Plus size={16} /> Add Task
-        </button>
+        </GlassButton>
       </div>
 
       {/* Filter Tabs */}
-      <div style={{ display: 'flex', backgroundColor: 'var(--color-bg-tertiary)', borderRadius: '10px', padding: '3px', gap: '2px' }}>
-        {(['all', 'today', 'upcoming'] as const).map(f => (
-          <button
-            key={f}
-            onClick={() => setActiveFilter(f)}
-            style={{
-              flex: 1,
-              padding: '8px',
-              borderRadius: '8px',
-              fontSize: '0.85rem',
-              fontWeight: 600,
-              textTransform: 'capitalize',
-              color: activeFilter === f ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
-              backgroundColor: activeFilter === f ? 'var(--color-bg-primary)' : 'transparent',
-              boxShadow: activeFilter === f ? '0 1px 3px rgba(0,0,0,0.06)' : 'none'
-            }}
-          >
-            {f}
-          </button>
-        ))}
-      </div>
+      <SegmentedControl
+        options={[
+          { value: 'all', label: 'All' },
+          { value: 'today', label: 'Today' },
+          { value: 'upcoming', label: 'Upcoming' },
+        ]}
+        value={activeFilter}
+        onChange={f => setActiveFilter(f as 'all' | 'today' | 'upcoming')}
+      />
 
       {/* Task List */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
@@ -158,68 +131,90 @@ export const TasksView: React.FC = () => {
                   alignItems: 'center',
                   gap: 'var(--space-sm)',
                   padding: 'var(--space-md)',
-                  backgroundColor: 'var(--color-bg-secondary)',
-                  borderRadius: 'var(--radius-card)',
-                  border: '1px solid var(--color-border)',
-                  opacity: isDone ? 0.6 : 1,
-                  position: 'relative'
+                  paddingLeft: 'var(--space-lg)',
+                  position: 'relative',
+                  overflow: 'hidden',
+                  backgroundColor: 'var(--surface-glass)',
+                  backdropFilter: 'blur(var(--blur-glass)) saturate(1.4)',
+                  WebkitBackdropFilter: 'blur(var(--blur-glass)) saturate(1.4)',
+                  borderRadius: 'var(--radius-squircle)',
+                  border: '1px solid var(--surface-glass-border)',
+                  boxShadow: isUrgent && !isDone ? 'var(--shadow-glass), var(--shadow-glow)' : 'var(--shadow-glass)',
+                  opacity: isDone ? 0.55 : 1,
+                  transition: 'opacity 0.2s ease',
                 }}
               >
-                {/* Checkbox */}
+                {/* Left gradient accent bar — turns neutral when completed */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    left: 0,
+                    top: 0,
+                    bottom: 0,
+                    width: 3,
+                    background: isDone ? 'var(--color-border)' : 'var(--gradient-accent)',
+                  }}
+                />
+
+                {/* Checkbox — squircle */}
                 <button
                   onClick={() => toggleTask(t.id, t.status)}
                   style={{
-                    width: '22px',
-                    height: '22px',
-                    borderRadius: '6px',
+                    width: 24,
+                    height: 24,
+                    borderRadius: 8,
                     border: isDone ? 'none' : '2px solid var(--color-border)',
                     backgroundColor: isDone ? 'var(--color-success)' : 'transparent',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: '#ffffff'
+                    color: 'var(--color-on-accent)',
+                    flexShrink: 0,
                   }}
                 >
                   {isDone && <Check size={14} />}
                 </button>
 
-                {/* Priority Indicator */}
-                <div 
+                {/* Priority pill */}
+                <span
                   style={{
-                    width: '8px',
-                    height: '8px',
-                    borderRadius: '50%',
-                    backgroundColor: priorityColor
+                    flexShrink: 0,
+                    fontSize: '0.6rem',
+                    fontWeight: 700,
+                    letterSpacing: '0.04em',
+                    textTransform: 'uppercase',
+                    padding: '3px 8px',
+                    borderRadius: 'var(--radius-pill)',
+                    backgroundColor: `${priorityColor}22`,
+                    color: priorityColor,
+                    border: `1px solid ${priorityColor}55`,
                   }}
-                />
+                >
+                  {t.priority}
+                </span>
 
                 {/* Details */}
-                <div 
+                <div
                   onClick={() => setSelectedTaskId(t.id)}
-                  style={{ flex: 1, cursor: 'pointer' }}
+                  style={{ flex: 1, cursor: 'pointer', minWidth: 0 }}
                 >
-                  <div style={{ fontSize: '0.95rem', fontWeight: 600, textDecoration: isDone ? 'line-through' : 'none' }}>
+                  <div style={{ fontSize: '0.95rem', fontWeight: 600, textDecoration: isDone ? 'line-through' : 'none', color: 'var(--color-text-primary)' }}>
                     {t.title}
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: 2 }}>
                     {sub && (
                       <span style={{ fontSize: '0.75rem', fontFamily: 'var(--font-family-mono)', color: sub.color, fontWeight: 700 }}>
                         {sub.code}
-                      </span>
-                    )}
-                    {isUrgent && (
-                      <span style={{ fontSize: '0.65rem', fontWeight: 700, backgroundColor: 'var(--color-danger)', color: '#ffffff', padding: '1px 6px', borderRadius: '4px' }}>
-                        URGENT
                       </span>
                     )}
                   </div>
                 </div>
 
                 {/* Action Buttons (Emulates swipe actions) */}
-                <div style={{ display: 'flex', gap: '4px' }}>
-                  <button 
+                <div style={{ display: 'flex', gap: 4 }}>
+                  <button
                     onClick={() => deleteTask(t.id)}
-                    style={{ padding: '6px', borderRadius: '6px', color: 'var(--color-danger)' }}
+                    style={{ padding: 6, borderRadius: 8, color: 'var(--color-danger)', background: 'var(--color-danger-bg)' }}
                     title="Delete task"
                   >
                     <Trash2 size={16} />
@@ -232,36 +227,12 @@ export const TasksView: React.FC = () => {
       </div>
 
       {/* Task Creation Sheet Drawer */}
-      {isAdding && (
-        <div 
-          style={{
-            position: 'fixed',
-            inset: 0,
-            backgroundColor: 'rgba(0,0,0,0.4)',
-            backdropFilter: 'blur(4px)',
-            zIndex: 100,
-            display: 'flex',
-            alignItems: 'flex-end',
-            justifyContent: 'center'
-          }}
-          onClick={() => setIsAdding(false)}
+      <BottomSheet open={isAdding} onClose={() => setIsAdding(false)}>
+        <form
+          onSubmit={handleCreateTask}
+          style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}
         >
-          <form 
-            onSubmit={handleCreateTask}
-            style={{
-              width: '100%',
-              maxWidth: '500px',
-              backgroundColor: 'var(--color-bg-primary)',
-              borderTopLeftRadius: 'var(--radius-sheet)',
-              borderTopRightRadius: 'var(--radius-sheet)',
-              padding: 'var(--space-lg)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 'var(--space-md)'
-            }}
-            onClick={e => e.stopPropagation()}
-          >
-            <h3 style={{ fontSize: '1.2rem', fontWeight: 700 }}>Add New Task</h3>
+          <h3 style={{ fontSize: '1.2rem', fontWeight: 700 }}>Add New Task</h3>
 
             <input
               type="text"
@@ -354,70 +325,22 @@ export const TasksView: React.FC = () => {
             )}
 
             <div style={{ display: 'flex', gap: '8px', marginTop: 'var(--space-xs)' }}>
-              <button
-                type="submit"
-                style={{
-                  flex: 1,
-                  padding: '12px',
-                  borderRadius: 'var(--radius-card)',
-                  backgroundColor: 'var(--color-accent-primary)',
-                  color: '#ffffff',
-                  fontWeight: 600,
-                  fontSize: '0.9rem'
-                }}
-              >
+              <GlassButton type="submit" style={{ flex: 1 }}>
                 Create Task
-              </button>
-              <button 
-                type="button"
-                onClick={() => setIsAdding(false)}
-                style={{
-                  padding: '12px 20px',
-                  borderRadius: 'var(--radius-card)',
-                  backgroundColor: 'var(--color-bg-tertiary)',
-                  fontWeight: 600,
-                  fontSize: '0.9rem'
-                }}
-              >
+              </GlassButton>
+              <GlassButton type="button" variant="ghost" onClick={() => setIsAdding(false)}>
                 Cancel
-              </button>
+              </GlassButton>
             </div>
           </form>
-        </div>
-      )}
+      </BottomSheet>
 
       {/* Task Details Sheet */}
       {selectedTaskId && selectedTask && (
-        <div 
-          style={{
-            position: 'fixed',
-            inset: 0,
-            backgroundColor: 'rgba(0,0,0,0.4)',
-            backdropFilter: 'blur(4px)',
-            zIndex: 100,
-            display: 'flex',
-            alignItems: 'flex-end',
-            justifyContent: 'center'
-          }}
-          onClick={() => setSelectedTaskId(null)}
-        >
-          <div 
-            style={{
-              width: '100%',
-              maxWidth: '500px',
-              backgroundColor: 'var(--color-bg-primary)',
-              borderTopLeftRadius: 'var(--radius-sheet)',
-              borderTopRightRadius: 'var(--radius-sheet)',
-              padding: 'var(--space-lg)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 'var(--space-md)'
-            }}
-            onClick={e => e.stopPropagation()}
-          >
-            <div style={{ width: '36px', height: '4px', borderRadius: '2px', backgroundColor: 'var(--color-border)', alignSelf: 'center' }} />
+      <BottomSheet open onClose={() => setSelectedTaskId(null)}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
 
-            <div>
+          <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span 
                   style={{ 
@@ -456,38 +379,22 @@ export const TasksView: React.FC = () => {
             </div>
 
             <div style={{ display: 'flex', gap: '8px', marginTop: 'var(--space-xs)' }}>
-              <button 
+              <GlassButton
+                variant={selectedTask.status === 'completed' ? 'subtle' : 'success'}
+                style={{ flex: 1 }}
                 onClick={() => {
                   toggleTask(selectedTask.id, selectedTask.status);
                   setSelectedTaskId(null);
                 }}
-                style={{
-                  flex: 1,
-                  padding: '12px',
-                  borderRadius: 'var(--radius-card)',
-                  backgroundColor: selectedTask.status === 'completed' ? 'var(--color-bg-tertiary)' : 'var(--color-success)',
-                  color: selectedTask.status === 'completed' ? 'var(--color-text-primary)' : '#ffffff',
-                  fontWeight: 600,
-                  fontSize: '0.9rem'
-                }}
               >
                 {selectedTask.status === 'completed' ? 'Mark Incomplete' : 'Mark Complete'}
-              </button>
-              <button 
-                onClick={() => setSelectedTaskId(null)}
-                style={{
-                  padding: '12px 24px',
-                  borderRadius: 'var(--radius-card)',
-                  backgroundColor: 'var(--color-bg-tertiary)',
-                  fontWeight: 600,
-                  fontSize: '0.9rem'
-                }}
-              >
+              </GlassButton>
+              <GlassButton variant="ghost" onClick={() => setSelectedTaskId(null)}>
                 Close
-              </button>
+              </GlassButton>
             </div>
-          </div>
         </div>
+      </BottomSheet>
       )}
     </div>
   );

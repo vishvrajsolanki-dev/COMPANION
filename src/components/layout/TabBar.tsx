@@ -28,7 +28,9 @@ export const TabBar: React.FC<TabBarProps> = ({ activeTab, onSelectTab }) => {
             onClick={() => onSelectTab(t.id)}
             className={`${styles.tabItem} ${isActive ? styles.tabItemActive : ''}`}
           >
-            <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
+            <span className={`${styles.tabPill} ${isActive ? styles.tabPillActive : ''}`}>
+              <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
+            </span>
             <span className={styles.tabLabel}>{t.label}</span>
           </button>
         );

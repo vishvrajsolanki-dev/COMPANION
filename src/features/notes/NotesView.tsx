@@ -151,7 +151,7 @@ export const NotesView: React.FC = () => {
                 padding: '8px 16px',
                 borderRadius: 'var(--radius-chip)',
                 backgroundColor: 'var(--color-accent-primary)',
-                color: '#ffffff',
+                color: 'var(--color-on-accent)',
                 fontSize: '0.85rem',
                 fontWeight: 600
               }}
@@ -301,7 +301,7 @@ export const NotesView: React.FC = () => {
             alignItems: 'center',
             gap: '4px',
             backgroundColor: 'var(--color-accent-primary)',
-            color: '#ffffff',
+            color: 'var(--color-on-accent)',
             padding: '8px 12px',
             borderRadius: 'var(--radius-chip)',
             fontWeight: 600,

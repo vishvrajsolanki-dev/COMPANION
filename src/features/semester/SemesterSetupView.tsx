@@ -67,7 +67,7 @@ export const SemesterSetupView: React.FC = () => {
           <button onClick={closeSubview}><ArrowLeft size={24} /></button>
           <h2 style={{ fontSize: '1.2rem', fontWeight: 700 }}>Semesters</h2>
         </div>
-        <button onClick={openAdd} style={{ display: 'flex', alignItems: 'center', gap: '4px', backgroundColor: 'var(--color-accent-primary)', color: '#fff', padding: '8px 12px', borderRadius: 'var(--radius-chip)', fontWeight: 600, fontSize: '0.85rem' }}>
+        <button onClick={openAdd} style={{ display: 'flex', alignItems: 'center', gap: '4px', backgroundColor: 'var(--color-accent-primary)', color: 'var(--color-on-accent)', padding: '8px 12px', borderRadius: 'var(--radius-chip)', fontWeight: 600, fontSize: '0.85rem' }}>
           <Plus size={16} /> New
         </button>
       </header>
@@ -87,7 +87,7 @@ export const SemesterSetupView: React.FC = () => {
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 {sem.is_active && (
-                  <span style={{ fontSize: '0.7rem', fontWeight: 700, backgroundColor: 'var(--color-accent-primary)', color: '#fff', padding: '2px 8px', borderRadius: '10px' }}>ACTIVE</span>
+                  <span style={{ fontSize: '0.7rem', fontWeight: 700, backgroundColor: 'var(--color-accent-primary)', color: 'var(--color-on-accent)', padding: '2px 8px', borderRadius: '10px' }}>ACTIVE</span>
                 )}
                 {!sem.is_active && (
                   <button onClick={() => setActive(sem)} title="Set as active" style={{ padding: '6px', borderRadius: '6px', backgroundColor: 'var(--color-bg-tertiary)', color: 'var(--color-success)' }}>
@@ -135,7 +135,7 @@ export const SemesterSetupView: React.FC = () => {
 
 const inputStyle: React.CSSProperties = { width: '100%', padding: '11px 12px', borderRadius: 'var(--radius-card)', border: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg-secondary)', color: 'var(--color-text-primary)', fontSize: '0.95rem' };
 const labelStyle: React.CSSProperties = { fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-text-secondary)' };
-const primaryBtn: React.CSSProperties = { flex: 1, padding: '12px', borderRadius: 'var(--radius-card)', backgroundColor: 'var(--color-accent-primary)', color: '#fff', fontWeight: 600 };
+const primaryBtn: React.CSSProperties = { flex: 1, padding: '12px', borderRadius: 'var(--radius-card)', backgroundColor: 'var(--color-accent-primary)', color: 'var(--color-on-accent)', fontWeight: 600 };
 const ghostBtn: React.CSSProperties = { padding: '12px 20px', borderRadius: 'var(--radius-card)', backgroundColor: 'var(--color-bg-tertiary)', fontWeight: 600, color: 'var(--color-text-primary)' };
 
 export default SemesterSetupView;

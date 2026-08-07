@@ -340,7 +340,7 @@ export const TimetableImportView: React.FC = () => {
             <button
               onClick={copyConversionPrompt}
               title="Copies a prompt you can paste into any AI (ChatGPT/Gemini/Claude) with your timetable to get schema-correct JSON back"
-              style={{ fontSize: '0.78rem', padding: '4px 8px', borderRadius: '6px', backgroundColor: 'rgba(37,99,235,0.12)', color: 'var(--color-accent-primary)', border: '1px solid var(--color-accent-primary)', fontWeight: 600 }}
+              style={{ fontSize: '0.78rem', padding: '4px 8px', borderRadius: '6px', backgroundColor: 'var(--color-info-bg)', color: 'var(--color-info)', border: '1px solid var(--color-info)', fontWeight: 600 }}
             >
               <Copy size={12} style={{ display: 'inline', marginRight: '4px' }} />
               {copied ? 'Copied ✓' : 'Copy Conversion Prompt'}
@@ -351,7 +351,7 @@ export const TimetableImportView: React.FC = () => {
             >
               Load Sample JSON
             </button>
-            <label style={{ fontSize: '0.78rem', padding: '4px 8px', borderRadius: '6px', backgroundColor: 'var(--color-accent-primary)', color: '#fff', cursor: 'pointer', fontWeight: 600 }}>
+            <label style={{ fontSize: '0.78rem', padding: '4px 8px', borderRadius: '6px', backgroundColor: 'var(--color-accent-primary)', color: 'var(--color-on-accent)', cursor: 'pointer', fontWeight: 600 }}>
               <Upload size={12} style={{ display: 'inline', marginRight: '4px' }} /> Upload .json
               <input type="file" accept=".json" onChange={handleFileUpload} style={{ display: 'none' }} />
             </label>
@@ -399,7 +399,7 @@ export const TimetableImportView: React.FC = () => {
             <button
               onClick={handleCommitImport}
               disabled={!activeSem}
-              style={{ padding: '12px', borderRadius: 'var(--radius-card)', backgroundColor: 'var(--color-accent-primary)', color: '#fff', fontWeight: 700, fontSize: '0.95rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', opacity: !activeSem ? 0.5 : 1 }}
+              style={{ padding: '12px', borderRadius: 'var(--radius-card)', backgroundColor: 'var(--color-accent-primary)', color: 'var(--color-on-accent)', fontWeight: 700, fontSize: '0.95rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', opacity: !activeSem ? 0.5 : 1 }}
             >
               <Play size={16} /> Commit Import & Generate Slots
             </button>

@@ -102,7 +102,7 @@ export const WeeklyGrid: React.FC = () => {
               alignItems: 'center',
               gap: '4px',
               backgroundColor: 'var(--color-accent-primary)',
-              color: '#ffffff',
+              color: 'var(--color-on-accent)',
               padding: '6px 10px',
               borderRadius: 'var(--radius-chip)',
               fontWeight: 600,
@@ -300,7 +300,7 @@ export const WeeklyGrid: React.FC = () => {
             <div style={{ display: 'flex', gap: '8px' }}>
               <button
                 type="submit"
-                style={{ flex: 1, padding: '12px', borderRadius: 'var(--radius-card)', backgroundColor: 'var(--color-accent-primary)', color: '#ffffff', fontWeight: 600, fontSize: '0.9rem' }}
+                style={{ flex: 1, padding: '12px', borderRadius: 'var(--radius-card)', backgroundColor: 'var(--color-accent-primary)', color: 'var(--color-on-accent)', fontWeight: 600, fontSize: '0.9rem' }}
               >
                 Create Extra Class
               </button>

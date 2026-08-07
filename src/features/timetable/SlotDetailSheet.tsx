@@ -241,7 +241,7 @@ export const SlotDetailSheet: React.FC<SlotDetailSheetProps> = ({
                 padding: '12px',
                 borderRadius: 'var(--radius-card)',
                 border: currentStatus === 'medical' ? '2px solid var(--color-accent-primary)' : '1px solid var(--color-border)',
-                backgroundColor: currentStatus === 'medical' ? 'rgba(37, 99, 235, 0.1)' : 'var(--color-bg-secondary)',
+                backgroundColor: currentStatus === 'medical' ? 'var(--color-info-bg)' : 'var(--color-bg-secondary)',
                 color: 'var(--color-accent-primary)',
                 fontWeight: 600,
               }}
@@ -261,7 +261,7 @@ export const SlotDetailSheet: React.FC<SlotDetailSheetProps> = ({
               padding: '12px',
               borderRadius: 'var(--radius-card)',
               border: currentStatus === 'onduty' ? '2px solid var(--color-accent-primary)' : '1px solid var(--color-border)',
-              backgroundColor: currentStatus === 'onduty' ? 'rgba(37, 99, 235, 0.1)' : 'var(--color-bg-secondary)',
+              backgroundColor: currentStatus === 'onduty' ? 'var(--color-info-bg)' : 'var(--color-bg-secondary)',
               color: 'var(--color-accent-primary)',
               fontWeight: 600,
             }}
@@ -383,7 +383,7 @@ export const SlotDetailSheet: React.FC<SlotDetailSheetProps> = ({
             <div style={{ display: 'flex', gap: '6px', marginTop: '4px' }}>
               <button
                 type="submit"
-                style={{ flex: 1, padding: '8px', borderRadius: '6px', backgroundColor: 'var(--color-accent-primary)', color: '#ffffff', fontWeight: 600, fontSize: '0.85rem' }}
+                style={{ flex: 1, padding: '8px', borderRadius: '6px', backgroundColor: 'var(--color-accent-primary)', color: 'var(--color-on-accent)', fontWeight: 600, fontSize: '0.85rem' }}
               >
                 Confirm Reschedule
               </button>

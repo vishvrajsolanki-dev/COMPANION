@@ -3,14 +3,16 @@
   bottom: 0;
   left: 0;
   right: 0;
-  height: 64px;
-  background-color: var(--color-bg-primary);
-  border-top: 1px solid var(--color-border);
+  height: var(--tabbar-height);
+  background-color: var(--surface-glass);
+  -webkit-backdrop-filter: blur(var(--blur-glass)) saturate(1.4);
+  backdrop-filter: blur(var(--blur-glass)) saturate(1.4);
+  border-top: 1px solid var(--surface-glass-border);
   display: flex;
   align-items: center;
   justify-content: space-around;
   z-index: 50;
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.03);
+  box-shadow: var(--shadow-glass);
 }
 
 .tabItem {
@@ -29,7 +31,31 @@
   color: var(--color-accent-primary);
 }
 
+/* Icon pill — gradient squircle behind the active icon */
+.tabPill {
+  width: 34px;
+  height: 30px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.18s ease, box-shadow 0.18s ease, color 0.18s ease, transform 0.18s ease;
+}
+
+.tabPillActive {
+  background: var(--gradient-accent);
+  color: var(--color-on-accent);
+  box-shadow: var(--shadow-glow);
+  transform: translateY(-1px);
+}
+
 .tabLabel {
   font-size: 0.75rem;
   font-weight: 600;
+  transition: color 0.15s ease;
+}
+
+.tabItemActive .tabLabel {
+  color: var(--color-text-primary);
+  font-weight: 700;
 }
