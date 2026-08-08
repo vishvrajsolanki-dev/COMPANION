@@ -473,6 +473,18 @@ export const AdminPortalView: React.FC = () => {
                     <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: 2 }}>
                       {p.key_label ? `via ${p.key_label}` : 'via access key'} · {fmtDate(p.created_at)}
                     </div>
+                    {p.role === 'student' &&
+                      (p.student_profile ? (
+                        <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', marginTop: 3, fontWeight: 600 }}>
+                          {[p.student_profile.name, p.student_profile.department, p.student_profile.enrollment_number]
+                            .filter(Boolean)
+                            .join(' · ')}
+                        </div>
+                      ) : (
+                        <div style={{ fontSize: '0.72rem', color: 'var(--color-warning)', marginTop: 3 }}>
+                          Awaiting identity profile
+                        </div>
+                      ))}
                   </div>
                 </div>
               ))

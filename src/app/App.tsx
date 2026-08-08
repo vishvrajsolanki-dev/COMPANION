@@ -8,6 +8,7 @@ import { ErrorBoundary } from '../components/ErrorBoundary';
 import { GlobalErrorCatcher } from '../components/GlobalErrorCatcher';
 import { ToastProvider } from '../components/ui';
 import { ActivationView } from '../features/auth/ActivationView';
+import { OnboardingView } from '../features/auth/OnboardingView';
 
 // Lazy-loaded views — each becomes its own chunk via code-splitting.
 // Named exports are mapped to a default for React.lazy.
@@ -45,6 +46,7 @@ export const App: React.FC = () => {
   const activeSubview = useUIStore(state => state.activeSubview);
   const theme = useUIStore(state => state.theme);
   const authStatus = useAuthStore(state => state.status);
+  const needsOnboarding = useAuthStore(state => state.activation?.needsOnboarding === true);
 
   const [isSeeded, setIsSeeded] = useState(false);
   const [seedError, setSeedError] = useState<string | null>(null);
@@ -92,6 +94,13 @@ export const App: React.FC = () => {
   // render the app exactly as before — the gate is inert until wired up.
   if (supabaseConfigured && authStatus !== 'activated') {
     return <ActivationView />;
+  }
+
+  // Part C gate: first-time student activation shows a one-off onboarding form
+  // (name / department / enrollment number) before the app opens. Only students
+  // ever see this — needsOnboarding is never set true for owners/admins.
+  if (supabaseConfigured && needsOnboarding) {
+    return <OnboardingView />;
   }
 
   const withViewBoundary = (scope: string, children: React.ReactNode) => (

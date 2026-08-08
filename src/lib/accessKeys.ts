@@ -120,6 +120,35 @@ export async function activateAccessKey(
 }
 
 /**
+ * Save student identity fields (name, department, enrollment number) to the
+ * server-side account record. Called once after first student activation
+ * (the onboarding form). account_id is the bearer; the raw key is NOT sent.
+ */
+export async function saveStudentProfile(
+  accountId: string,
+  name: string,
+  department: string,
+  enrollmentNumber: string,
+): Promise<boolean> {
+  if (!supabase) return false;
+  try {
+    const { data, error } = await supabase.rpc('save_student_profile', {
+      p_account_id: accountId,
+      p_name: name,
+      p_department: department,
+      p_enrollment_number: enrollmentNumber,
+    });
+    if (error) {
+      console.error('save_student_profile error:', error);
+      return false;
+    }
+    return data?.ok === true;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Sign out of the current device — removes the device session server-side.
  * Account-keyed (not code-keyed) because students never persist their raw key
  * on-device. This is a best-effort cleanup; a network failure is non-fatal
