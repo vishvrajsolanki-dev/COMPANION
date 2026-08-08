@@ -287,6 +287,13 @@ export async function setKeyActive(id: string, active: boolean): Promise<AdminRe
   return rpc('admin_set_key_active', { p_admin_code: cred, p_key_id: id, p_active: active }, mapSetActiveResult);
 }
 
+/** Owner-only: adjust the max_uses session cap on an existing key. */
+export async function updateKeyLimits(keyId: string, maxUses: number): Promise<AdminResult<boolean>> {
+  const cred = getAdminCredential();
+  if (!cred) return { ok: false, error: 'UNAUTHORIZED' };
+  return rpc('admin_update_key_limits', { p_admin_code: cred, p_key_id: keyId, p_max_uses: maxUses }, mapSetActiveResult);
+}
+
 export async function listProfiles(): Promise<AdminResult<AdminProfileRecord[]>> {
   const cred = getAdminCredential();
   if (!cred) return { ok: false, error: 'UNAUTHORIZED' };

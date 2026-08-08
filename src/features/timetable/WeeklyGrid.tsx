@@ -6,7 +6,7 @@ import { SlotDetailSheet } from './SlotDetailSheet';
 import { todayISO } from '../../utils/date';
 import { useUIStore } from '../../store/uiStore';
 import { GlassButton, BottomSheet, EmptyState, Badge } from '../../components/ui';
-import { Calendar, MapPin, Clock, Plus, CalendarPlus } from 'lucide-react';
+import { Calendar, MapPin, Clock, Plus, CalendarPlus, AlertCircle } from 'lucide-react';
 
 const DAYS = [
   { dayNum: 1, name: 'Mon', fullName: 'Monday' },
@@ -17,6 +17,23 @@ const DAYS = [
   { dayNum: 6, name: 'Sat', fullName: 'Saturday' },
   { dayNum: 7, name: 'Sun', fullName: 'Sunday' },
 ];
+
+/** Humanized labels for slot/attendance statuses shown in cards (Bug F#6).
+ *  Pattern-generated slots carry status 'scheduled' — without this map they
+ *  render as a raw lowercase slug next to a neutral badge while manually
+ *  marked attendance shows 'present'/'absent' etc. */
+const STATUS_LABELS: Record<string, string> = {
+  scheduled: 'Scheduled',
+  extra: 'Extra Class',
+  rescheduled: 'Rescheduled',
+  cancelled: 'Cancelled',
+  present: 'Present',
+  absent: 'Absent',
+  late: 'Late',
+  medical: 'Medical',
+  onduty: 'On-Duty',
+};
+const statusLabel = (raw: string) => STATUS_LABELS[raw] ?? raw;
 
 export const WeeklyGrid: React.FC = () => {
   const [selectedDay, setSelectedDay] = useState<number>(1); // 1 = Mon
@@ -30,6 +47,7 @@ export const WeeklyGrid: React.FC = () => {
   const [extraStartTime, setExtraStartTime] = useState('16:00');
   const [extraEndTime, setExtraEndTime] = useState('17:15');
   const [extraRoomId, setExtraRoomId] = useState('LH-301');
+  const [extraError, setExtraError] = useState<string | null>(null);
 
   // Reset the form to defaults when the sheet opens/closes so a stale or
   // mid-flight submission can never produce a duplicate slot.
@@ -39,6 +57,7 @@ export const WeeklyGrid: React.FC = () => {
     setExtraStartTime('16:00');
     setExtraEndTime('17:15');
     setExtraRoomId('LH-301');
+    setExtraError(null);
     setIsSavingExtra(false);
     setIsAddingExtra(true);
   };
@@ -79,6 +98,12 @@ export const WeeklyGrid: React.FC = () => {
     // Guard against double-submit (rapid double-tap on "Create Extra Class")
     // which previously added two identical slots before the sheet closed.
     if (isSavingExtra) return;
+
+    // Time-order validation (Bug F#9): a class can never end before it starts.
+    if (extraStartTime >= extraEndTime) {
+      setExtraError('End time must be after start time.');
+      return;
+    }
 
     setIsSavingExtra(true);
     try {
@@ -153,7 +178,7 @@ export const WeeklyGrid: React.FC = () => {
 
             const record = recordMap.get(slot.id);
             const isCancelled = slot.status === 'cancelled';
-            const statusLabel = record ? record.status : slot.status;
+            const rawStatus = record ? record.status : slot.status;
 
             return (
               <div
@@ -209,7 +234,7 @@ export const WeeklyGrid: React.FC = () => {
                           : 'neutral'
                       }
                     >
-                      {statusLabel}
+                      {statusLabel(rawStatus)}
                     </Badge>
                   </div>
                 </div>
@@ -226,6 +251,24 @@ export const WeeklyGrid: React.FC = () => {
           style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}
         >
           <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-primary)' }}>Add Extra Lecture</h3>
+
+          {extraError && (
+            <div
+              style={{
+                padding: '10px 12px',
+                borderRadius: 'var(--radius-card)',
+                backgroundColor: 'var(--color-danger-bg)',
+                color: 'var(--color-danger-fg)',
+                fontSize: '0.82rem',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+              }}
+            >
+              <AlertCircle size={15} style={{ flexShrink: 0 }} /> {extraError}
+            </div>
+          )}
 
           <div>
             <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Subject</label>

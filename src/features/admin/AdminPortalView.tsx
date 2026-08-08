@@ -1,21 +1,28 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useAuthStore } from '../../store/authStore';
 import { useUIStore } from '../../store/uiStore';
-import { GlassButton, GlassCard, EmptyState, SegmentedControl, Badge, Banner } from '../../components/ui';
+import { GlassButton, GlassCard, EmptyState, SegmentedControl, Badge, Banner, ConfirmDialog } from '../../components/ui';
 import {
-  generateKey, listKeys, setKeyActive, listProfiles, listActions, getAdminCredential, isMaskedCode,
+  generateKey, listKeys, setKeyActive, updateKeyLimits, listProfiles, listActions, listSessions, revokeSession,
+  getAdminCredential, isMaskedCode,
   ADMIN_ERROR_MESSAGES,
-  type AdminKeyRecord, type AdminProfileRecord, type AdminActionRecord,
+  type AdminKeyRecord, type AdminProfileRecord, type AdminActionRecord, type AdminSessionRecord,
   type AdminErrorCode, type AdminRole,
 } from '../../lib/adminKeys';
-import { ArrowLeft, Copy, Check, KeyRound, ShieldCheck, Users, Plus, ScrollText } from 'lucide-react';
+import { ArrowLeft, Copy, Check, KeyRound, ShieldCheck, Users, Plus, ScrollText, Upload, FileCode, Play, AlertCircle, Pencil, Smartphone, LogOut } from 'lucide-react';
+import {
+  upsertReferenceData, listReferenceDataSummary,
+  type ReferenceDataSummary, type UpsertResult, type ReferenceDataErrorCode,
+} from '../../lib/referenceData';
 
-type PortalTab = 'generate' | 'keys' | 'activations' | 'audit';
+type PortalTab = 'generate' | 'keys' | 'activations' | 'sessions' | 'audit' | 'data';
 
 const TABS: { value: PortalTab; label: string }[] = [
   { value: 'generate', label: 'Generate' },
   { value: 'keys', label: 'Keys' },
   { value: 'activations', label: 'Activations' },
+  { value: 'sessions', label: 'Sessions' },
+  { value: 'data', label: 'Data' },
   { value: 'audit', label: 'Audit' },
 ];
 
@@ -44,6 +51,14 @@ const fmtDate = (iso: string | null): string => {
   return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
 };
 
+const fmtDateTime = (iso: string | null): string => {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '—';
+  return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) +
+    ' · ' + d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+};
+
 export const AdminPortalView: React.FC = () => {
   const closeSubview = useUIStore(s => s.closeSubview);
   const activation = useAuthStore(s => s.activation);
@@ -57,30 +72,55 @@ export const AdminPortalView: React.FC = () => {
   // Generate form
   const [role, setRole] = useState<AdminRole>('student');
   const [label, setLabel] = useState('');
-  const [maxUses, setMaxUses] = useState('1');
+  const [maxUses, setMaxUses] = useState('5');
   const [expiresAt, setExpiresAt] = useState('');
   const [generating, setGenerating] = useState(false);
   const [genError, setGenError] = useState<string | null>(null);
   const [newKey, setNewKey] = useState<AdminKeyRecord | null>(null);
 
-  // Keys + activations + audit
+  // Keys + activations + sessions + audit
   const [keys, setKeys] = useState<AdminKeyRecord[] | null>(null);
   const [profiles, setProfiles] = useState<AdminProfileRecord[] | null>(null);
+  const [sessions, setSessions] = useState<AdminSessionRecord[] | null>(null);
   const [actions, setActions] = useState<AdminActionRecord[] | null>(null);
   const [keysError, setKeysError] = useState<AdminErrorCode | null>(null);
   const [profilesError, setProfilesError] = useState<AdminErrorCode | null>(null);
+  const [sessionsError, setSessionsError] = useState<AdminErrorCode | null>(null);
   const [actionsError, setActionsError] = useState<AdminErrorCode | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [revokingId, setRevokingId] = useState<string | null>(null);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const [pendingHighUses, setPendingHighUses] = useState<number | null>(null);
+  const [editingMaxId, setEditingMaxId]   = useState<string | null>(null);
+  const [editingMaxVal, setEditingMaxVal] = useState<string>('');
+
+  // Data tab (reference data)
+  const [refSummary, setRefSummary] = useState<ReferenceDataSummary | null>(null);
+  const [refSummaryError, setRefSummaryError] = useState<ReferenceDataErrorCode | null>(null);
+  const [refText, setRefText] = useState('');
+  const [refParsed, setRefParsed] = useState<{ faculty: Array<{ name: string; designation?: string | null; department: string; email?: string | null }>; subjects: Array<{ course_code: string; name: string; department: string; semester: number; credits?: number; ltp?: string | null }> } | null>(null);
+  const [refError, setRefError] = useState<string | null>(null);
+  const [refUpserting, setRefUpserting] = useState(false);
+  const [refResult, setRefResult] = useState<UpsertResult | null>(null);
 
   const isOwner = currentRole === 'owner';
 
   const load = useCallback(async () => {
-    const [k, p, a] = await Promise.all([listKeys(), listProfiles(), isOwner ? listActions() : Promise.resolve(null)]);
+    const [k, p, s, a] = await Promise.all([
+      listKeys(),
+      listProfiles(),
+      listSessions(),
+      isOwner ? listActions() : Promise.resolve(null),
+    ]);
     if (k.ok) { setKeys(k.data); setKeysError(null); } else setKeysError(k.error);
     if (p.ok) { setProfiles(p.data); setProfilesError(null); } else setProfilesError(p.error);
+    if (s.ok) { setSessions(s.data); setSessionsError(null); } else setSessionsError(s.error);
     if (a) {
       if (a.ok) { setActions(a.data); setActionsError(null); } else setActionsError(a.error);
+    }
+    if (isOwner) {
+      const r = await listReferenceDataSummary();
+      if (r.ok) { setRefSummary(r.data); setRefSummaryError(null); } else setRefSummaryError(r.error);
     }
   }, [isOwner]);
 
@@ -113,21 +153,20 @@ export const AdminPortalView: React.FC = () => {
     setTimeout(() => setCopiedCode(null), 1500);
   };
 
-  const handleGenerate = async (e: React.FormEvent) => {
+  const handleGenerate = (e: React.FormEvent) => {
     e.preventDefault();
     setGenError(null);
     setNewKey(null);
 
     const uses = parseInt(maxUses, 10) || 1;
     if (uses > 5) {
-      const proceed = window.confirm(
-        `You're about to make this key work on ${uses} devices. ` +
-        'Each key is meant for one person — if you need to give access to multiple people, ' +
-        'generate a separate key for each. Continue with one key across ' + uses + ' devices?',
-      );
-      if (!proceed) return;
+      setPendingHighUses(uses);
+      return;
     }
+    runGenerate(uses);
+  };
 
+  const runGenerate = async (uses: number) => {
     setGenerating(true);
     try {
       const res = await generateKey({
@@ -165,7 +204,110 @@ export const AdminPortalView: React.FC = () => {
     }
   };
 
-  const visibleTabs = isOwner ? TABS : TABS.filter(t => t.value !== 'audit');
+  const handleUpdateMaxUses = async (keyId: string) => {
+    const val = parseInt(editingMaxVal, 10);
+    if (isNaN(val) || val < 1 || val > 100) return;
+    const res = await updateKeyLimits(keyId, val);
+    if (!res.ok) {
+      setKeysError(res.error);
+      return;
+    }
+    setKeysError(null);
+    setEditingMaxId(null);
+    await load();
+  };
+
+  const handleRevokeSession = async (session: AdminSessionRecord) => {
+    setRevokingId(session.id);
+    try {
+      const res = await revokeSession(session.id);
+      if (!res.ok) {
+        setSessionsError(res.error);
+        return;
+      }
+      setSessionsError(null);
+      await load();
+    } finally {
+      setRevokingId(null);
+    }
+  };
+
+  // ── Reference data tab ─────────────────────────────────────────────────────
+  // Sample matches the shape written by scripts/scrape-adit.mjs (or the
+  // Admin-supplied JSON), so the scraper output pastes in without reshaping.
+  const sampleRefJSON = JSON.stringify({
+    source: 'https://adit.ac.in',
+    scraped_at: '2026-08-08T00:00:00.000Z',
+    faculty: [
+      { name: 'Dr. Bhagirath Prajapati', designation: 'Associate Professor & Head', department: 'Computer Engineering', email: 'head.cp@adit.ac.in' },
+      { name: 'Dr. Ishita Theba', designation: 'Assistant Professor', department: 'Computer Engineering', email: 'thebaishita@adit.ac.in' },
+    ],
+    subjects: [
+      { course_code: '102040304', name: 'Data Structures', department: 'Computer Engineering', semester: 3, credits: 5, ltp: '4-0-2' },
+      { course_code: '102040305', name: 'Database Management Systems', department: 'Computer Engineering', semester: 3, credits: 5, ltp: '4-0-2' },
+    ],
+  }, null, 2);
+
+  const handleValidateRef = () => {
+    setRefError(null);
+    setRefParsed(null);
+    setRefResult(null);
+    try {
+      if (!refText.trim()) throw new Error('Please paste reference JSON or load sample.');
+      const data = JSON.parse(refText);
+      const faculty = Array.isArray(data.faculty) ? data.faculty : [];
+      const subjects = Array.isArray(data.subjects) ? data.subjects : [];
+      if (faculty.length === 0 && subjects.length === 0) {
+        throw new Error('Invalid JSON: Must contain a "faculty" and/or "subjects" array.');
+      }
+      faculty.forEach((f: any, idx: number) => {
+        if (!f || typeof f.name !== 'string' || !f.name.trim()) throw new Error(`Faculty #${idx + 1} missing "name".`);
+        if (typeof f.department !== 'string' || !f.department.trim()) throw new Error(`Faculty #${idx + 1} missing "department".`);
+      });
+      subjects.forEach((s: any, idx: number) => {
+        if (!s || typeof s.name !== 'string' || !s.name.trim()) throw new Error(`Subject #${idx + 1} missing "name".`);
+        if (typeof s.course_code !== 'string' || !s.course_code.trim()) throw new Error(`Subject #${idx + 1} missing "course_code".`);
+        if (typeof s.department !== 'string' || !s.department.trim()) throw new Error(`Subject #${idx + 1} missing "department".`);
+        if (typeof s.semester !== 'number' || !Number.isInteger(s.semester)) throw new Error(`Subject #${idx + 1} missing numeric "semester".`);
+      });
+      setRefParsed({ faculty, subjects });
+    } catch (err: any) {
+      setRefError(err.message || 'Failed to parse reference JSON.');
+    }
+  };
+
+  const handleRefFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      setRefText((evt.target?.result as string) || '');
+      setRefError(null);
+      setRefParsed(null);
+      setRefResult(null);
+    };
+    reader.readAsText(file);
+  };
+
+  const handlePublishRef = async () => {
+    if (!refParsed) return;
+    setRefUpserting(true);
+    try {
+      const res = await upsertReferenceData(refParsed.faculty, refParsed.subjects);
+      if (res.ok) {
+        setRefResult(res.data);
+        setRefParsed(null);
+        setRefText('');
+        load(); // refresh the summary counts
+      } else {
+        setRefError(res.error === 'NETWORK' ? 'Publish failed — check your connection and try again.' : 'Publish failed.');
+      }
+    } finally {
+      setRefUpserting(false);
+    }
+  };
+
+  const visibleTabs = isOwner ? TABS : TABS.filter(t => t.value !== 'audit' && t.value !== 'data');
 
   const actionLabel = (a: AdminActionRecord): string => {
     switch (a.action) {
@@ -406,10 +548,28 @@ export const AdminPortalView: React.FC = () => {
                     )}
                   </div>
 
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.74rem', color: 'var(--text-muted)' }}>
-                    <span>
-                      used {k.used_count}/{k.max_uses}
-                    </span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.74rem', color: 'var(--text-muted)', alignItems: 'center' }}>
+                    {editingMaxId === k.id ? (
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                        used {k.used_count}/
+                        <input
+                          type="number"
+                          min={1}
+                          max={100}
+                          value={editingMaxVal}
+                          onChange={e => setEditingMaxVal(e.target.value)}
+                          onKeyDown={e => { if (e.key === 'Enter') handleUpdateMaxUses(k.id); if (e.key === 'Escape') setEditingMaxId(null); }}
+                          style={{ width: 42, fontSize: '0.74rem', padding: '1px 4px', border: '1px solid var(--border-hairline)', borderRadius: 4, background: 'var(--bg-card)', color: 'var(--text-primary)' }}
+                        />
+                        <button onClick={() => handleUpdateMaxUses(k.id)} style={{ color: 'var(--color-success)', display: 'flex' }}><Check size={13} /></button>
+                        <button onClick={() => setEditingMaxId(null)} style={{ color: 'var(--text-muted)', display: 'flex' }}>✕</button>
+                      </span>
+                    ) : (
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, cursor: 'pointer' }} onClick={() => { setEditingMaxId(k.id); setEditingMaxVal(String(k.max_uses)); }}>
+                        used {k.used_count}/{k.max_uses}
+                        <Pencil size={10} style={{ opacity: 0.45 }} />
+                      </span>
+                    )}
                     <span>
                       {k.expires_at ? `expires ${fmtDate(k.expires_at)}` : 'no expiry'}
                     </span>
@@ -492,6 +652,190 @@ export const AdminPortalView: React.FC = () => {
           </div>
         )}
 
+        {/* ══════════════ SESSIONS ══════════════ */}
+        {tab === 'sessions' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {sessionsError && (
+              <Banner tone="danger" title={ADMIN_ERROR_MESSAGES[sessionsError]} />
+            )}
+
+            <p style={{ fontSize: '0.74rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+              {isOwner
+                ? 'Active device sessions across all accounts. Revoking a session signs that device out immediately.'
+                : 'Active device sessions for your account. Revoking a session signs that device out immediately.'}
+            </p>
+
+            {sessions === null ? (
+              <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 24, fontSize: '0.85rem' }}>Loading sessions…</p>
+            ) : sessions.length === 0 ? (
+              <EmptyState icon={<Smartphone size={28} />} title="No active sessions" body="When a device activates with a key, its session will show up here." />
+            ) : (
+              sessions.map(s => (
+                <div
+                  key={s.id}
+                  style={{
+                    padding: 'var(--space-md)',
+                    backgroundColor: 'var(--bg-card)',
+                    borderRadius: 'var(--radius-card)',
+                    border: '1px solid var(--border-hairline)',
+                    boxShadow: 'var(--shadow-card)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                  }}
+                >
+                  <span
+                    style={{
+                      width: 38,
+                      height: 38,
+                      borderRadius: 12,
+                      background: 'var(--bg-card-tint)',
+                      color: 'var(--color-primary)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <Smartphone size={18} />
+                  </span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {s.device_name || 'Unknown device'}
+                      </span>
+                      <Badge tone={roleBadgeTone(s.account_role)}>{s.account_role}</Badge>
+                    </div>
+                    <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: 2 }}>
+                      {s.account_name || 'Unnamed account'}
+                      {' · last seen '}
+                      {fmtDateTime(s.last_seen)}
+                    </div>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 2, fontFamily: 'var(--font-family-mono)' }}>
+                      {s.device_id}
+                    </div>
+                  </div>
+                  <GlassButton
+                    variant="danger"
+                    size="sm"
+                    disabled={revokingId === s.id}
+                    onClick={() => handleRevokeSession(s)}
+                  >
+                    <LogOut size={13} style={{ marginRight: 4 }} />
+                    {revokingId === s.id ? 'Revoking…' : 'Revoke'}
+                  </GlassButton>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+
+        {/* ══════════════ DATA (owner-only) ══════════════ */}
+        {tab === 'data' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
+            {refSummaryError && (
+              <Banner tone="warning" title="Reference data summary unavailable" />
+            )}
+
+            <GlassCard>
+              <div style={overlineStyle}>
+                <span style={{ width: 3, height: 14, borderRadius: 2, background: 'var(--color-primary)', flexShrink: 0 }} />
+                Reference data — ADIT institutional
+              </div>
+              {refSummary ? (
+                <div style={{ display: 'flex', gap: 'var(--space-md)', marginTop: 10, flexWrap: 'wrap' }}>
+                  <div>
+                    <div style={{ fontSize: 'var(--text-xl)', fontWeight: 700, color: 'var(--text-primary)' }}>{refSummary.faculty_count}</div>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Faculty</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 'var(--text-xl)', fontWeight: 700, color: 'var(--text-primary)' }}>{refSummary.subjects_count}</div>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Subjects</div>
+                  </div>
+                  <div style={{ flex: 1, minWidth: 160 }}>
+                    <div style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4 }}>Departments</div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                      {refSummary.departments.length === 0 ? (
+                        <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>None loaded yet</span>
+                      ) : (
+                        refSummary.departments.map(d => <Badge key={d} tone="neutral">{d}</Badge>)
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 8 }}>
+                  No summary yet. Paste faculty/subjects JSON below and publish to seed the reference tables.
+                </p>
+              )}
+            </GlassCard>
+
+            {refResult && (
+              <Banner tone="success" title="Reference data published">
+                <div style={{ fontSize: '0.8rem' }}>
+                  ✓ {refResult.faculty_inserted} faculty inserted, {refResult.faculty_updated} updated ·
+                  {refResult.subjects_inserted} subjects inserted, {refResult.subjects_updated} updated
+                </div>
+              </Banner>
+            )}
+
+            <GlassCard>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+                <label style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Scraper output JSON</label>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                  <GlassButton
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => { setRefText(sampleRefJSON); setRefError(null); setRefParsed(null); setRefResult(null); }}
+                  >
+                    Load Sample JSON
+                  </GlassButton>
+                  <label style={{ fontSize: '0.78rem', padding: '7px 12px', borderRadius: 'var(--radius-pill)', backgroundColor: 'var(--color-primary)', color: '#FFFFFF', cursor: 'pointer', fontWeight: 600 }}>
+                    <Upload size={12} style={{ display: 'inline', marginRight: 4 }} /> Upload .json
+                    <input type="file" accept=".json" onChange={handleRefFileUpload} style={{ display: 'none' }} />
+                  </label>
+                </div>
+              </div>
+
+              <p style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: 8, lineHeight: 1.5 }}>
+                Paste the JSON produced by <code style={{ fontFamily: 'var(--font-family-mono)' }}>node scripts/scrape-adit.mjs</code>{' '}
+                (or manually edited data) to upsert ADIT faculty and curriculum. Existing entries are updated by
+                (department, name) and (department, semester, course_code); new ones are added. Changes affect all students.
+              </p>
+
+              <textarea
+                value={refText}
+                onChange={e => { setRefText(e.target.value); setRefResult(null); }}
+                placeholder='{"faculty": [...], "subjects": [...]}'
+                rows={8}
+                className="input"
+                style={{ marginTop: 10, fontFamily: 'var(--font-family-mono)', borderRadius: 'var(--radius-card)' }}
+              />
+
+              {refError && (
+                <div style={{ marginTop: 10, padding: '12px', backgroundColor: 'var(--color-danger-bg)', borderRadius: 'var(--radius-card)', color: 'var(--color-danger-fg)', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <AlertCircle size={18} /> {refError}
+                </div>
+              )}
+
+              <GlassButton onClick={handleValidateRef} variant="ghost" fullWidth style={{ marginTop: 12 }}>
+                <FileCode size={16} /> Validate Reference JSON
+              </GlassButton>
+
+              {refParsed && (
+                <div style={{ marginTop: 'var(--space-md)', padding: 'var(--space-md)', backgroundColor: 'var(--bg-card-tint)', borderRadius: 'var(--radius-card)', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                    ✓ <strong>{refParsed.faculty.length}</strong> faculty · <strong>{refParsed.subjects.length}</strong> subjects ready to publish.
+                  </div>
+                  <GlassButton onClick={handlePublishRef} disabled={refUpserting} fullWidth>
+                    <Play size={16} /> {refUpserting ? 'Publishing…' : 'Publish to Supabase'}
+                  </GlassButton>
+                </div>
+              )}
+            </GlassCard>
+          </div>
+        )}
+
         {/* ══════════════ AUDIT (owner-only) ══════════════ */}
         {tab === 'audit' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -538,6 +882,17 @@ export const AdminPortalView: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* High-uses confirmation */}
+      <ConfirmDialog
+        open={pendingHighUses !== null}
+        title={`Allow ${pendingHighUses ?? 0} active sessions?`}
+        message={`You're about to make this key work on ${pendingHighUses ?? 0} devices. Each key is meant for one person — if you need to give access to multiple people, generate a separate key for each. Continue with one key across ${pendingHighUses ?? 0} devices?`}
+        confirmLabel="Continue"
+        tone="primary"
+        onConfirm={() => { const uses = pendingHighUses!; setPendingHighUses(null); runGenerate(uses); }}
+        onCancel={() => setPendingHighUses(null)}
+      />
     </div>
   );
 };

@@ -15,3 +15,4 @@ export { StatTile } from './StatTile';
 export { ProgressRing } from './ProgressRing';
 export { Banner } from './Banner';
 export type { BannerTone } from './Banner';
+export { ConfirmDialog } from './ConfirmDialog';

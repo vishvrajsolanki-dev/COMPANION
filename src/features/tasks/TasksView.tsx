@@ -17,7 +17,12 @@ export const TasksView: React.FC = () => {
   const [isAdding, setIsAdding] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [newSubjectId, setNewSubjectId] = useState('');
-  const [newDueAt, setNewDueAt] = useState(() => `${todayISO()}T23:59:00`);
+  // Due date/time split into native date+time inputs (Bug F#11): the combined
+  // <input type="datetime-local"> has no standard confirm button on mobile and
+  // renders inconsistently across browsers. Separate pickers match the Extra
+  // Class form pattern elsewhere in the app.
+  const [newDueDate, setNewDueDate] = useState(() => todayISO());
+  const [newDueTime, setNewDueTime] = useState('23:59');
   const [newPriority, setNewPriority] = useState<'low' | 'medium' | 'high' | 'urgent'>('medium');
 
   const selectedTask = tasks.find(t => t.id === selectedTaskId);
@@ -48,7 +53,7 @@ export const TasksView: React.FC = () => {
   const handleCreateTask = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTitle.trim()) return;
-    if (!newDueAt) {
+    if (!newDueDate || !newDueTime) {
       setDbError('Please choose a due date & time for the task.');
       return;
     }
@@ -59,7 +64,7 @@ export const TasksView: React.FC = () => {
         id: `task-${Date.now()}`,
         subject_id: newSubjectId || undefined,
         title: newTitle,
-        due_at: newDueAt,
+        due_at: `${newDueDate}T${newDueTime}:00`,
         priority: newPriority,
         status: 'todo',
         is_deleted: false,
@@ -67,7 +72,8 @@ export const TasksView: React.FC = () => {
 
       setNewTitle('');
       setNewSubjectId('');
-      setNewDueAt(`${todayISO()}T23:59:00`);
+      setNewDueDate(todayISO());
+      setNewDueTime('23:59');
       setNewPriority('medium');
       setIsAdding(false);
     } catch (err) {
@@ -278,9 +284,9 @@ export const TasksView: React.FC = () => {
             <div>
               <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Due Date</label>
               <input
-                type="datetime-local"
-                value={newDueAt}
-                onChange={e => setNewDueAt(e.target.value)}
+                type="date"
+                value={newDueDate}
+                onChange={e => setNewDueDate(e.target.value)}
                 required
                 className="input"
                 style={{ marginTop: 4 }}
@@ -288,19 +294,31 @@ export const TasksView: React.FC = () => {
             </div>
 
             <div>
-              <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Priority</label>
-              <select
-                value={newPriority}
-                onChange={e => setNewPriority(e.target.value as any)}
+              <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Due Time</label>
+              <input
+                type="time"
+                value={newDueTime}
+                onChange={e => setNewDueTime(e.target.value)}
+                required
                 className="input"
                 style={{ marginTop: 4 }}
-              >
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-                <option value="urgent">Urgent</option>
-              </select>
+              />
             </div>
+          </div>
+
+          <div>
+            <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Priority</label>
+            <select
+              value={newPriority}
+              onChange={e => setNewPriority(e.target.value as any)}
+              className="input"
+              style={{ marginTop: 4 }}
+            >
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+              <option value="urgent">Urgent</option>
+            </select>
           </div>
 
           {dbError && (

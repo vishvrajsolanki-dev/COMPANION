@@ -4,7 +4,7 @@ import { db, CalendarEvent } from '../../db/index';
 import { useActiveSemester } from '../../db/useDatabase';
 import { useUIStore } from '../../store/uiStore';
 import { ADIT_CALENDAR_EVENT_DEFAULTS, ADIT_SEMESTER_DEFAULT } from '../../data/aditCalendarDefaults';
-import { GlassButton, BottomSheet, EmptyState } from '../../components/ui';
+import { GlassButton, BottomSheet, EmptyState, ConfirmDialog } from '../../components/ui';
 import { ArrowLeft, Plus, Pencil, Trash2, RotateCcw } from 'lucide-react';
 
 // Event-type styling pulled from the 8 locked design tokens (no free colors).
@@ -45,6 +45,8 @@ export const CalendarEventsView: React.FC = () => {
   const [type, setType]         = useState<CalendarEvent['type']>('holiday');
   const [description, setDescription] = useState('');
   const [resetMsg, setResetMsg] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<CalendarEvent | null>(null);
+  const [pendingReset, setPendingReset] = useState(false);
 
   const openAdd = () => {
     setEditTarget(null);
@@ -87,21 +89,23 @@ export const CalendarEventsView: React.FC = () => {
     }
   };
 
-  const handleDelete = async (ev: CalendarEvent) => {
-    if (!confirm(`Delete "${ev.title}"?`)) return;
+  const requestDelete = (ev: CalendarEvent) => setPendingDelete(ev);
+
+  const executeDelete = async () => {
+    if (!pendingDelete) return;
     try {
-      await db.calendarEvents.update(ev.id, { is_deleted: true });
+      await db.calendarEvents.update(pendingDelete.id, { is_deleted: true });
     } catch (err) {
       console.error('Failed to delete calendar event:', err);
       setDbError('Failed to delete event.');
     }
+    setPendingDelete(null);
   };
 
   // Restore the full ADIT default set: keep user customs, un-delete/restore
   // any default that was edited or deleted, and align the sample semester's
   // dates back to the real ADIT ODD 2026 calendar.
   const handleResetDefaults = async () => {
-    if (!confirm('Reset the calendar to the official ADIT Academic Calendar 2026-27 defaults?\n\nCustom events are kept. Default events you edited or deleted are restored.')) return;
 
     const existing = await db.calendarEvents.toArray();
     const liveKeys = new Set(existing.filter(e => !e.is_deleted).map(keyOf));
@@ -141,6 +145,7 @@ export const CalendarEventsView: React.FC = () => {
 
     setResetMsg(`Calendar reset to ADIT 2026-27 defaults — ${restored} default event(s) restored.`);
     setTimeout(() => setResetMsg(null), 5000);
+    setPendingReset(false);
   };
 
   return (
@@ -158,7 +163,7 @@ export const CalendarEventsView: React.FC = () => {
           </div>
         </div>
         <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
-          <GlassButton size="sm" variant="ghost" onClick={handleResetDefaults} title="Restore the official ADIT Academic Calendar 2026-27 defaults">
+          <GlassButton size="sm" variant="ghost" onClick={() => setPendingReset(true)} title="Restore the official ADIT Academic Calendar 2026-27 defaults">
             <RotateCcw size={14} /> Reset to ADIT
           </GlassButton>
           <GlassButton size="sm" onClick={openAdd}>
@@ -220,7 +225,7 @@ export const CalendarEventsView: React.FC = () => {
                   aria-label={`Delete ${ev.title}`}
                   size="sm"
                   variant="danger"
-                  onClick={() => handleDelete(ev)}
+                  onClick={() => requestDelete(ev)}
                   title="Delete"
                 >
                   <Trash2 size={15} />
@@ -303,6 +308,27 @@ export const CalendarEventsView: React.FC = () => {
           </form>
         </BottomSheet>
       )}
+
+      {/* Delete confirmation */}
+      <ConfirmDialog
+        open={!!pendingDelete}
+        title={`Delete "${pendingDelete?.title ?? ''}"?`}
+        message="This calendar event will be permanently removed from your calendar."
+        confirmLabel="Delete Event"
+        onConfirm={executeDelete}
+        onCancel={() => setPendingDelete(null)}
+      />
+
+      {/* Reset-to-ADIT confirmation */}
+      <ConfirmDialog
+        open={pendingReset}
+        title="Reset calendar to ADIT defaults?"
+        message="Restores the official ADIT Academic Calendar 2026-27 defaults. Custom events are kept; default events you edited or deleted are restored."
+        confirmLabel="Reset to ADIT"
+        tone="primary"
+        onConfirm={handleResetDefaults}
+        onCancel={() => setPendingReset(false)}
+      />
     </div>
   );
 };

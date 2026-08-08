@@ -59,7 +59,7 @@
 .btnPrimary:hover { background-color: #1D4ED8; }
 
 .btnGhost {
-  background-color: #FFFFFF;
+  background-color: var(--bg-card);
   border: 1px solid var(--border-hairline);
   color: var(--text-primary);
 }

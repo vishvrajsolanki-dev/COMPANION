@@ -4,7 +4,7 @@ import { useSubjects } from '../../db/useDatabase';
 import { db, LectureSlot } from '../../db/index';
 import { useUIStore } from '../../store/uiStore';
 import { GlassButton, EmptyState } from '../../components/ui';
-import { ArrowLeft, CalendarPlus, Trash2, Zap, Calendar } from 'lucide-react';
+import { ArrowLeft, CalendarPlus, Trash2, Zap, Calendar, AlertCircle } from 'lucide-react';
 
 const DAYS = [
   { num: 1, name: 'Mon' },
@@ -101,15 +101,19 @@ export const TimetableBuilderView: React.FC = () => {
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime]     = useState('10:15');
   const [roomId, setRoomId]       = useState('');
+  const [formError, setFormError] = useState<string | null>(null);
 
   const addPattern = (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError(null);
     if (!subjectId) return;
+    // Time-order validation (Bug F#9): a recurring class must end after it starts.
+    if (startTime >= endTime) { setFormError('End time must be after start time.'); return; }
     // Prevent exact duplicate patterns
     const exists = patterns.some(p =>
       p.subjectId === subjectId && p.dayOfWeek === dayOfWeek && p.startTime === startTime
     );
-    if (exists) { alert('This pattern already exists in the list.'); return; }
+    if (exists) { setFormError('This pattern already exists in the list.'); return; }
 
     setPatterns(prev => [...prev, {
       id: `pat-${Date.now()}`,
@@ -120,8 +124,9 @@ export const TimetableBuilderView: React.FC = () => {
   const removePattern = (id: string) => setPatterns(prev => prev.filter(p => p.id !== id));
 
   const generateAll = async () => {
-    if (!activeSem) { alert('No active semester found. Go to Profile → Semesters and set one active first.'); return; }
-    if (patterns.length === 0) { alert('Add at least one pattern row before generating.'); return; }
+    setFormError(null);
+    if (!activeSem) { setFormError('No active semester found. Go to Profile → Semesters and set one active first.'); return; }
+    if (patterns.length === 0) { setFormError('Add at least one pattern row before generating.'); return; }
 
     setGenerating(true);
     let totalAdded = 0;
@@ -184,6 +189,11 @@ export const TimetableBuilderView: React.FC = () => {
       <div style={{ padding: 'var(--space-md)' }}>
         <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '10px' }}>Add Recurring Pattern</h3>
         <form onSubmit={addPattern} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)', padding: 'var(--space-md)', backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius-card)', border: '1px solid var(--border-hairline)', boxShadow: 'var(--shadow-card)' }}>
+          {formError && (
+            <div style={{ padding: '10px 12px', borderRadius: 'var(--radius-card)', backgroundColor: 'var(--color-danger-bg)', color: 'var(--color-danger-fg)', fontSize: '0.82rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <AlertCircle size={15} style={{ flexShrink: 0 }} /> {formError}
+            </div>
+          )}
           {/* Subject picker */}
           <div>
             <label style={labelStyle}>Subject</label>

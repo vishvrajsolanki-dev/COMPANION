@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAttendanceMath } from '../../hooks/useAttendanceMath';
 import { useSubjects, useLectureSlots, useTasks } from '../../db/useDatabase';
-import { useUIStore } from '../../store/uiStore';
+import { useUIStore, SubviewType } from '../../store/uiStore';
 import { useProfileStore, profileFirstName } from '../../store/profileStore';
 import { todayISO, isToday, nowMinutes, timePart, datePart, formatHeaderDate } from '../../utils/date';
 import styles from './QuietDashboard.module.css';
@@ -91,6 +91,44 @@ export const QuietDashboard: React.FC = () => {
         <h1 className={styles.greeting}>{greeting}{firstName ? `, ${firstName}` : ''}</h1>
         <p className={styles.dateSubtitle}>{dateStr}</p>
       </div>
+
+      {/* SETUP GUIDE BANNER — shown only on a fresh account (no subjects yet).
+          Walks the user through the real setup order so the app is never a
+          blank page (Bug F#12). */}
+      {subjects.length === 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, margin: 'var(--space-sm) var(--space-md)', padding: 'var(--space-md)', backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius-card)', border: '1px solid var(--border-hairline)', boxShadow: 'var(--shadow-card)' }}>
+          <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>Get started in 4 steps</div>
+          {[
+            { label: 'Set up your semester', sub: 'Dates & active term', go: 'semester-setup' as SubviewType },
+            { label: 'Add your subjects', sub: 'Course codes & credits', go: 'manage-subjects' as SubviewType },
+            { label: 'Build your timetable', sub: 'Weekly patterns → slots', go: 'timetable-builder' as SubviewType },
+            { label: 'Mark attendance', sub: 'After each lecture', go: 'attendance' as SubviewType },
+          ].map((step, i) => (
+            <button
+              key={step.go}
+              onClick={() => navigateToSubview(step.go)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                padding: '8px 4px',
+                borderRadius: 'var(--radius-card)',
+                textAlign: 'left',
+                cursor: 'pointer',
+              }}
+            >
+              <span style={{ width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', backgroundColor: 'var(--color-primary)', color: '#FFFFFF', fontSize: '0.75rem', fontWeight: 700, flexShrink: 0 }}>
+                {i + 1}
+              </span>
+              <span style={{ flex: 1, minWidth: 0 }}>
+                <span style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>{step.label}</span>
+                <span style={{ display: 'block', fontSize: '0.72rem', color: 'var(--text-secondary)' }}>{step.sub}</span>
+              </span>
+              <ArrowRight size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* CONDITIONAL WARNING BANNER (Quiet Dashboard Rule: ONLY show if isAnyAtRisk is true) */}
       {overall.isAnyAtRisk && (

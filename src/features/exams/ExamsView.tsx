@@ -3,7 +3,7 @@ import { useExams, useSubjects } from '../../db/useDatabase';
 import { db } from '../../db/index';
 import { useUIStore } from '../../store/uiStore';
 import { todayISO, nowMinutes } from '../../utils/date';
-import { BottomSheet, SegmentedControl, GlassButton, EmptyState } from '../../components/ui';
+import { BottomSheet, SegmentedControl, GlassButton, EmptyState, ConfirmDialog } from '../../components/ui';
 import { ArrowLeft, Plus, Calendar, AlertTriangle, Trash2, Check, BookOpen } from 'lucide-react';
 
 export const ExamsView: React.FC = () => {
@@ -26,6 +26,7 @@ export const ExamsView: React.FC = () => {
   const selectedExamSubject = selectedExam ? subjects.find(s => s.id === selectedExam.subject_id) : null;
 
   const [dbError, setDbError] = useState<string | null>(null);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   const handleCreateExam = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,13 +65,10 @@ export const ExamsView: React.FC = () => {
   };
 
   const handleDeleteExam = async (examId: string) => {
-    const exam = exams.find(e => e.id === examId);
-    if (!exam) return;
-    const sub = subjects.find(s => s.id === exam.subject_id);
-    if (!confirm(`Delete ${sub?.name || 'this exam'} (${exam.type})?`)) return;
     try {
       await db.exams.update(examId, { is_deleted: true });
       setSelectedExamId(null);
+      setPendingDeleteId(null);
     } catch (err) {
       console.error('Failed to delete exam:', err);
       setDbError('Failed to delete exam. Please try again.');
@@ -403,7 +401,7 @@ export const ExamsView: React.FC = () => {
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 'var(--space-xs)' }}>
-              <GlassButton variant="danger" onClick={() => handleDeleteExam(selectedExam.id)}>
+              <GlassButton variant="danger" onClick={() => setPendingDeleteId(selectedExam.id)}>
                 <Trash2 size={15} /> Delete Exam
               </GlassButton>
               <GlassButton variant="ghost" onClick={() => setSelectedExamId(null)}>
@@ -413,6 +411,16 @@ export const ExamsView: React.FC = () => {
           </div>
         )}
       </BottomSheet>
+
+      {/* Delete confirmation */}
+      <ConfirmDialog
+        open={!!pendingDeleteId}
+        title={`Delete ${subjects.find(s => s.id === exams.find(e => e.id === pendingDeleteId)?.subject_id)?.name ?? 'this exam'}?`}
+        message="The exam and its syllabus checklist will be permanently removed."
+        confirmLabel="Delete Exam"
+        onConfirm={() => { if (pendingDeleteId) handleDeleteExam(pendingDeleteId); }}
+        onCancel={() => setPendingDeleteId(null)}
+      />
     </div>
   );
 };

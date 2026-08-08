@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, Semester } from '../../db/index';
 import { useUIStore } from '../../store/uiStore';
-import { BottomSheet, EmptyState, Badge, GlassButton } from '../../components/ui';
-import { ArrowLeft, Plus, Check, Pencil, Trash2 } from 'lucide-react';
+import { BottomSheet, EmptyState, Badge, GlassButton, ConfirmDialog } from '../../components/ui';
+import { ArrowLeft, Plus, Check, Pencil, Trash2, AlertCircle } from 'lucide-react';
 
 function newId() { return `sem-${Date.now()}`; }
 
@@ -17,6 +17,8 @@ export const SemesterSetupView: React.FC = () => {
 
   const [editing, setEditing] = useState<Semester | null>(null);
   const [isAdding, setIsAdding] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<Semester | null>(null);
 
   // Form state
   const [label, setLabel] = useState('');
@@ -26,6 +28,7 @@ export const SemesterSetupView: React.FC = () => {
   const openAdd = () => {
     setEditing(null);
     setLabel(''); setStartDate(''); setEndDate('');
+    setFormError(null);
     setIsAdding(true);
   };
 
@@ -34,13 +37,15 @@ export const SemesterSetupView: React.FC = () => {
     setLabel(sem.label);
     setStartDate(sem.start_date);
     setEndDate(sem.end_date);
+    setFormError(null);
     setIsAdding(true);
   };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!label.trim() || !startDate || !endDate) return;
-    if (endDate < startDate) { alert('End date must be on or after the start date.'); return; }
+    if (endDate < startDate) { setFormError('End date must be on or after the start date.'); return; }
+    setFormError(null);
     if (editing) {
       await db.semesters.update(editing.id, { label: label.trim(), start_date: startDate, end_date: endDate });
     } else {
@@ -56,10 +61,15 @@ export const SemesterSetupView: React.FC = () => {
     await db.semesters.update(sem.id, { is_active: true });
   };
 
-  const deleteSemester = async (sem: Semester) => {
-    if (sem.is_active) { alert('Cannot delete the active semester.'); return; }
-    if (!confirm(`Delete "${sem.label}"? This won't delete slots/records inside it.`)) return;
-    await db.semesters.update(sem.id, { is_deleted: true });
+  const confirmDelete = (sem: Semester) => {
+    if (sem.is_active) { setFormError('Cannot delete the active semester.'); return; }
+    setPendingDelete(sem);
+  };
+
+  const executeDelete = async () => {
+    if (!pendingDelete) return;
+    await db.semesters.update(pendingDelete.id, { is_deleted: true });
+    setPendingDelete(null);
   };
 
   return (
@@ -133,7 +143,7 @@ export const SemesterSetupView: React.FC = () => {
                   <Pencil size={15} />
                 </button>
                 <button
-                  onClick={() => deleteSemester(sem)}
+                  onClick={() => confirmDelete(sem)}
                   title="Delete"
                   aria-label="Delete semester"
                   style={{ width: '34px', height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', backgroundColor: 'var(--color-danger-bg)', color: 'var(--color-danger)' }}
@@ -153,6 +163,24 @@ export const SemesterSetupView: React.FC = () => {
           style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}
         >
           <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-primary)' }}>{editing ? 'Edit Semester' : 'New Semester'}</h3>
+
+          {formError && (
+            <div
+              style={{
+                padding: '10px 12px',
+                borderRadius: 'var(--radius-card)',
+                backgroundColor: 'var(--color-danger-bg)',
+                color: 'var(--color-danger-fg)',
+                fontSize: '0.82rem',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+              }}
+            >
+              <AlertCircle size={15} style={{ flexShrink: 0 }} /> {formError}
+            </div>
+          )}
 
           <div>
             <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Semester Label</label>
@@ -201,6 +229,16 @@ export const SemesterSetupView: React.FC = () => {
           </div>
         </form>
       </BottomSheet>
+
+      {/* Delete confirmation */}
+      <ConfirmDialog
+        open={!!pendingDelete}
+        title={`Delete "${pendingDelete?.label ?? ''}"?`}
+        message="This semester will be removed from the list. Slots and attendance records inside it are not deleted."
+        confirmLabel="Delete Semester"
+        onConfirm={executeDelete}
+        onCancel={() => setPendingDelete(null)}
+      />
     </div>
   );
 };

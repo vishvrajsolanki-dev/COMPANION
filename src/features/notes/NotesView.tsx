@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNotes, useSubjects } from '../../db/useDatabase';
 import { db, Note } from '../../db/index';
 import { useUIStore } from '../../store/uiStore';
-import { GlassButton } from '../../components/ui';
+import { GlassButton, useToast, ConfirmDialog } from '../../components/ui';
 import {
   ArrowLeft, Search, Plus, Tag, Edit, Trash2,
   Eye, EyeOff, Paperclip, Save
@@ -38,6 +38,7 @@ export const NotesView: React.FC = () => {
   const subjects = useSubjects() || [];
 
   const closeSubview = useUIStore(state => state.closeSubview);
+  const toast = useToast();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
@@ -86,6 +87,7 @@ export const NotesView: React.FC = () => {
   };
 
   const [dbError, setDbError] = useState<string | null>(null);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   const handleSave = async () => {
     if (!editTitle.trim()) return;
@@ -123,14 +125,12 @@ export const NotesView: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('Are you sure you want to delete this note?')) {
-      try {
-        await db.notes.update(id, { is_deleted: true });
-        if (editingNoteId === id) setEditingNoteId(null);
-      } catch (err) {
-        console.error('Failed to delete note:', err);
-        setDbError('Failed to delete note. Please try again.');
-      }
+    try {
+      await db.notes.update(id, { is_deleted: true });
+      if (editingNoteId === id) setEditingNoteId(null);
+    } catch (err) {
+      console.error('Failed to delete note:', err);
+      setDbError('Failed to delete note. Please try again.');
     }
   };
 
@@ -213,7 +213,7 @@ export const NotesView: React.FC = () => {
           </div>
 
           {isPreview ? (
-            <div style={{ flex: 1, padding: '12px', border: '1px solid var(--border-hairline)', borderRadius: 'var(--radius-card)', backgroundColor: 'var(--bg-card)', overflowY: 'auto' }}>
+            <div style={{ flex: 1, padding: '12px', border: '1px solid var(--border-hairline)', borderRadius: 'var(--radius-card)', backgroundColor: 'var(--bg-page)', overflowY: 'auto' }}>
               <h3 style={{ marginBottom: '8px' }}>{editTitle || 'Untitled Note'}</h3>
               <p style={{ whiteSpace: 'pre-wrap', color: 'var(--text-primary)' }}>
                 {editBody ? renderMarkdownBody(editBody) : 'No content written yet.'}
@@ -231,6 +231,7 @@ export const NotesView: React.FC = () => {
                 fontSize: '0.95rem',
                 resize: 'none',
                 minHeight: '200px',
+                backgroundColor: 'var(--bg-page)',
               }}
             />
           )}
@@ -246,7 +247,7 @@ export const NotesView: React.FC = () => {
             <div style={{ display: 'flex', gap: '8px' }}>
               <button
                 type="button"
-                onClick={() => alert('Offline attachment uploading will be implemented in Phase 3 sync stack')}
+                onClick={() => toast.show('Offline attachments are coming in the Phase 3 sync stack.', 'info')}
                 style={{
                   padding: '8px 12px',
                   borderRadius: 'var(--radius-pill)',
@@ -401,13 +402,32 @@ export const NotesView: React.FC = () => {
                       </span>
                     ))}
                   </div>
+
+                  {/* Truncated body preview */}
+                  {n.body_markdown.trim() && (
+                    <p
+                      style={{
+                        marginTop: '6px',
+                        fontSize: '0.78rem',
+                        color: 'var(--text-muted)',
+                        lineHeight: 1.4,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                      }}
+                    >
+                      {n.body_markdown.replace(/[#*_`>]/g, '').trim()}
+                    </p>
+                  )}
                 </div>
 
                 <div style={{ display: 'flex', gap: '4px' }}>
                   <button onClick={() => handleStartEdit(n)} style={{ padding: '6px', color: 'var(--text-secondary)' }} aria-label="Edit note">
                     <Edit size={16} />
                   </button>
-                  <button onClick={() => handleDelete(n.id)} style={{ padding: '6px', color: 'var(--color-danger)' }} aria-label="Delete note">
+                  <button onClick={() => setPendingDeleteId(n.id)} style={{ padding: '6px', color: 'var(--color-danger)' }} aria-label="Delete note">
                     <Trash2 size={16} />
                   </button>
                 </div>
@@ -416,6 +436,16 @@ export const NotesView: React.FC = () => {
           })
         )}
       </div>
+
+      {/* Delete confirmation */}
+      <ConfirmDialog
+        open={!!pendingDeleteId}
+        title={`Delete "${notes.find(n => n.id === pendingDeleteId)?.title ?? 'this note'}"?`}
+        message="This note will be permanently removed."
+        confirmLabel="Delete Note"
+        onConfirm={() => { if (pendingDeleteId) handleDelete(pendingDeleteId); setPendingDeleteId(null); }}
+        onCancel={() => setPendingDeleteId(null)}
+      />
 
     </div>
   );

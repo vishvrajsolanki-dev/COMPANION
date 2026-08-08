@@ -3,8 +3,9 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db, Subject, LectureSlot } from '../../db/index';
 import { useUIStore } from '../../store/uiStore';
 import { GlassButton } from '../../components/ui';
-import { ArrowLeft, Upload, CheckCircle2, AlertCircle, FileCode, Play, Copy } from 'lucide-react';
+import { ArrowLeft, Upload, CheckCircle2, AlertCircle, FileCode, Play, Copy, UserCheck, Pencil } from 'lucide-react';
 import { SUBJECT_COLORS } from '../subjects/ManageSubjectsView';
+import { getReferenceFaculty, findBestFacultyMatch, type ReferenceFaculty } from '../../lib/referenceData';
 
 interface JSONSubjectImport {
   code: string;
@@ -27,6 +28,14 @@ interface JSONTimetablePayload {
   semester_label?: string;
   subjects?: JSONSubjectImport[];
   patterns?: JSONPatternImport[];
+}
+
+/** One distinct faculty name found in the payload, matched against reference data. */
+interface FacultyMatch {
+  key: string;                 // normalized distinct key
+  input: string;               // original spelling from the payload
+  matched: ReferenceFaculty | null;
+  override: string;            // editable — stored name when non-empty
 }
 
 // Student-facing prompt they paste into any AI (ChatGPT/Gemini/Claude/…) along
@@ -118,6 +127,8 @@ export const TimetableImportView: React.FC = () => {
   const [commitSummary, setCommitSummary] = useState<{ created: string[]; updated: string[]; skipped: string[] } | null>(null);
   const [preview, setPreview] = useState<{ newSubjects: number; projectedSlots: number; unresolvable: string[] } | null>(null);
   const [copied, setCopied] = useState(false);
+  const [facultyMatches, setFacultyMatches] = useState<FacultyMatch[] | null>(null);
+  const [facultyMatchError, setFacultyMatchError] = useState(false);
 
   // Live preview of the real DB impact: how many subjects are NEW, and how many
   // dated lecture slots the patterns will generate across the active semester.
@@ -167,8 +178,9 @@ export const TimetableImportView: React.FC = () => {
   const handleValidate = () => {
     setError(null);
     setParsed(null);
-    setImportedCount(null);   // clear stale success banner on re-validation
+    setImportedCount(null);
     setCommitSummary(null);
+    setFacultyMatches(null);
     try {
       if (!jsonText.trim()) throw new Error('Please paste JSON content or load sample.');
       const data: JSONTimetablePayload = JSON.parse(jsonText);
@@ -184,6 +196,7 @@ export const TimetableImportView: React.FC = () => {
       });
 
       setParsed(data);
+      buildFacultyMatches(data);
     } catch (err: any) {
       setError(err.message || 'Failed to parse JSON.');
     }
@@ -199,8 +212,49 @@ export const TimetableImportView: React.FC = () => {
       setError(null);
       setImportedCount(null);
       setCommitSummary(null);
+      setFacultyMatches(null);
     };
     reader.readAsText(file);
+  };
+
+  /**
+   * Auto-match every distinct faculty_name in the payload against reference_faculty.
+   * Best-effort: when the reference tables are unreachable/empty we leave the names
+   * as typed (no hard failure). Each distinct name gets an editable override field so
+   * the user can assign a teacher when no match is found.
+   */
+  const buildFacultyMatches = async (data: JSONTimetablePayload) => {
+    setFacultyMatches(null);
+    setFacultyMatchError(false);
+
+    const distinct = new Map<string, string>();
+    for (const p of data.patterns || []) {
+      if (p.faculty_name && p.faculty_name.trim()) {
+        const key = p.faculty_name.trim().toLowerCase();
+        if (!distinct.has(key)) distinct.set(key, p.faculty_name.trim());
+      }
+    }
+    if (distinct.size === 0) { setFacultyMatches([]); return; }
+
+    const ref = await getReferenceFaculty();
+    if (ref.error) setFacultyMatchError(true);
+    const list = ref.error ? [] : ref.data;
+
+    const matches: FacultyMatch[] = [];
+    for (const [key, input] of distinct) {
+      const matched = list.length > 0 ? findBestFacultyMatch(input, list) : null;
+      matches.push({ key, input, matched, override: matched?.name ?? input });
+    }
+    setFacultyMatches(matches);
+  };
+
+  /** Resolve what faculty name to store for a pattern, honoring user overrides. */
+  const resolveFacultyName = (input?: string): string | undefined => {
+    if (!input || !input.trim()) return undefined;
+    const key = input.trim().toLowerCase();
+    const m = facultyMatches?.find(f => f.key === key);
+    if (!m) return input;
+    return m.override.trim() || undefined;
   };
 
   const copyConversionPrompt = async () => {
@@ -283,7 +337,7 @@ export const TimetableImportView: React.FC = () => {
         pat.start_time,
         pat.end_time,
         pat.room_id,
-        pat.faculty_name,
+        resolveFacultyName(pat.faculty_name),
         activeSem.start_date,
         activeSem.end_date
       );
@@ -304,6 +358,7 @@ export const TimetableImportView: React.FC = () => {
     setImportedCount(totalGenerated);
     setCommitSummary({ created, updated, skipped });
     setParsed(null);
+    setFacultyMatches(null);
     setJsonText('');
   };
 
@@ -412,6 +467,76 @@ export const TimetableImportView: React.FC = () => {
                 </div>
               )}
             </div>
+
+            {/* Faculty auto-matching */}
+            {parsed.patterns?.some(p => p.faculty_name?.trim()) && (
+              <div style={{ borderTop: '1px solid var(--border-hairline)', paddingTop: 'var(--space-md)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                  <UserCheck size={16} style={{ color: 'var(--color-primary)' }} />
+                  <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)' }}>Faculty auto-matching</span>
+                </div>
+
+                {facultyMatchError && (
+                  <div style={{ fontSize: '0.74rem', color: 'var(--color-warning-fg)', backgroundColor: 'var(--color-warning-bg)', border: '1px solid var(--color-warning)', borderRadius: 8, padding: '6px 10px', marginBottom: 8 }}>
+                    Could not reach reference data — faculty names will be stored as typed.
+                  </div>
+                )}
+
+                {facultyMatches === null ? (
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '4px 0' }}>Matching faculty against reference data…</p>
+                ) : facultyMatches.length === 0 ? null : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {facultyMatches.map(m => {
+                      const resolved = m.override.trim() || m.input;
+                      const isCorrected = resolved !== m.input;
+                      return (
+                        <div key={m.key} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.8rem' }}>
+                          {m.matched ? (
+                            <CheckCircle2 size={15} style={{ color: 'var(--color-success)', flexShrink: 0 }} />
+                          ) : (
+                            <AlertCircle size={15} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+                          )}
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <span style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-family-mono)', fontSize: '0.76rem' }}>
+                              {m.input}
+                            </span>
+                            <span style={{ margin: '0 4px', color: 'var(--text-muted)' }}>→</span>
+                            <span style={{
+                              fontWeight: isCorrected ? 700 : 500,
+                              color: isCorrected ? 'var(--color-primary)' : 'var(--text-primary)',
+                              fontFamily: 'var(--font-family-mono)',
+                              fontSize: '0.76rem',
+                            }}>
+                              {resolved}
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newOverride = prompt(`Override faculty name for "${m.input}"`, m.override === m.input ? '' : m.override);
+                              if (newOverride !== null) {
+                                setFacultyMatches(prev => (prev || []).map(x => x.key === m.key ? { ...x, override: newOverride } : x));
+                              }
+                            }}
+                            title="Edit name (Assign Teacher)"
+                            style={{ flexShrink: 0, color: 'var(--text-muted)', display: 'flex', padding: 4, borderRadius: 6, background: 'transparent' }}
+                            aria-label={`Override name for ${m.input}`}
+                          >
+                            <Pencil size={13} />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 8, lineHeight: 1.4 }}>
+                  Names matched against the college faculty list are corrected automatically. Tap
+                  <Pencil size={10} style={{ display: 'inline', verticalAlign: 'middle', margin: '0 2px' }} />
+                  to override any name (Assign Teacher fallback).
+                </p>
+              </div>
+            )}
 
             <GlassButton
               onClick={handleCommitImport}

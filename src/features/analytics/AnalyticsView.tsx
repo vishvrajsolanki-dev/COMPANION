@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useAttendanceMath } from '../../hooks/useAttendanceMath';
-import { useSubjects, useLectureSlots, useAttendanceRecords } from '../../db/useDatabase';
+import { useSubjects, useLectureSlots, useAttendanceRecords, useTasks } from '../../db/useDatabase';
 import { useUIStore } from '../../store/uiStore';
+import { todayISO, datePart } from '../../utils/date';
 import { SegmentedControl, GlassCard, Banner } from '../../components/ui';
 import { ArrowLeft, TrendingUp, AlertCircle, CheckCircle, Calendar } from 'lucide-react';
 
@@ -27,6 +28,7 @@ export const AnalyticsView: React.FC = () => {
   const subjects = useSubjects() || [];
   const lectureSlots = useLectureSlots() || [];
   const attendanceRecords = useAttendanceRecords() || [];
+  const tasks = useTasks() || [];
 
   const closeSubview = useUIStore(state => state.closeSubview);
 
@@ -49,6 +51,19 @@ export const AnalyticsView: React.FC = () => {
 
   // Compute Faculty cancellation list
   const cancelledSlots = lectureSlots.filter(s => s.status === 'cancelled' && !s.is_deleted);
+
+  // ── Task analytics (real stats — Bug F#17–19) ─────────────────────────
+  // The Task model has no `completed_at` field, so "completion speed" can't
+  // be computed. Instead we show genuine count/ratio stats.
+  const activeTasks = tasks.filter(t => !t.is_deleted);
+  const totalTasks = activeTasks.length;
+  const completedTasks = activeTasks.filter(t => t.status === 'completed').length;
+  const pendingTasks = activeTasks.filter(t => t.status !== 'completed').length;
+  const today = todayISO();
+  const overdueTasks = activeTasks.filter(
+    t => t.status !== 'completed' && t.due_at && datePart(t.due_at) < today,
+  ).length;
+  const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: 'var(--bg-page)', paddingBottom: '80px' }}>
@@ -230,8 +245,28 @@ export const AnalyticsView: React.FC = () => {
           <GlassCard>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: 'var(--space-md)', textAlign: 'center', color: 'var(--text-secondary)' }}>
               <CheckCircle size={32} style={{ color: 'var(--color-success)' }} />
-              <h4 style={{ color: 'var(--text-primary)', fontWeight: 700 }}>Task Efficiency Analytics</h4>
-              <p style={{ fontSize: '0.8rem', marginTop: '4px' }}>Average completion speed: 18 hours before deadline.</p>
+              <h4 style={{ color: 'var(--text-primary)', fontWeight: 700 }}>Task Analytics</h4>
+              {totalTasks === 0 ? (
+                <p style={{ fontSize: '0.8rem', marginTop: '4px' }}>No tasks yet. Create tasks from the Tasks tab to see real analytics.</p>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-sm)', width: '100%', marginTop: 4 }}>
+                  {[
+                    { value: totalTasks, label: 'Total', color: 'var(--text-primary)' },
+                    { value: completedTasks, label: 'Completed', color: 'var(--color-success-fg)' },
+                    { value: pendingTasks, label: 'Pending', color: 'var(--color-primary)' },
+                    { value: overdueTasks, label: 'Overdue', color: overdueTasks > 0 ? 'var(--color-danger-fg)' : 'var(--text-muted)' },
+                  ].map(stat => (
+                    <div key={stat.label} style={{ padding: 8, borderRadius: 'var(--radius-card)', backgroundColor: 'var(--bg-page)', textAlign: 'center' }}>
+                      <div style={{ fontSize: '1.1rem', fontWeight: 700, color: stat.color, fontFamily: 'var(--font-family-mono)' }}>{stat.value}</div>
+                      <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-muted)' }}>{stat.label}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <p style={{ fontSize: '0.78rem', marginTop: 4, color: 'var(--text-muted)' }}>
+                Completion rate: <strong>{completionRate}%</strong>
+                {overdueTasks > 0 && <>, {overdueTasks} overdue</>}
+              </p>
             </div>
           </GlassCard>
         )}
@@ -241,7 +276,10 @@ export const AnalyticsView: React.FC = () => {
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: 'var(--space-md)', textAlign: 'center', color: 'var(--text-secondary)' }}>
               <Calendar size={32} style={{ color: 'var(--color-primary)' }} />
               <h4 style={{ color: 'var(--text-primary)', fontWeight: 700 }}>Study Hour Logs</h4>
-              <p style={{ fontSize: '0.8rem', marginTop: '4px' }}>Total study log tracking is currently synchronized locally.</p>
+              <p style={{ fontSize: '0.8rem', marginTop: '4px' }}>Coming soon — study hour tracking with session timers, daily goals, and weekly reports will be available in a future release.</p>
+              <span style={{ fontSize: '0.7rem', fontWeight: 600, padding: '4px 10px', borderRadius: 'var(--radius-pill)', backgroundColor: 'var(--color-info-bg)', color: 'var(--color-info-fg)' }}>
+                In Development
+              </span>
             </div>
           </GlassCard>
         )}

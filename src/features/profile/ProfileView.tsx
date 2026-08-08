@@ -5,6 +5,8 @@ import { useUIStore } from '../../store/uiStore';
 import { useProfileStore } from '../../store/profileStore';
 import { useAuthStore } from '../../store/authStore';
 import { QuickLink, StatTile, GlassButton, BottomSheet, Badge } from '../../components/ui';
+import { signOutSession } from '../../lib/accessKeys';
+import { getDeviceId } from '../../lib/deviceId';
 import {
   Moon, Sun, HardDrive, Users, BookOpen, Calendar, CalendarDays,
   BookMarked, Sliders, Trash2, Download, AlertTriangle, FileCode, Upload, User,
@@ -89,9 +91,16 @@ export const ProfileView: React.FC = () => {
     }
   };
 
-  // 3. Perform safe reset (export backup → set flag → clear all IndexedDB tables)
+  // 3. Perform safe reset (export backup → clear server session → wipe IndexedDB)
   const handleClearAllData = async () => {
     if (confirmInput.trim().toUpperCase() !== 'DELETE') return;
+
+    // Step 0: Best-effort server-side session cleanup (prevents orphaned
+    // device_sessions rows when local storage is wiped). Non-fatal —
+    // network failure is silently ignored, matching signOut()'s pattern.
+    if (activation?.accountId) {
+      await signOutSession(activation.accountId, getDeviceId()).catch(() => {});
+    }
 
     // Step 1: Auto export backup
     await exportBackupJSON();
@@ -384,47 +393,53 @@ export const ProfileView: React.FC = () => {
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: 8, paddingTop: 4, flexWrap: 'wrap' }}>
-            <GlassButton variant="ghost" size="sm" onClick={exportBackupJSON} style={{ flex: 1, minWidth: 130 }}>
-              <Download size={15} /> Backup Data
-            </GlassButton>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingTop: 4 }}>
+            {/* Backup / Restore share a row; Clear All Data gets its own full-width
+                row so it can never wrap under a neighbouring control on narrow phones
+                and always keeps a ≥44px tap target (Bug F#15). */}
+            <div style={{ display: 'flex', gap: 8 }}>
+              <GlassButton variant="ghost" size="sm" onClick={exportBackupJSON} style={{ flex: 1, minWidth: 130, minHeight: 44 }}>
+                <Download size={15} /> Backup Data
+              </GlassButton>
 
-            <label
-              style={{
-                flex: 1,
-                minWidth: 130,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 6,
-                padding: '7px 12px',
-                fontSize: 'var(--text-sm)',
-                borderRadius: 'var(--radius-pill)',
-                backgroundColor: 'var(--bg-card)',
-                border: '1px solid var(--border-hairline)',
-                color: 'var(--text-primary)',
-                fontWeight: 600,
-                cursor: 'pointer',
-                userSelect: 'none',
-              }}
-            >
-              <Upload size={15} /> Restore from JSON
-              <input
-                type="file"
-                accept=".json"
-                style={{ display: 'none' }}
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) importBackupJSON(file);
-                  e.target.value = '';
+              <label
+                style={{
+                  flex: 1,
+                  minWidth: 130,
+                  minHeight: 44,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 6,
+                  padding: '7px 12px',
+                  fontSize: 'var(--text-sm)',
+                  borderRadius: 'var(--radius-pill)',
+                  backgroundColor: 'var(--bg-card)',
+                  border: '1px solid var(--border-hairline)',
+                  color: 'var(--text-primary)',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  userSelect: 'none',
                 }}
-              />
-            </label>
+              >
+                <Upload size={15} /> Restore from JSON
+                <input
+                  type="file"
+                  accept=".json"
+                  style={{ display: 'none' }}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) importBackupJSON(file);
+                    e.target.value = '';
+                  }}
+                />
+              </label>
+            </div>
 
             <GlassButton
               variant="danger"
-              size="sm"
-              style={{ flex: 1, minWidth: 150 }}
+              size="md"
+              style={{ width: '100%', minHeight: 44 }}
               onClick={() => {
                 setConfirmInput('');
                 setIsConfirmingClear(true);

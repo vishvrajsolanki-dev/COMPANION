@@ -79,6 +79,12 @@ export const SlotDetailSheet: React.FC<SlotDetailSheetProps> = ({
     e.preventDefault();
     if (!rescheduleDate || !rescheduleStartTime || !rescheduleEndTime) return;
 
+    // Time-order validation (Bug F#9): a rescheduled class must end after it starts.
+    if (rescheduleStartTime >= rescheduleEndTime) {
+      setDbError('End time must be after start time.');
+      return;
+    }
+
     try {
       await db.lectureSlots.update(slot.id, { status: 'cancelled' });
       const newSlotId = `slot-resched-${Date.now()}`;
@@ -309,7 +315,7 @@ export const SlotDetailSheet: React.FC<SlotDetailSheetProps> = ({
           {slot.status === 'cancelled' ? 'Unmark Cancelled' : 'Faculty Cancelled'}
         </GlassButton>
 
-        <GlassButton variant="subtle" onClick={() => setIsRescheduling(true)} style={{ flex: 1 }}>
+        <GlassButton variant="subtle" onClick={() => { setDbError(null); setIsRescheduling(true); }} style={{ flex: 1 }}>
           <RefreshCw size={16} />
           <span>Reschedule</span>
         </GlassButton>
