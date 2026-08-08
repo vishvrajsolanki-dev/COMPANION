@@ -107,22 +107,28 @@ This is deliberately header-based (not a `<meta>` tag) so local `vite dev`
 
 **CORS on Supabase.** The browser calls `supabase.rpc(...)` straight to the
 Supabase REST endpoint (`*.supabase.co`), so the Supabase project must allow
-this origin. The Supabase **default allows all origins (`*`)** — acceptable for
-a public PWA that self-authorizes every RPC with an access key (RLS still blocks
-all direct table access, and the anon key is public by design), but it means any
-website could *attempt* an RPC. To tighten it to the app only:
+this origin. Supabase's hosted Data API answers `Access-Control-Allow-Origin:
+*` and **does not expose any per-origin CORS allow-list** — origin restriction
+is not available at the Data API layer (checked 2026-08-08 against the Supabase
+docs: the API guide documents the model as "Postgres RLS provisioned behind a
+key-auth gateway", and the API-keys guide marks the anon/publishable key "safe
+to expose online … web page, mobile or desktop app"; neither mentions any
+origin/CORS setting). The Settings → Auth → URL Configuration panel only covers
+Auth redirects (OAuth/email), not the Data API.
 
-1. Supabase Dashboard → your project → **Settings → API** (or **Authentication →
-   URL Configuration** on newer projects).
-2. In **Allowed Origins**, remove `*` and add exactly:
-   ```
-   https://student-academic-os.pages.dev
-   ```
-3. Re-run `scripts/verify-live-deploy.cjs` — activation still works, proving the
-   allow-list didn't break the app.
+So the browser-facing security boundary is not an origin allow-list — it is:
 
-The `connect-src` entry in the CSP above is already scoped to `*.supabase.co`,
-so the CSP is the first line of defense regardless of the CORS setting.
+1. **RLS + key-auth on Postgres** — every table has RLS with zero
+   `anon`/`authenticated` policies; the only data paths are SECURITY DEFINER
+   RPCs that self-verify an access key before doing anything. The anon key is
+   public by design and cannot read anything on its own.
+2. **`connect-src` in the CSP** (above) is already scoped to `*.supabase.co` —
+   a browser visiting this app cannot be tricked into exfiltrating to any other
+   host, and the app itself is the only intended caller.
+
+Any website can still *attempt* an RPC to `*.supabase.co` — that is inherent to
+Supabase's model and why the RPCs never trust the caller's origin. The access
+key is the authorization check, and RLS/grants stop everything else.
 
 ## How a release reaches students
 
