@@ -6,12 +6,14 @@ import {
   mapSetActiveResult,
   mapProfileListResult,
   mapActionListResult,
+  mapSessionListResult,
   isMaskedCode,
   ADMIN_ERROR_MESSAGES,
   type AdminErrorCode,
   type AdminKeyRecord,
   type AdminProfileRecord,
   type AdminActionRecord,
+  type AdminSessionRecord,
 } from './adminKeys';
 
 describe('isMaskedCode', () => {
@@ -69,6 +71,8 @@ describe('mapGenerateKeyResult', () => {
         used_count: 0,
         created_at: null,
         expires_at: null,
+        account_id: '',
+        student_profile: null,
       },
     });
   });
@@ -173,8 +177,8 @@ describe('mapProfileListResult', () => {
     const res = mapProfileListResult({
       ok: true,
       profiles: [
-        { id: 'p-1', name: 'Vishvraj', email: 'v@x.com', role: 'owner', created_at: '2026-08-06T00:00:00Z', key_label: 'Vishvraj' },
-        { id: 'p-2', name: null, email: null, role: 'student', created_at: '2026-08-05T00:00:00Z', key_label: null },
+        { id: 'p-1', name: 'Vishvraj', email: 'v@x.com', role: 'owner', created_at: '2026-08-06T00:00:00Z', key_label: 'Vishvraj', account_id: 'acc-1', student_profile: null },
+        { id: 'p-2', name: null, email: null, role: 'student', created_at: '2026-08-05T00:00:00Z', key_label: null, account_id: 'acc-2', student_profile: null },
       ],
     });
     expect(res.ok).toBe(true);
@@ -183,10 +187,38 @@ describe('mapProfileListResult', () => {
       expect(res.data[0]).toEqual({
         id: 'p-1', name: 'Vishvraj', email: 'v@x.com', role: 'owner',
         created_at: '2026-08-06T00:00:00Z', key_label: 'Vishvraj',
+        account_id: 'acc-1', student_profile: null,
       });
       expect(res.data[1].name).toBeNull();
       expect(res.data[1].email).toBeNull();
       expect(res.data[1].key_label).toBeNull();
+    }
+  });
+
+  it('passes through the account-scoped student profile', () => {
+    const res = mapProfileListResult({
+      ok: true,
+      profiles: [
+        {
+          id: 'p-3',
+          name: 'Drashti',
+          email: 'd@x.com',
+          role: 'student',
+          created_at: '2026-08-06T00:00:00Z',
+          key_label: 'Drashti Key',
+          account_id: '9a1c9f1a-0000-4000-8000-000000000009',
+          student_profile: { name: 'Drashti', department: 'CE', enrollment_number: '2204039' },
+        },
+      ],
+    });
+    expect(res.ok).toBe(true);
+    if (res.ok) {
+      expect(res.data[0].account_id).toBe('9a1c9f1a-0000-4000-8000-000000000009');
+      expect(res.data[0].student_profile).toEqual({
+        name: 'Drashti',
+        department: 'CE',
+        enrollment_number: '2204039',
+      });
     }
   });
 
@@ -286,6 +318,78 @@ describe('mapActionListResult', () => {
   });
 });
 
+describe('mapSessionListResult', () => {
+  it('maps a device-session array with all fields', () => {
+    const res = mapSessionListResult({
+      ok: true,
+      sessions: [
+        {
+          id: 's-1',
+          account_id: '9a1c9f1a-0000-4000-8000-000000000001',
+          device_id: 'dev-1',
+          device_name: 'Chrome on Windows',
+          last_seen: '2026-08-07T09:00:00Z',
+          created_at: '2026-08-07T08:00:00Z',
+          account_name: 'Vishvraj',
+          account_role: 'owner',
+        },
+      ],
+    });
+    expect(res.ok).toBe(true);
+    if (res.ok) {
+      expect(res.data).toHaveLength(1);
+      expect(res.data[0]).toEqual({
+        id: 's-1',
+        account_id: '9a1c9f1a-0000-4000-8000-000000000001',
+        device_id: 'dev-1',
+        device_name: 'Chrome on Windows',
+        last_seen: '2026-08-07T09:00:00Z',
+        created_at: '2026-08-07T08:00:00Z',
+        account_name: 'Vishvraj',
+        account_role: 'owner',
+      });
+    }
+  });
+
+  it('defaults missing optional fields', () => {
+    const res = mapSessionListResult({
+      ok: true,
+      sessions: [{ id: 's-2', account_id: 'acc-1', device_id: 'dev-2' }],
+    });
+    expect(res.ok).toBe(true);
+    if (res.ok) {
+      expect(res.data[0]).toEqual({
+        id: 's-2',
+        account_id: 'acc-1',
+        device_id: 'dev-2',
+        device_name: null,
+        last_seen: null,
+        created_at: null,
+        account_name: null,
+        account_role: 'student',
+      });
+    }
+  });
+
+  it('returns empty array for empty sessions list', () => {
+    const res = mapSessionListResult({ ok: true, sessions: [] });
+    expect(res).toEqual({ ok: true, data: [] });
+  });
+
+  it('drops malformed rows instead of failing the whole list', () => {
+    const res = mapSessionListResult({ ok: true, sessions: [{ device_id: 'no-id' }, 'junk', null] });
+    expect(res.ok).toBe(true);
+    if (res.ok) expect(res.data).toHaveLength(0);
+  });
+
+  it('rejects non-array sessions payloads', () => {
+    expect(mapSessionListResult({ ok: true, sessions: {} })).toEqual({ ok: false, error: 'UNKNOWN' });
+    expect(mapSessionListResult({ ok: false, error: 'UNAUTHORIZED' })).toEqual({ ok: false, error: 'UNAUTHORIZED' });
+    expect(mapSessionListResult({ ok: true })).toEqual({ ok: false, error: 'UNKNOWN' });
+    expect(mapSessionListResult(null)).toEqual({ ok: false, error: 'UNKNOWN' });
+  });
+});
+
 describe('ADMIN_ERROR_MESSAGES', () => {
   it('has a human-readable message for every AdminErrorCode', () => {
     const codes: AdminErrorCode[] = ['UNAUTHORIZED', 'GENERATION_CONFLICT', 'CANNOT_MODIFY_SELF', 'NOT_FOUND', 'NETWORK', 'UNKNOWN'];
@@ -315,6 +419,7 @@ describe('Type inference sanity', () => {
       used_count: 0,
       created_at: '2026-08-06T00:00:00Z',
       expires_at: null,
+      account_id: '9a1c9f1a-0000-4000-8000-000000000001',
     };
     expect(key).toBeDefined();
   });
@@ -340,5 +445,19 @@ describe('Type inference sanity', () => {
       created_at: '2026-08-07T12:00:00Z',
     };
     expect(action).toBeDefined();
+  });
+
+  it('AdminSessionRecord has all expected fields', () => {
+    const session: AdminSessionRecord = {
+      id: 's-1',
+      account_id: '9a1c9f1a-0000-4000-8000-000000000001',
+      device_id: 'dev-1',
+      device_name: 'Chrome on Windows',
+      last_seen: '2026-08-07T09:00:00Z',
+      created_at: '2026-08-07T08:00:00Z',
+      account_name: 'Vishvraj',
+      account_role: 'owner',
+    };
+    expect(session).toBeDefined();
   });
 });

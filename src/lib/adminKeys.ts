@@ -12,6 +12,13 @@ import { useAuthStore } from '../store/authStore';
 
 export type AdminRole = 'student' | 'admin' | 'owner';
 
+/** Self-declared student identity (name, department, enrollment number). */
+export interface StudentProfile {
+  name?: string | null;
+  department?: string | null;
+  enrollment_number?: string | null;
+}
+
 /** One row from admin_list_keys. */
 export interface AdminKeyRecord {
   id: string;
@@ -23,6 +30,8 @@ export interface AdminKeyRecord {
   used_count: number;
   created_at: string | null;
   expires_at: string | null;
+  account_id: string;
+  student_profile?: StudentProfile | null;
 }
 
 /** One row from admin_list_profiles. */
@@ -33,6 +42,8 @@ export interface AdminProfileRecord {
   role: AdminRole;
   created_at: string | null;
   key_label: string | null;
+  account_id?: string;
+  student_profile?: StudentProfile | null;
 }
 
 /** One row from admin_list_actions (the action-audit trail). */
@@ -42,6 +53,18 @@ export interface AdminActionRecord {
   target_code: string;
   detail: Record<string, unknown>;
   created_at: string | null;
+}
+
+/** One row from admin_list_sessions. */
+export interface AdminSessionRecord {
+  id: string;
+  account_id: string;
+  device_id: string;
+  device_name: string | null;
+  last_seen: string | null;
+  created_at: string | null;
+  account_name: string | null;
+  account_role: AdminRole;
 }
 
 export type AdminErrorCode =
@@ -87,6 +110,15 @@ const asBool = (v: unknown, dflt: boolean): boolean => (typeof v === 'boolean' ?
 const asNum = (v: unknown, dflt: number): number => (typeof v === 'number' ? v : dflt);
 const asRole = (v: unknown): AdminRole => (typeof v === 'string' && ROLES.includes(v) ? (v as AdminRole) : 'student');
 
+const asStudentProfile = (v: unknown): StudentProfile | null => {
+  if (!isObj(v)) return null;
+  return {
+    name: asStr(v.name),
+    department: asStr(v.department),
+    enrollment_number: asStr(v.enrollment_number),
+  };
+};
+
 /** Normalizes any non-ok RPC payload into an AdminErrorCode. */
 export function mapAdminError(raw: unknown): AdminErrorCode {
   if (!isObj(raw)) return 'UNKNOWN';
@@ -106,6 +138,8 @@ const mapKeyRecord = (raw: unknown): AdminKeyRecord | null => {
     used_count: asNum(raw.used_count, 0),
     created_at: asStr(raw.created_at),
     expires_at: asStr(raw.expires_at),
+    account_id: typeof raw.account_id === 'string' ? raw.account_id : '',
+    student_profile: 'student_profile' in raw ? asStudentProfile(raw.student_profile) : null,
   };
 };
 
@@ -118,6 +152,8 @@ const mapProfileRecord = (raw: unknown): AdminProfileRecord | null => {
     role: asRole(raw.role),
     created_at: asStr(raw.created_at),
     key_label: asStr(raw.key_label),
+    account_id: typeof raw.account_id === 'string' ? raw.account_id : undefined,
+    student_profile: 'student_profile' in raw ? asStudentProfile(raw.student_profile) : null,
   };
 };
 
@@ -129,6 +165,20 @@ const mapActionRecord = (raw: unknown): AdminActionRecord | null => {
     target_code: asStr(raw.target_code) ?? '',
     detail: isObj(raw.detail) ? raw.detail : {},
     created_at: asStr(raw.created_at),
+  };
+};
+
+const mapSessionRecord = (raw: unknown): AdminSessionRecord | null => {
+  if (!isObj(raw) || typeof raw.id !== 'string') return null;
+  return {
+    id: raw.id,
+    account_id: typeof raw.account_id === 'string' ? raw.account_id : '',
+    device_id: typeof raw.device_id === 'string' ? raw.device_id : '',
+    device_name: asStr(raw.device_name),
+    last_seen: asStr(raw.last_seen),
+    created_at: asStr(raw.created_at),
+    account_name: asStr(raw.account_name),
+    account_role: asRole(raw.account_role),
   };
 };
 
@@ -169,6 +219,14 @@ export function mapActionListResult(raw: unknown): AdminResult<AdminActionRecord
   if (!Array.isArray(raw.actions)) return { ok: false, error: 'UNKNOWN' };
   const actions = raw.actions.map(mapActionRecord).filter((a): a is AdminActionRecord => a !== null);
   return { ok: true, data: actions };
+}
+
+export function mapSessionListResult(raw: unknown): AdminResult<AdminSessionRecord[]> {
+  if (!isObj(raw)) return { ok: false, error: 'UNKNOWN' };
+  if (raw.ok !== true) return { ok: false, error: mapAdminError(raw) };
+  if (!Array.isArray(raw.sessions)) return { ok: false, error: 'UNKNOWN' };
+  const sessions = raw.sessions.map(mapSessionRecord).filter((s): s is AdminSessionRecord => s !== null);
+  return { ok: true, data: sessions };
 }
 
 /* ── live RPC calls ───────────────────────────────────────────────────────── */
@@ -240,4 +298,18 @@ export async function listActions(): Promise<AdminResult<AdminActionRecord[]>> {
   const cred = getAdminCredential();
   if (!cred) return { ok: false, error: 'UNAUTHORIZED' };
   return rpc('admin_list_actions', { p_admin_code: cred }, mapActionListResult);
+}
+
+/** Owner sees all sessions; admin sees only their own account's sessions. */
+export async function listSessions(): Promise<AdminResult<AdminSessionRecord[]>> {
+  const cred = getAdminCredential();
+  if (!cred) return { ok: false, error: 'UNAUTHORIZED' };
+  return rpc('admin_list_sessions', { p_admin_code: cred }, mapSessionListResult);
+}
+
+/** Revoke a single device session (signs that device out). */
+export async function revokeSession(sessionId: string): Promise<AdminResult<boolean>> {
+  const cred = getAdminCredential();
+  if (!cred) return { ok: false, error: 'UNAUTHORIZED' };
+  return rpc('admin_revoke_session', { p_admin_code: cred, p_session_id: sessionId }, mapSetActiveResult);
 }
