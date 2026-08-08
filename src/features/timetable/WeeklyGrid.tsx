@@ -75,6 +75,7 @@ export const WeeklyGrid: React.FC = () => {
 
   return (
     <div className={styles.container}>
+      <h1 className="sr-only">Weekly Timetable</h1>
       {/* Screen header */}
       <header
         style={{

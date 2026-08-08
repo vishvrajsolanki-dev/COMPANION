@@ -52,6 +52,7 @@ export const AnalyticsView: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: 'var(--bg-page)', paddingBottom: '80px' }}>
+      <h1 className="sr-only">Analytics</h1>
 
       {/* Header */}
       <header
@@ -68,7 +69,7 @@ export const AnalyticsView: React.FC = () => {
           zIndex: 10,
         }}
       >
-        <button onClick={closeSubview} style={{ color: 'var(--text-primary)' }}>
+        <button onClick={closeSubview} style={{ color: 'var(--text-primary)' }} aria-label="Go back">
           <ArrowLeft size={24} />
         </button>
         <div>

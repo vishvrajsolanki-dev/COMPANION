@@ -92,6 +92,7 @@ export const TasksView: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: 'var(--bg-page)', paddingBottom: '80px' }}>
+      <h1 className="sr-only">Tasks</h1>
       {/* Screen header */}
       <header
         style={{
@@ -225,6 +226,7 @@ export const TasksView: React.FC = () => {
                       onClick={() => deleteTask(t.id)}
                       style={{ padding: 6, borderRadius: 8, color: 'var(--color-danger)', background: 'var(--color-danger-bg)' }}
                       title="Delete task"
+                      aria-label="Delete task"
                     >
                       <Trash2 size={16} />
                     </button>

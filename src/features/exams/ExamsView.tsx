@@ -105,6 +105,7 @@ export const ExamsView: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: 'var(--bg-page)', paddingBottom: '80px' }}>
+      <h1 className="sr-only">Exams</h1>
 
       {/* Screen header */}
       <header
@@ -122,7 +123,7 @@ export const ExamsView: React.FC = () => {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <button onClick={closeSubview} style={{ color: 'var(--text-primary)' }}>
+          <button onClick={closeSubview} style={{ color: 'var(--text-primary)' }} aria-label="Go back">
             <ArrowLeft size={24} />
           </button>
           <h2 style={{ fontSize: 'var(--text-xl)', fontWeight: 700, color: 'var(--text-primary)' }}>Exams & Quizzes</h2>

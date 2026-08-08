@@ -11,11 +11,12 @@ export const DirectoryView: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: 'var(--bg-page)', paddingBottom: '80px' }}>
+      <h1 className="sr-only">Faculty Directory</h1>
 
       {/* Header */}
       <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'var(--space-md)', paddingTop: 'calc(var(--space-md) + env(safe-area-inset-top))', borderBottom: '1px solid var(--border-hairline)', backgroundColor: 'var(--bg-page)', position: 'sticky', top: 0, zIndex: 10 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button onClick={closeSubview} style={{ color: 'var(--text-primary)' }}>
+          <button onClick={closeSubview} style={{ color: 'var(--text-primary)' }} aria-label="Go back">
             <ArrowLeft size={24} />
           </button>
           <h2 style={{ fontSize: 'var(--text-xl)', fontWeight: 700, color: 'var(--text-primary)' }}>Faculty Directory</h2>

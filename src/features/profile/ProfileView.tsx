@@ -129,6 +129,7 @@ export const ProfileView: React.FC = () => {
 
   return (
     <div style={{ padding: 'var(--space-md)', paddingBottom: '90px', display: 'flex', flexDirection: 'column', gap: 'var(--space-lg)' }}>
+      <h1 className="sr-only">Profile</h1>
 
       {/* Profile Header — white card hero with avatar ring */}
       <div

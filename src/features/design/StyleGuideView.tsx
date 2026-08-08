@@ -100,10 +100,10 @@ const BUTTONS = [
 
 // ── §5.8 Semantic icon buttons (blue/violet/rust/red) ────────────────────────
 const SEMANTIC_ICONS = [
-  { Icon: Settings, bg: 'var(--color-primary)' },
-  { Icon: Award,    bg: 'var(--color-secondary)' },
-  { Icon: Shield,   bg: 'var(--color-tertiary)' },
-  { Icon: Bell,     bg: 'var(--color-danger)' },
+  { Icon: Settings, bg: 'var(--color-primary)',   label: 'Settings icon specimen' },
+  { Icon: Award,    bg: 'var(--color-secondary)', label: 'Award icon specimen' },
+  { Icon: Shield,   bg: 'var(--color-tertiary)',  label: 'Shield icon specimen' },
+  { Icon: Bell,     bg: 'var(--color-danger)',    label: 'Bell icon specimen' },
 ];
 
 const circleBtn = (bg: string, size = 44): React.CSSProperties => ({
@@ -144,6 +144,7 @@ export const StyleGuideView: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: 'var(--bg-page)', paddingBottom: '80px' }}>
+      <h1 className="sr-only">Design System</h1>
 
       {/* Screen header */}
       <header
@@ -161,7 +162,7 @@ export const StyleGuideView: React.FC = () => {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button onClick={closeSubview} style={{ color: 'var(--text-primary)' }}>
+          <button onClick={closeSubview} style={{ color: 'var(--text-primary)' }} aria-label="Go back">
             <ArrowLeft size={24} />
           </button>
           <div>
@@ -322,13 +323,13 @@ export const StyleGuideView: React.FC = () => {
             Nav & Icon Buttons
           </div>
           <div style={{ ...card, display: 'flex', alignItems: 'center', gap: 'var(--space-md)', padding: 'var(--space-md)' }}>
-            <button type="button" style={circleBtn('var(--color-primary)')}>
+            <button type="button" style={circleBtn('var(--color-primary)')} aria-label="Home icon button specimen">
               <Home size={20} />
             </button>
-            <button type="button" style={outlineCircleBtn}>
+            <button type="button" style={outlineCircleBtn} aria-label="Search icon button specimen">
               <Search size={20} />
             </button>
-            <button type="button" style={outlineCircleBtn}>
+            <button type="button" style={outlineCircleBtn} aria-label="User icon button specimen">
               <User size={20} />
             </button>
           </div>
@@ -354,6 +355,7 @@ export const StyleGuideView: React.FC = () => {
                 justifyContent: 'center',
                 flexShrink: 0,
               }}
+              aria-label="Edit icon button specimen"
             >
               <Pencil size={20} />
             </button>
@@ -383,8 +385,8 @@ export const StyleGuideView: React.FC = () => {
             Semantic Icon Buttons
           </div>
           <div style={{ ...card, display: 'flex', alignItems: 'center', gap: 'var(--space-md)', padding: 'var(--space-md)' }}>
-            {SEMANTIC_ICONS.map(({ Icon, bg }) => (
-              <button key={bg} type="button" style={circleBtn(bg, 38)}>
+            {SEMANTIC_ICONS.map(({ Icon, bg, label }) => (
+              <button key={bg} type="button" style={circleBtn(bg, 38)} aria-label={label}>
                 <Icon size={17} />
               </button>
             ))}

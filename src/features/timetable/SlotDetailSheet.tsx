@@ -288,7 +288,7 @@ export const SlotDetailSheet: React.FC<SlotDetailSheetProps> = ({
         </GlassButton>
 
         {record && (
-          <GlassButton variant="danger" onClick={clearRecord} title="Clear marked attendance">
+          <GlassButton variant="danger" onClick={clearRecord} title="Clear marked attendance" aria-label="Clear marked attendance">
             <Trash2 size={16} />
           </GlassButton>
         )}

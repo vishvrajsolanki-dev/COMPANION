@@ -1,34 +1,43 @@
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import { seedDatabaseIfEmpty } from '../db/seeds';
 import { useUIStore } from '../store/uiStore';
 import { useAuthStore } from '../store/authStore';
 import { supabaseConfigured } from '../lib/supabase';
 import { TabBar } from '../components/layout/TabBar';
 import { ErrorBoundary } from '../components/ErrorBoundary';
+import { GlobalErrorCatcher } from '../components/GlobalErrorCatcher';
 import { ToastProvider } from '../components/ui';
 import { ActivationView } from '../features/auth/ActivationView';
 
-// Main tab views
-import { QuietDashboard }  from '../features/dashboard/QuietDashboard';
-import { WeeklyGrid }      from '../features/timetable/WeeklyGrid';
-import { TasksView }       from '../features/tasks/TasksView';
-import { ProfileView }     from '../features/profile/ProfileView';
+// Lazy-loaded views — each becomes its own chunk via code-splitting.
+// Named exports are mapped to a default for React.lazy.
+const QuietDashboard       = React.lazy(() => import('../features/dashboard/QuietDashboard').then(m => ({ default: m.QuietDashboard })));
+const WeeklyGrid           = React.lazy(() => import('../features/timetable/WeeklyGrid').then(m => ({ default: m.WeeklyGrid })));
+const TasksView            = React.lazy(() => import('../features/tasks/TasksView').then(m => ({ default: m.TasksView })));
+const ProfileView          = React.lazy(() => import('../features/profile/ProfileView').then(m => ({ default: m.ProfileView })));
+const AttendanceView       = React.lazy(() => import('../features/attendance/AttendanceView').then(m => ({ default: m.AttendanceView })));
+const NotesView            = React.lazy(() => import('../features/notes/NotesView').then(m => ({ default: m.NotesView })));
+const AnalyticsView        = React.lazy(() => import('../features/analytics/AnalyticsView').then(m => ({ default: m.AnalyticsView })));
+const ExamsView            = React.lazy(() => import('../features/exams/ExamsView').then(m => ({ default: m.ExamsView })));
+const ResourcesView        = React.lazy(() => import('../features/resources/ResourcesView').then(m => ({ default: m.ResourcesView })));
+const DirectoryView        = React.lazy(() => import('../features/directory/DirectoryView').then(m => ({ default: m.DirectoryView })));
+const SemesterSetupView    = React.lazy(() => import('../features/semester/SemesterSetupView').then(m => ({ default: m.SemesterSetupView })));
+const ManageSubjectsView   = React.lazy(() => import('../features/subjects/ManageSubjectsView').then(m => ({ default: m.ManageSubjectsView })));
+const TimetableBuilderView = React.lazy(() => import('../features/timetable/TimetableBuilderView').then(m => ({ default: m.TimetableBuilderView })));
+const TimetableImportView  = React.lazy(() => import('../features/timetable/TimetableImportView').then(m => ({ default: m.TimetableImportView })));
+const AcademicCalendarImportView = React.lazy(() => import('../features/calendar/AcademicCalendarImportView').then(m => ({ default: m.AcademicCalendarImportView })));
+const CalendarEventsView   = React.lazy(() => import('../features/calendar/CalendarEventsView').then(m => ({ default: m.CalendarEventsView })));
+const AdminPortalView      = React.lazy(() => import('../features/admin/AdminPortalView').then(m => ({ default: m.AdminPortalView })));
+const StyleGuideView       = React.lazy(() => import('../features/design/StyleGuideView').then(m => ({ default: m.StyleGuideView })));
 
-// Subviews (full-screen overlays)
-import { AttendanceView }        from '../features/attendance/AttendanceView';
-import { NotesView }             from '../features/notes/NotesView';
-import { AnalyticsView }         from '../features/analytics/AnalyticsView';
-import { ExamsView }             from '../features/exams/ExamsView';
-import { ResourcesView }         from '../features/resources/ResourcesView';
-import { DirectoryView }         from '../features/directory/DirectoryView';
-import { SemesterSetupView }     from '../features/semester/SemesterSetupView';
-import { ManageSubjectsView }    from '../features/subjects/ManageSubjectsView';
-import { TimetableBuilderView }     from '../features/timetable/TimetableBuilderView';
-import { TimetableImportView }      from '../features/timetable/TimetableImportView';
-import { AcademicCalendarImportView } from '../features/calendar/AcademicCalendarImportView';
-import { CalendarEventsView }        from '../features/calendar/CalendarEventsView';
-import { AdminPortalView }           from '../features/admin/AdminPortalView';
-import { StyleGuideView }            from '../features/design/StyleGuideView';
+/** Minimal loading state shown while a lazy view chunk downloads. */
+const ViewLoading: React.FC<{ scope?: string }> = ({ scope }) => (
+  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: '12px', backgroundColor: 'var(--bg-page)' }}>
+    <div style={{ width: '28px', height: '28px', borderRadius: '50%', border: '3px solid var(--color-primary)', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} />
+    {scope && <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontFamily: 'var(--font-family-mono)' }}>Loading {scope}…</span>}
+    <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+  </div>
+);
 
 export const App: React.FC = () => {
   const activeTab    = useUIStore(state => state.activeTab);
@@ -85,35 +94,44 @@ export const App: React.FC = () => {
     return <ActivationView />;
   }
 
+  const withViewBoundary = (scope: string, children: React.ReactNode) => (
+    <ErrorBoundary key={scope} scope={scope}>
+      <Suspense fallback={<ViewLoading scope={scope} />}>
+        {children}
+      </Suspense>
+    </ErrorBoundary>
+  );
+
   return (
     <ErrorBoundary>
       <ToastProvider>
+      <GlobalErrorCatcher />
       <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-page)' }}>
         <main style={{ flex: 1, overflowY: 'auto' }}>
           {/* Subviews take full screen — tab bar hides */}
           {activeSubview ? (
             <>
-              {activeSubview === 'attendance'        && <AttendanceView        />}
-              {activeSubview === 'notes'             && <NotesView             />}
-              {activeSubview === 'analytics'         && <AnalyticsView         />}
-              {activeSubview === 'exams'             && <ExamsView             />}
-              {activeSubview === 'resources'         && <ResourcesView         />}
-              {activeSubview === 'directory'         && <DirectoryView         />}
-              {activeSubview === 'semester-setup'    && <SemesterSetupView     />}
-              {activeSubview === 'manage-subjects'   && <ManageSubjectsView    />}
-              {activeSubview === 'timetable-builder' && <TimetableBuilderView />}
-              {activeSubview === 'timetable-import'  && <TimetableImportView  />}
-              {activeSubview === 'calendar-import'   && <AcademicCalendarImportView />}
-              {activeSubview === 'calendar-events'   && <CalendarEventsView        />}
-              {activeSubview === 'admin-portal'      && <AdminPortalView           />}
-              {activeSubview === 'style-guide'       && <StyleGuideView            />}
+              {activeSubview === 'attendance'        && withViewBoundary('Attendance',       <AttendanceView />)}
+              {activeSubview === 'notes'             && withViewBoundary('Notes',            <NotesView />)}
+              {activeSubview === 'analytics'         && withViewBoundary('Analytics',        <AnalyticsView />)}
+              {activeSubview === 'exams'             && withViewBoundary('Exams',            <ExamsView />)}
+              {activeSubview === 'resources'         && withViewBoundary('Resources',        <ResourcesView />)}
+              {activeSubview === 'directory'         && withViewBoundary('Directory',        <DirectoryView />)}
+              {activeSubview === 'semester-setup'    && withViewBoundary('Semesters',        <SemesterSetupView />)}
+              {activeSubview === 'manage-subjects'   && withViewBoundary('Subjects',         <ManageSubjectsView />)}
+              {activeSubview === 'timetable-builder' && withViewBoundary('Timetable Builder', <TimetableBuilderView />)}
+              {activeSubview === 'timetable-import'  && withViewBoundary('Timetable Import', <TimetableImportView />)}
+              {activeSubview === 'calendar-import'   && withViewBoundary('Calendar Import',  <AcademicCalendarImportView />)}
+              {activeSubview === 'calendar-events'   && withViewBoundary('Calendar Events',  <CalendarEventsView />)}
+              {activeSubview === 'admin-portal'      && withViewBoundary('Admin Portal',     <AdminPortalView />)}
+              {activeSubview === 'style-guide'       && withViewBoundary('Design System',    <StyleGuideView />)}
             </>
           ) : (
             <>
-              {activeTab === 'home'     && <QuietDashboard />}
-              {activeTab === 'schedule' && <WeeklyGrid     />}
-              {activeTab === 'tasks'    && <TasksView      />}
-              {activeTab === 'profile'  && <ProfileView    />}
+              {activeTab === 'home'     && withViewBoundary('Dashboard',  <QuietDashboard />)}
+              {activeTab === 'schedule' && withViewBoundary('Timetable',  <WeeklyGrid />)}
+              {activeTab === 'tasks'    && withViewBoundary('Tasks',      <TasksView />)}
+              {activeTab === 'profile'  && withViewBoundary('Profile',    <ProfileView />)}
             </>
           )}
         </main>

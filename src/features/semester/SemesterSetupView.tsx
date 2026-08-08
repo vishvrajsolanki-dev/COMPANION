@@ -64,6 +64,7 @@ export const SemesterSetupView: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: 'var(--bg-page)', paddingBottom: '80px' }}>
+      <h1 className="sr-only">Semesters</h1>
       {/* Screen header */}
       <header
         style={{
@@ -80,7 +81,7 @@ export const SemesterSetupView: React.FC = () => {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
-          <button onClick={closeSubview} style={{ display: 'flex', alignItems: 'center', color: 'var(--text-primary)' }}><ArrowLeft size={24} /></button>
+          <button onClick={closeSubview} style={{ display: 'flex', alignItems: 'center', color: 'var(--text-primary)' }} aria-label="Go back"><ArrowLeft size={24} /></button>
           <h2 style={{ fontSize: 'var(--text-xl)', fontWeight: 700, color: 'var(--text-primary)' }}>Semesters</h2>
         </div>
         <GlassButton size="sm" onClick={openAdd}>
@@ -126,6 +127,7 @@ export const SemesterSetupView: React.FC = () => {
                 <button
                   onClick={() => openEdit(sem)}
                   title="Edit"
+                  aria-label="Edit semester"
                   style={{ width: '34px', height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', backgroundColor: 'var(--neutral-100)', color: 'var(--text-secondary)' }}
                 >
                   <Pencil size={15} />
@@ -133,6 +135,7 @@ export const SemesterSetupView: React.FC = () => {
                 <button
                   onClick={() => deleteSemester(sem)}
                   title="Delete"
+                  aria-label="Delete semester"
                   style={{ width: '34px', height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', backgroundColor: 'var(--color-danger-bg)', color: 'var(--color-danger)' }}
                 >
                   <Trash2 size={15} />

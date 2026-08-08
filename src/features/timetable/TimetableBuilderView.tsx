@@ -154,6 +154,7 @@ export const TimetableBuilderView: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: 'var(--bg-page)', paddingBottom: '100px' }}>
+      <h1 className="sr-only">Build My Timetable</h1>
       {/* Header */}
       <header style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -163,7 +164,7 @@ export const TimetableBuilderView: React.FC = () => {
         backgroundColor: 'var(--bg-page)',
         position: 'sticky', top: 0, zIndex: 10,
       }}>
-        <button onClick={closeSubview} style={{ color: 'var(--text-primary)', display: 'flex', alignItems: 'center' }}><ArrowLeft size={24} /></button>
+        <button onClick={closeSubview} style={{ color: 'var(--text-primary)', display: 'flex', alignItems: 'center' }} aria-label="Go back"><ArrowLeft size={24} /></button>
         <div style={{ flex: 1, marginLeft: '12px' }}>
           <h2 style={{ fontSize: 'var(--text-xl)', fontWeight: 700, color: 'var(--text-primary)' }}>Build My Timetable</h2>
           <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '1px' }}>
@@ -261,7 +262,7 @@ export const TimetableBuilderView: React.FC = () => {
                     {dayName} · {pat.startTime}–{pat.endTime} {pat.roomId ? `· ${pat.roomId}` : ''}
                   </div>
                 </div>
-                <button onClick={() => removePattern(pat.id)} style={{ width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 'var(--radius-pill)', backgroundColor: 'var(--color-danger-bg)', color: 'var(--color-danger-fg)' }}>
+                <button onClick={() => removePattern(pat.id)} aria-label="Remove pattern" style={{ width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 'var(--radius-pill)', backgroundColor: 'var(--color-danger-bg)', color: 'var(--color-danger-fg)' }}>
                   <Trash2 size={14} />
                 </button>
               </div>

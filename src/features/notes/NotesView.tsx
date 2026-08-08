@@ -269,6 +269,7 @@ export const NotesView: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: 'var(--bg-page)', paddingBottom: '80px' }}>
+      <h1 className="sr-only">Notes</h1>
 
       {/* Screen header */}
       <header
@@ -286,7 +287,7 @@ export const NotesView: React.FC = () => {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button onClick={closeSubview} style={{ color: 'var(--text-primary)' }}>
+          <button onClick={closeSubview} style={{ color: 'var(--text-primary)' }} aria-label="Go back">
             <ArrowLeft size={24} />
           </button>
           <h2 style={{ fontSize: 'var(--text-xl)', fontWeight: 700, color: 'var(--text-primary)' }}>Study Notes</h2>
@@ -403,10 +404,10 @@ export const NotesView: React.FC = () => {
                 </div>
 
                 <div style={{ display: 'flex', gap: '4px' }}>
-                  <button onClick={() => handleStartEdit(n)} style={{ padding: '6px', color: 'var(--text-secondary)' }}>
+                  <button onClick={() => handleStartEdit(n)} style={{ padding: '6px', color: 'var(--text-secondary)' }} aria-label="Edit note">
                     <Edit size={16} />
                   </button>
-                  <button onClick={() => handleDelete(n.id)} style={{ padding: '6px', color: 'var(--color-danger)' }}>
+                  <button onClick={() => handleDelete(n.id)} style={{ padding: '6px', color: 'var(--color-danger)' }} aria-label="Delete note">
                     <Trash2 size={16} />
                   </button>
                 </div>

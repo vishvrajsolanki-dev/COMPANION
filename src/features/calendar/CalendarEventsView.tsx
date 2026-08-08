@@ -145,10 +145,11 @@ export const CalendarEventsView: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: 'var(--bg-page)', paddingBottom: '80px' }}>
+      <h1 className="sr-only">Calendar Events</h1>
       {/* Header */}
       <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'var(--space-md)', paddingTop: 'calc(var(--space-md) + env(safe-area-inset-top))', borderBottom: '1px solid var(--border-hairline)', backgroundColor: 'var(--bg-page)', position: 'sticky', top: 0, zIndex: 10 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
-          <button onClick={closeSubview} style={{ color: 'var(--text-primary)', flexShrink: 0 }}><ArrowLeft size={24} /></button>
+          <button onClick={closeSubview} style={{ color: 'var(--text-primary)', flexShrink: 0 }} aria-label="Go back"><ArrowLeft size={24} /></button>
           <div>
             <h2 style={{ fontSize: 'var(--text-xl)', fontWeight: 700, color: 'var(--text-primary)' }}>Calendar Events</h2>
             <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>

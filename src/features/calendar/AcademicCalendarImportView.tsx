@@ -179,6 +179,7 @@ export const AcademicCalendarImportView: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: 'var(--bg-page)', paddingBottom: '80px' }}>
+      <h1 className="sr-only">Import Academic Calendar</h1>
       {/* Header */}
       <header style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -188,7 +189,7 @@ export const AcademicCalendarImportView: React.FC = () => {
         backgroundColor: 'var(--bg-page)',
         position: 'sticky', top: 0, zIndex: 10,
       }}>
-        <button onClick={closeSubview} style={{ color: 'var(--text-primary)', display: 'flex', alignItems: 'center' }}><ArrowLeft size={24} /></button>
+        <button onClick={closeSubview} style={{ color: 'var(--text-primary)', display: 'flex', alignItems: 'center' }} aria-label="Go back"><ArrowLeft size={24} /></button>
         <div style={{ flex: 1, marginLeft: '12px' }}>
           <h2 style={{ fontSize: 'var(--text-xl)', fontWeight: 700, color: 'var(--text-primary)' }}>Import Academic Calendar</h2>
           <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>

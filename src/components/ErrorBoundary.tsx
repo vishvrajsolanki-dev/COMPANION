@@ -3,6 +3,7 @@ import { AlertTriangle, RefreshCw } from 'lucide-react';
 
 interface Props {
   children: ReactNode;
+  scope?: string;
 }
 
 interface State {
@@ -45,9 +46,11 @@ export class ErrorBoundary extends Component<Props, State> {
           }}
         >
           <AlertTriangle size={48} color="var(--color-danger)" />
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Something went wrong</h2>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>
+            {this.props.scope ? `${this.props.scope} stopped unexpectedly` : 'Something went wrong'}
+          </h2>
           <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', maxWidth: '300px' }}>
-            {this.state.error?.message || 'An unexpected error occurred. Your data is safe in IndexedDB.'}
+            {this.state.error?.message || 'An unexpected error occurred. Your local data is safe in IndexedDB.'}
           </p>
           <button
             onClick={this.handleReset}

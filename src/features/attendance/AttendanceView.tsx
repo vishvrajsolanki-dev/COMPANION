@@ -83,6 +83,7 @@ export const AttendanceView: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: 'var(--bg-page)', paddingBottom: '80px' }}>
+      <h1 className="sr-only">Attendance</h1>
 
       {/* Screen header */}
       <header
@@ -99,7 +100,7 @@ export const AttendanceView: React.FC = () => {
           zIndex: 10,
         }}
       >
-        <button onClick={closeSubview} style={{ color: 'var(--text-primary)' }}>
+        <button onClick={closeSubview} style={{ color: 'var(--text-primary)' }} aria-label="Go back">
           <ArrowLeft size={24} />
         </button>
         <h2 style={{ fontSize: 'var(--text-xl)', fontWeight: 700, color: 'var(--text-primary)' }}>Attendance Center</h2>

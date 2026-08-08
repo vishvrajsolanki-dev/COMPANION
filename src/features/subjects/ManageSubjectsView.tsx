@@ -81,6 +81,7 @@ export const ManageSubjectsView: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: 'var(--bg-page)', paddingBottom: '80px' }}>
+      <h1 className="sr-only">Manage Subjects</h1>
       {/* Screen header */}
       <header
         style={{
@@ -97,7 +98,7 @@ export const ManageSubjectsView: React.FC = () => {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
-          <button onClick={closeSubview} style={{ display: 'flex', alignItems: 'center', color: 'var(--text-primary)' }}><ArrowLeft size={24} /></button>
+          <button onClick={closeSubview} style={{ display: 'flex', alignItems: 'center', color: 'var(--text-primary)' }} aria-label="Go back"><ArrowLeft size={24} /></button>
           <h2 style={{ fontSize: 'var(--text-xl)', fontWeight: 700, color: 'var(--text-primary)' }}>Manage Subjects</h2>
         </div>
         <GlassButton size="sm" onClick={openAdd}>
@@ -125,10 +126,10 @@ export const ManageSubjectsView: React.FC = () => {
               </div>
             </div>
             <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
-              <button onClick={() => openEdit(sub)} style={{ width: '34px', height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', backgroundColor: 'var(--neutral-100)', color: 'var(--text-secondary)' }} title="Edit">
+              <button onClick={() => openEdit(sub)} style={{ width: '34px', height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', backgroundColor: 'var(--neutral-100)', color: 'var(--text-secondary)' }} title="Edit" aria-label="Edit subject">
                 <Pencil size={15} />
               </button>
-              <button onClick={() => handleDelete(sub)} style={{ width: '34px', height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', backgroundColor: 'var(--color-danger-bg)', color: 'var(--color-danger)' }} title="Delete">
+              <button onClick={() => handleDelete(sub)} style={{ width: '34px', height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', backgroundColor: 'var(--color-danger-bg)', color: 'var(--color-danger)' }} title="Delete" aria-label="Delete subject">
                 <Trash2 size={15} />
               </button>
             </div>
