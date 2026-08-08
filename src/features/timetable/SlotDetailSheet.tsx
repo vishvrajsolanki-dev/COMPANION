@@ -181,6 +181,31 @@ export const SlotDetailSheet: React.FC<SlotDetailSheetProps> = ({
           Mark Attendance (5-State Rule)
         </span>
 
+        {slot.status === 'cancelled' && (
+          <div
+            style={{
+              padding: '10px 12px',
+              borderRadius: 'var(--radius-card)',
+              backgroundColor: 'var(--color-warning-bg)',
+              color: 'var(--color-warning-fg)',
+              fontSize: '0.82rem',
+              fontWeight: 600,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+            }}
+          >
+            <AlertCircle size={15} style={{ flexShrink: 0 }} />
+            This class was cancelled — attendance can't be marked for it.
+          </div>
+        )}
+
+        {slot.status === 'cancelled' ? (
+          <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', padding: '4px 2px' }}>
+            Use “Unmark Cancelled” below if the class actually happened.
+          </p>
+        ) : (
+          <>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
           <button
             onClick={() => markStatus('present')}
@@ -273,6 +298,8 @@ export const SlotDetailSheet: React.FC<SlotDetailSheetProps> = ({
           <Award size={18} />
           <span>On-Duty Leave</span>
         </button>
+          </>
+        )}
       </div>
 
       {/* Reschedule and Cancel Controls */}

@@ -24,11 +24,28 @@ export const WeeklyGrid: React.FC = () => {
 
   // Extra class form state
   const [isAddingExtra, setIsAddingExtra] = useState(false);
+  const [isSavingExtra, setIsSavingExtra] = useState(false);
   const [extraSubjectId, setExtraSubjectId] = useState('');
   const [extraDate, setExtraDate] = useState(() => todayISO());
   const [extraStartTime, setExtraStartTime] = useState('16:00');
   const [extraEndTime, setExtraEndTime] = useState('17:15');
   const [extraRoomId, setExtraRoomId] = useState('LH-301');
+
+  // Reset the form to defaults when the sheet opens/closes so a stale or
+  // mid-flight submission can never produce a duplicate slot.
+  const openExtraSheet = () => {
+    setExtraSubjectId('');
+    setExtraDate(todayISO());
+    setExtraStartTime('16:00');
+    setExtraEndTime('17:15');
+    setExtraRoomId('LH-301');
+    setIsSavingExtra(false);
+    setIsAddingExtra(true);
+  };
+  const closeExtraSheet = () => {
+    setIsSavingExtra(false);
+    setIsAddingExtra(false);
+  };
 
   const subjects = useSubjects() || [];
   const lectureSlots = useLectureSlots() || [];
@@ -59,18 +76,24 @@ export const WeeklyGrid: React.FC = () => {
   const handleAddExtraClass = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!extraSubjectId || !extraDate || !extraStartTime || !extraEndTime) return;
+    // Guard against double-submit (rapid double-tap on "Create Extra Class")
+    // which previously added two identical slots before the sheet closed.
+    if (isSavingExtra) return;
 
-    await db.lectureSlots.add({
-      id: `slot-extra-${Date.now()}`,
-      subject_id: extraSubjectId,
-      room_id: extraRoomId || undefined,
-      start_time: `${extraDate}T${extraStartTime}:00`,
-      end_time: `${extraDate}T${extraEndTime}:00`,
-      status: 'extra',
-      is_deleted: false,
-    });
-
-    setIsAddingExtra(false);
+    setIsSavingExtra(true);
+    try {
+      await db.lectureSlots.add({
+        id: `slot-extra-${Date.now()}`,
+        subject_id: extraSubjectId,
+        room_id: extraRoomId || undefined,
+        start_time: `${extraDate}T${extraStartTime}:00`,
+        end_time: `${extraDate}T${extraEndTime}:00`,
+        status: 'extra',
+        is_deleted: false,
+      });
+    } finally {
+      closeExtraSheet();
+    }
   };
 
   return (
@@ -93,7 +116,7 @@ export const WeeklyGrid: React.FC = () => {
       >
         <h2 style={{ fontSize: 'var(--text-xl)', fontWeight: 700, color: 'var(--text-primary)' }}>Weekly Timetable (7-Day Grid)</h2>
         <div style={{ display: 'flex', gap: '6px' }}>
-          <GlassButton size="sm" variant="ghost" onClick={() => setIsAddingExtra(true)}>
+          <GlassButton size="sm" variant="ghost" onClick={openExtraSheet}>
             <Plus size={14} /> Extra Class
           </GlassButton>
           <GlassButton size="sm" onClick={() => navigateToSubview('timetable-builder')}>
@@ -197,7 +220,7 @@ export const WeeklyGrid: React.FC = () => {
       </div>
 
       {/* Add Extra Class Sheet */}
-      <BottomSheet open={isAddingExtra} onClose={() => setIsAddingExtra(false)}>
+      <BottomSheet open={isAddingExtra} onClose={closeExtraSheet}>
         <form
           onSubmit={handleAddExtraClass}
           style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}
@@ -266,10 +289,10 @@ export const WeeklyGrid: React.FC = () => {
           />
 
           <div style={{ display: 'flex', gap: '8px' }}>
-            <GlassButton type="submit" style={{ flex: 1 }}>
-              Create Extra Class
+            <GlassButton type="submit" style={{ flex: 1 }} disabled={isSavingExtra}>
+              {isSavingExtra ? 'Adding…' : 'Create Extra Class'}
             </GlassButton>
-            <GlassButton type="button" variant="ghost" onClick={() => setIsAddingExtra(false)}>
+            <GlassButton type="button" variant="ghost" onClick={closeExtraSheet} disabled={isSavingExtra}>
               Cancel
             </GlassButton>
           </div>

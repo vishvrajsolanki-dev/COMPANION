@@ -41,6 +41,7 @@ export const AcademicCalendarImportView: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [isImporting, setIsImporting] = useState(false);
+  const [semesterOverlapWarning, setSemesterOverlapWarning] = useState<string | null>(null);
 
   const sampleCalendarJSON = JSON.stringify({
     semester_defaults: {
@@ -56,10 +57,11 @@ export const AcademicCalendarImportView: React.FC = () => {
     ]
   }, null, 2);
 
-  const handleValidate = () => {
+  const handleValidate = async () => {
     setError(null);
     setParsed(null);
-    setSuccessMsg(null); // clear stale success banner on re-validation
+    setSuccessMsg(null);
+    setSemesterOverlapWarning(null);
     try {
       if (!jsonText.trim()) throw new Error('Please paste JSON content or load sample.');
       const data: JSONAcademicCalendarPayload = JSON.parse(jsonText);
@@ -74,6 +76,28 @@ export const AcademicCalendarImportView: React.FC = () => {
         if (!isValidDateStr(start_date)) throw new Error(`"semester_defaults" has invalid "start_date" (expected YYYY-MM-DD): ${start_date}`);
         if (!isValidDateStr(end_date)) throw new Error(`"semester_defaults" has invalid "end_date" (expected YYYY-MM-DD): ${end_date}`);
         if (end_date < start_date) throw new Error('"semester_defaults" end_date is before start_date.');
+
+        // Duplicate / overlap check — fuzzy-match label and detect date collisions
+        const normalizedLabel = label.trim().toLowerCase();
+        const labelMatch = await db.semesters
+          .filter(s => !s.is_deleted && s.label.trim().toLowerCase() === normalizedLabel)
+          .first();
+        const allSems = await db.semesters.filter(s => !s.is_deleted).toArray();
+        const dateOverlap = allSems.find(
+          s =>
+            s.start_date <= end_date &&
+            s.end_date >= start_date &&
+            s.label.trim().toLowerCase() !== normalizedLabel,
+        );
+        if (labelMatch) {
+          setSemesterOverlapWarning(
+            `A semester named "${labelMatch.label}" already exists — it will be updated with the new dates on import.`,
+          );
+        } else if (dateOverlap) {
+          setSemesterOverlapWarning(
+            `This semester's dates overlap with "${dateOverlap.label}" (${dateOverlap.start_date} → ${dateOverlap.end_date}). The other semester will be deactivated on import.`,
+          );
+        }
       }
 
       if (data.events) {
@@ -114,7 +138,10 @@ export const AcademicCalendarImportView: React.FC = () => {
     if (parsed.semester_defaults) {
       const def = parsed.semester_defaults;
       let targetSemId: string;
-      const existing = await db.semesters.filter(s => s.label === def.label && !s.is_deleted).first();
+      const normalizedLabel = def.label.trim().toLowerCase();
+      const existing = await db.semesters
+        .filter(s => !s.is_deleted && s.label.trim().toLowerCase() === normalizedLabel)
+        .first();
       if (!existing) {
         targetSemId = `sem-${Date.now()}`;
         await db.semesters.add({
@@ -261,6 +288,24 @@ export const AcademicCalendarImportView: React.FC = () => {
             <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
               Events to import: <strong>{parsed.events?.length || 0}</strong>
             </div>
+
+            {semesterOverlapWarning && (
+              <div
+                style={{
+                  padding: '10px 12px',
+                  borderRadius: 'var(--radius-card)',
+                  backgroundColor: 'var(--color-warning-bg)',
+                  color: 'var(--color-warning-fg)',
+                  fontSize: '0.82rem',
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                }}
+              >
+                <AlertCircle size={15} style={{ flexShrink: 0 }} /> {semesterOverlapWarning}
+              </div>
+            )}
 
             <GlassButton onClick={handleCommitImport} disabled={isImporting} fullWidth>
               {isImporting ? 'Importing…' : 'Import Academic Calendar Defaults'}

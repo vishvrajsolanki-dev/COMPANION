@@ -4,7 +4,7 @@ import { useSubjects } from '../../db/useDatabase';
 import { db, Subject } from '../../db/index';
 import { useUIStore } from '../../store/uiStore';
 import { BottomSheet, EmptyState, GlassButton } from '../../components/ui';
-import { ArrowLeft, Plus, Pencil, Trash2 } from 'lucide-react';
+import { ArrowLeft, Plus, Pencil, Trash2, AlertCircle } from 'lucide-react';
 
 // The 8 locked token colors — no free color picker allowed (design system constraint)
 export const SUBJECT_COLORS = [
@@ -33,10 +33,12 @@ export const ManageSubjectsView: React.FC = () => {
   const [name, setName]       = useState('');
   const [credits, setCredits] = useState('4');
   const [color, setColor]     = useState(SUBJECT_COLORS[2].hex); // Blue default
+  const [duplicateError, setDuplicateError] = useState<string | null>(null);
 
   const openAdd = () => {
     setEditTarget(null);
     setCode(''); setName(''); setCredits('4'); setColor(SUBJECT_COLORS[2].hex);
+    setDuplicateError(null);
     setIsEditing(true);
   };
 
@@ -45,17 +47,32 @@ export const ManageSubjectsView: React.FC = () => {
     setCode(sub.code); setName(sub.name); setCredits(String(sub.credits));
     // If stored color is outside the locked palette, default to first color
     setColor(SUBJECT_COLORS.some(c => c.hex === sub.color) ? sub.color : SUBJECT_COLORS[0].hex);
+    setDuplicateError(null);
     setIsEditing(true);
   };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!code.trim() || !name.trim()) return;
+    const normalizedCode = code.trim().toUpperCase();
     const creditsNum = Math.max(1, Math.min(6, parseInt(credits, 10) || 3));
+    setDuplicateError(null);
+
+    // Prevent creating a subject with a code that already exists (active only)
+    const isDuplicate = await db.subjects
+      .where('code')
+      .equals(normalizedCode)
+      .filter(s => !s.is_deleted && s.id !== editTarget?.id)
+      .first();
+
+    if (isDuplicate) {
+      setDuplicateError(`A subject with code "${normalizedCode}" already exists.`);
+      return;
+    }
 
     if (editTarget) {
       await db.subjects.update(editTarget.id, {
-        code: code.trim().toUpperCase(),
+        code: normalizedCode,
         name: name.trim(),
         credits: creditsNum,
         color,
@@ -64,7 +81,7 @@ export const ManageSubjectsView: React.FC = () => {
       await db.subjects.add({
         id: `sub-${Date.now()}`,
         semester_id: activeSem?.id || 'sem-5',
-        code: code.trim().toUpperCase(),
+        code: normalizedCode,
         name: name.trim(),
         credits: creditsNum,
         color,
@@ -210,6 +227,24 @@ export const ManageSubjectsView: React.FC = () => {
               Selected: <strong style={{ color }}>{SUBJECT_COLORS.find(c => c.hex === color)?.label ?? color}</strong>
             </p>
           </div>
+
+          {duplicateError && (
+            <div
+              style={{
+                padding: '10px 12px',
+                borderRadius: 'var(--radius-pill)',
+                backgroundColor: 'var(--color-danger-bg)',
+                color: 'var(--color-danger)',
+                fontSize: '0.82rem',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+              }}
+            >
+              <AlertCircle size={15} style={{ flexShrink: 0 }} /> {duplicateError}
+            </div>
+          )}
 
           <div style={{ display: 'flex', gap: '8px', paddingTop: '4px' }}>
             <GlassButton type="submit" style={{ flex: 1 }}>Save Subject</GlassButton>
