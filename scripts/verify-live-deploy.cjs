@@ -51,7 +51,8 @@ function log(ok, msg) {
     log(!!csp && csp.includes("default-src 'self'"), 'Content-Security-Policy present on root HTML');
     log(csp.includes("connect-src 'self' https://*.supabase.co"), 'CSP allows only Supabase + self for connect-src');
     log(csp.includes("frame-ancestors 'none'"), 'CSP blocks embedding (frame-ancestors none)');
-    log(csp.includes('script-src') && !csp.includes("'unsafe-inline'"), 'CSP blocks inline scripts (script-src self, no unsafe-inline)');
+    const scriptSrc = (csp.match(/(?:^|;)\s*script-src\s+([^;]+)/) || [])[1] || '';
+    log(!!scriptSrc && !scriptSrc.includes("'unsafe-inline'"), 'CSP blocks inline scripts (script-src self, no unsafe-inline)');
     log((headers.get('x-content-type-options') || '') === 'nosniff', 'X-Content-Type-Options: nosniff');
     log((headers.get('referrer-policy') || '') === 'no-referrer', 'Referrer-Policy: no-referrer');
     log((headers.get('x-frame-options') || '') === 'DENY', 'X-Frame-Options: DENY');
