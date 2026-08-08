@@ -127,7 +127,7 @@ Send them the app link and their key. Plain-text version (copy-paste ready):
 > **`ABCD-EFGH-JKLM-NPQR`**
 >
 > How to activate:
-> 1. Open this link on your phone: [your app link]
+> 1. Open this link on your phone: **https://student-academic-os.pages.dev**
 > 2. On the "Activate this device" screen, type the key above.
 > 3. Tap **Activate**.
 >

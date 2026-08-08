@@ -1,0 +1,24 @@
+# Cloudflare Pages configuration for Student Academic OS
+#
+# Static PWA + managed Supabase — no server functions, no Workers routes.
+# Direct upload is done with `wrangler pages deploy` (see DEPLOY.md). The
+# build_command + build_output_dir below are used when Pages runs its own
+# build (git integration / dashboard), e.g. on a push to main.
+
+name = "student-academic-os"
+compatibility_date = "2026-08-08"
+
+# Direct-upload deploys upload this directory. `wrangler pages deploy` (no
+# args) uses it; the build command for dashboard/CI-managed builds lives in
+# the Pages dashboard's Builds & deployments settings.
+pages_build_output_dir = "dist"
+
+# ── Environment variables for dashboard-managed builds ──────────────────────
+# VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are inlined at BUILD time, so
+# they must be set here (or in the Pages dashboard: Settings → Environment
+# variables). Direct-upload deploys build locally, so they already pick the
+# values up from the gitignored .env.local.
+#
+# [vars]
+# VITE_SUPABASE_URL = "https://YOUR-PROJECT.supabase.co"
+# VITE_SUPABASE_ANON_KEY = "YOUR-ANON-KEY"
