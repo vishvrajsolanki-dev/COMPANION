@@ -3,18 +3,20 @@ import { useAuthStore } from '../../store/authStore';
 import { useUIStore } from '../../store/uiStore';
 import { GlassButton, GlassCard, EmptyState, SegmentedControl, Badge, Banner } from '../../components/ui';
 import {
-  generateKey, listKeys, setKeyActive, listProfiles, getAdminCredential, isMaskedCode,
+  generateKey, listKeys, setKeyActive, listProfiles, listActions, getAdminCredential, isMaskedCode,
   ADMIN_ERROR_MESSAGES,
-  type AdminKeyRecord, type AdminProfileRecord, type AdminErrorCode, type AdminRole,
+  type AdminKeyRecord, type AdminProfileRecord, type AdminActionRecord,
+  type AdminErrorCode, type AdminRole,
 } from '../../lib/adminKeys';
-import { ArrowLeft, Copy, Check, KeyRound, ShieldCheck, Users, Plus } from 'lucide-react';
+import { ArrowLeft, Copy, Check, KeyRound, ShieldCheck, Users, Plus, ScrollText } from 'lucide-react';
 
-type PortalTab = 'generate' | 'keys' | 'activations';
+type PortalTab = 'generate' | 'keys' | 'activations' | 'audit';
 
 const TABS: { value: PortalTab; label: string }[] = [
   { value: 'generate', label: 'Generate' },
   { value: 'keys', label: 'Keys' },
   { value: 'activations', label: 'Activations' },
+  { value: 'audit', label: 'Audit' },
 ];
 
 const labelStyle: React.CSSProperties = {
@@ -61,19 +63,26 @@ export const AdminPortalView: React.FC = () => {
   const [genError, setGenError] = useState<string | null>(null);
   const [newKey, setNewKey] = useState<AdminKeyRecord | null>(null);
 
-  // Keys + activations
+  // Keys + activations + audit
   const [keys, setKeys] = useState<AdminKeyRecord[] | null>(null);
   const [profiles, setProfiles] = useState<AdminProfileRecord[] | null>(null);
+  const [actions, setActions] = useState<AdminActionRecord[] | null>(null);
   const [keysError, setKeysError] = useState<AdminErrorCode | null>(null);
   const [profilesError, setProfilesError] = useState<AdminErrorCode | null>(null);
+  const [actionsError, setActionsError] = useState<AdminErrorCode | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
+  const isOwner = currentRole === 'owner';
+
   const load = useCallback(async () => {
-    const [k, p] = await Promise.all([listKeys(), listProfiles()]);
+    const [k, p, a] = await Promise.all([listKeys(), listProfiles(), isOwner ? listActions() : Promise.resolve(null)]);
     if (k.ok) { setKeys(k.data); setKeysError(null); } else setKeysError(k.error);
     if (p.ok) { setProfiles(p.data); setProfilesError(null); } else setProfilesError(p.error);
-  }, []);
+    if (a) {
+      if (a.ok) { setActions(a.data); setActionsError(null); } else setActionsError(a.error);
+    }
+  }, [isOwner]);
 
   useEffect(() => {
     if (isAdmin && hasCredential) load();
@@ -156,12 +165,24 @@ export const AdminPortalView: React.FC = () => {
     }
   };
 
+  const visibleTabs = isOwner ? TABS : TABS.filter(t => t.value !== 'audit');
+
+  const actionLabel = (a: AdminActionRecord): string => {
+    switch (a.action) {
+      case 'generate_key':   return 'Generated';
+      case 'deactivate_key': return 'Deactivated';
+      case 'reactivate_key': return 'Reactivated';
+      default:               return a.action.replace(/_/g, ' ');
+    }
+  };
+
   // ── Authorization guard ────────────────────────────────────────────────────
   if (!isAdmin) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: 'var(--bg-page)' }}>
+        <h1 className="sr-only">Admin Portal</h1>
         <header style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 'var(--space-md)', paddingTop: 'calc(var(--space-md) + env(safe-area-inset-top))', borderBottom: '1px solid var(--border-hairline)', backgroundColor: 'var(--bg-page)' }}>
-          <button onClick={closeSubview} style={{ color: 'var(--text-primary)' }}><ArrowLeft size={24} /></button>
+          <button onClick={closeSubview} style={{ color: 'var(--text-primary)' }} aria-label="Go back"><ArrowLeft size={24} /></button>
           <h2 style={{ fontSize: 'var(--text-xl)', fontWeight: 700, color: 'var(--text-primary)' }}>Admin Portal</h2>
         </header>
         <div style={{ padding: 'var(--space-lg)' }}>
@@ -178,8 +199,9 @@ export const AdminPortalView: React.FC = () => {
   if (!hasCredential) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: 'var(--bg-page)' }}>
+        <h1 className="sr-only">Admin Portal</h1>
         <header style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 'var(--space-md)', paddingTop: 'calc(var(--space-md) + env(safe-area-inset-top))', borderBottom: '1px solid var(--border-hairline)', backgroundColor: 'var(--bg-page)' }}>
-          <button onClick={closeSubview} style={{ color: 'var(--text-primary)' }}><ArrowLeft size={24} /></button>
+          <button onClick={closeSubview} style={{ color: 'var(--text-primary)' }} aria-label="Go back"><ArrowLeft size={24} /></button>
           <h2 style={{ fontSize: 'var(--text-xl)', fontWeight: 700, color: 'var(--text-primary)' }}>Admin Portal</h2>
         </header>
         <div style={{ padding: 'var(--space-lg)' }}>
@@ -195,6 +217,7 @@ export const AdminPortalView: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: 'var(--bg-page)', paddingBottom: '80px' }}>
+      <h1 className="sr-only">Admin Portal</h1>
       {/* Header */}
       <header
         style={{
@@ -211,7 +234,7 @@ export const AdminPortalView: React.FC = () => {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <button onClick={closeSubview} style={{ color: 'var(--text-primary)' }}><ArrowLeft size={24} /></button>
+          <button onClick={closeSubview} style={{ color: 'var(--text-primary)' }} aria-label="Go back"><ArrowLeft size={24} /></button>
           <div>
             <h2 style={{ fontSize: 'var(--text-xl)', fontWeight: 700, color: 'var(--text-primary)' }}>Admin Portal</h2>
             <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Access-key distribution</div>
@@ -222,7 +245,7 @@ export const AdminPortalView: React.FC = () => {
 
       {/* Segmented control */}
       <div style={{ padding: 'var(--space-sm) var(--space-md)' }}>
-        <SegmentedControl options={TABS} value={tab} onChange={setTab} />
+        <SegmentedControl options={visibleTabs} value={tab} onChange={setTab} />
       </div>
 
       <div style={{ padding: '0 var(--space-md)', display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
@@ -449,6 +472,52 @@ export const AdminPortalView: React.FC = () => {
                     </div>
                     <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: 2 }}>
                       {p.key_label ? `via ${p.key_label}` : 'via access key'} · {fmtDate(p.created_at)}
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+
+        {/* ══════════════ AUDIT (owner-only) ══════════════ */}
+        {tab === 'audit' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {actionsError && (
+              <Banner tone="danger" title={ADMIN_ERROR_MESSAGES[actionsError]} />
+            )}
+
+            {actions === null ? (
+              <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 24, fontSize: '0.85rem' }}>Loading audit trail…</p>
+            ) : actions.length === 0 ? (
+              <EmptyState icon={<ScrollText size={28} />} title="No actions yet" body="Key generations and deactivations will be logged here." />
+            ) : (
+              actions.map(a => (
+                <div
+                  key={`${a.created_at}-${a.action}-${a.target_code}`}
+                  style={{
+                    padding: 'var(--space-md)',
+                    backgroundColor: 'var(--bg-card)',
+                    borderRadius: 'var(--radius-card)',
+                    border: '1px solid var(--border-hairline)',
+                    boxShadow: 'var(--shadow-card)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                  }}
+                >
+                  <Badge tone={roleBadgeTone(a.actor_role)}>{a.actor_role}</Badge>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)' }}>
+                        {actionLabel(a)}
+                      </span>
+                      <code style={{ fontFamily: 'var(--font-family-mono)', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                        {a.target_code}
+                      </code>
+                    </div>
+                    <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: 2 }}>
+                      {fmtDate(a.created_at)}
                     </div>
                   </div>
                 </div>

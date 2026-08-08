@@ -5,11 +5,13 @@ import {
   mapKeyListResult,
   mapSetActiveResult,
   mapProfileListResult,
+  mapActionListResult,
   isMaskedCode,
   ADMIN_ERROR_MESSAGES,
   type AdminErrorCode,
   type AdminKeyRecord,
   type AdminProfileRecord,
+  type AdminActionRecord,
 } from './adminKeys';
 
 describe('isMaskedCode', () => {
@@ -207,6 +209,83 @@ describe('mapProfileListResult', () => {
   });
 });
 
+describe('mapActionListResult', () => {
+  it('maps an action array with all fields', () => {
+    const res = mapActionListResult({
+      ok: true,
+      actions: [
+        {
+          action: 'generate_key',
+          actor_role: 'owner',
+          target_code: 'AAAA-****-****-DDDD',
+          detail: { role: 'student', label: 'Tester', max_uses: 1 },
+          created_at: '2026-08-07T12:00:00Z',
+        },
+        {
+          action: 'deactivate_key',
+          actor_role: 'admin',
+          target_code: 'EEEE-****-****-HHHH',
+          detail: { was_active: true },
+          created_at: '2026-08-07T11:00:00Z',
+        },
+      ],
+    });
+    expect(res.ok).toBe(true);
+    if (res.ok) {
+      expect(res.data).toHaveLength(2);
+      expect(res.data[0]).toEqual({
+        action: 'generate_key',
+        actor_role: 'owner',
+        target_code: 'AAAA-****-****-DDDD',
+        detail: { role: 'student', label: 'Tester', max_uses: 1 },
+        created_at: '2026-08-07T12:00:00Z',
+      });
+      expect(res.data[1].action).toBe('deactivate_key');
+      expect(res.data[1].actor_role).toBe('admin');
+      expect(res.data[1].detail).toEqual({ was_active: true });
+    }
+  });
+
+  it('defaults missing optional fields', () => {
+    const res = mapActionListResult({
+      ok: true,
+      actions: [{ action: 'reactivate_key' }],
+    });
+    expect(res.ok).toBe(true);
+    if (res.ok) {
+      expect(res.data).toHaveLength(1);
+      expect(res.data[0]).toEqual({
+        action: 'reactivate_key',
+        actor_role: 'student',
+        target_code: '',
+        detail: {},
+        created_at: null,
+      });
+    }
+  });
+
+  it('returns empty array for empty actions list', () => {
+    const res = mapActionListResult({ ok: true, actions: [] });
+    expect(res).toEqual({ ok: true, data: [] });
+  });
+
+  it('drops malformed rows instead of failing the whole list', () => {
+    const res = mapActionListResult({
+      ok: true,
+      actions: [{ action: 'generate_key', target_code: 'OK-1' }, 'junk', null, { no_action: true }],
+    });
+    expect(res.ok).toBe(true);
+    if (res.ok) expect(res.data).toHaveLength(1);
+  });
+
+  it('rejects non-array actions payloads', () => {
+    expect(mapActionListResult({ ok: true, actions: {} })).toEqual({ ok: false, error: 'UNKNOWN' });
+    expect(mapActionListResult({ ok: false, error: 'UNAUTHORIZED' })).toEqual({ ok: false, error: 'UNAUTHORIZED' });
+    expect(mapActionListResult({ ok: true })).toEqual({ ok: false, error: 'UNKNOWN' });
+    expect(mapActionListResult(null)).toEqual({ ok: false, error: 'UNKNOWN' });
+  });
+});
+
 describe('ADMIN_ERROR_MESSAGES', () => {
   it('has a human-readable message for every AdminErrorCode', () => {
     const codes: AdminErrorCode[] = ['UNAUTHORIZED', 'GENERATION_CONFLICT', 'CANNOT_MODIFY_SELF', 'NOT_FOUND', 'NETWORK', 'UNKNOWN'];
@@ -250,5 +329,16 @@ describe('Type inference sanity', () => {
       key_label: 'Test Key',
     };
     expect(profile).toBeDefined();
+  });
+
+  it('AdminActionRecord has all expected fields', () => {
+    const action: AdminActionRecord = {
+      action: 'generate_key',
+      actor_role: 'owner',
+      target_code: 'AAAA-****-****-DDDD',
+      detail: { role: 'student' },
+      created_at: '2026-08-07T12:00:00Z',
+    };
+    expect(action).toBeDefined();
   });
 });

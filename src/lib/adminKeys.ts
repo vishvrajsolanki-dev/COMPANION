@@ -35,6 +35,15 @@ export interface AdminProfileRecord {
   key_label: string | null;
 }
 
+/** One row from admin_list_actions (the action-audit trail). */
+export interface AdminActionRecord {
+  action: string;
+  actor_role: AdminRole;
+  target_code: string;
+  detail: Record<string, unknown>;
+  created_at: string | null;
+}
+
 export type AdminErrorCode =
   | 'UNAUTHORIZED'
   | 'GENERATION_CONFLICT'
@@ -112,6 +121,17 @@ const mapProfileRecord = (raw: unknown): AdminProfileRecord | null => {
   };
 };
 
+const mapActionRecord = (raw: unknown): AdminActionRecord | null => {
+  if (!isObj(raw) || typeof raw.action !== 'string') return null;
+  return {
+    action: raw.action,
+    actor_role: asRole(raw.actor_role),
+    target_code: asStr(raw.target_code) ?? '',
+    detail: isObj(raw.detail) ? raw.detail : {},
+    created_at: asStr(raw.created_at),
+  };
+};
+
 /* ── pure mappers (unit-tested) ───────────────────────────────────────────── */
 
 export function mapGenerateKeyResult(raw: unknown): AdminResult<AdminKeyRecord> {
@@ -141,6 +161,14 @@ export function mapProfileListResult(raw: unknown): AdminResult<AdminProfileReco
   if (!Array.isArray(raw.profiles)) return { ok: false, error: 'UNKNOWN' };
   const profiles = raw.profiles.map(mapProfileRecord).filter((p): p is AdminProfileRecord => p !== null);
   return { ok: true, data: profiles };
+}
+
+export function mapActionListResult(raw: unknown): AdminResult<AdminActionRecord[]> {
+  if (!isObj(raw)) return { ok: false, error: 'UNKNOWN' };
+  if (raw.ok !== true) return { ok: false, error: mapAdminError(raw) };
+  if (!Array.isArray(raw.actions)) return { ok: false, error: 'UNKNOWN' };
+  const actions = raw.actions.map(mapActionRecord).filter((a): a is AdminActionRecord => a !== null);
+  return { ok: true, data: actions };
 }
 
 /* ── live RPC calls ───────────────────────────────────────────────────────── */
@@ -205,4 +233,11 @@ export async function listProfiles(): Promise<AdminResult<AdminProfileRecord[]>>
   const cred = getAdminCredential();
   if (!cred) return { ok: false, error: 'UNAUTHORIZED' };
   return rpc('admin_list_profiles', { p_admin_code: cred }, mapProfileListResult);
+}
+
+/** Owner-only: the action-audit trail (who deactivated/reactivated/minted what). */
+export async function listActions(): Promise<AdminResult<AdminActionRecord[]>> {
+  const cred = getAdminCredential();
+  if (!cred) return { ok: false, error: 'UNAUTHORIZED' };
+  return rpc('admin_list_actions', { p_admin_code: cred }, mapActionListResult);
 }
