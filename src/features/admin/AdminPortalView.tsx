@@ -105,6 +105,11 @@ export const AdminPortalView: React.FC = () => {
 
   const isOwner = currentRole === 'owner';
 
+  const loadSessions = useCallback(async () => {
+    const s = await listSessions();
+    if (s.ok) { setSessions(s.data); setSessionsError(null); } else setSessionsError(s.error);
+  }, []);
+
   const load = useCallback(async () => {
     const [k, p, s, a] = await Promise.all([
       listKeys(),
@@ -127,6 +132,13 @@ export const AdminPortalView: React.FC = () => {
   useEffect(() => {
     if (isAdmin && hasCredential) load();
   }, [isAdmin, hasCredential, load]);
+
+  // H17: refresh the sessions list whenever the Sessions tab becomes active so
+  // a device that activates AFTER the portal was opened still shows up. Without
+  // this the list only ever loaded on portal mount.
+  useEffect(() => {
+    if (isAdmin && hasCredential && tab === 'sessions') loadSessions();
+  }, [isAdmin, hasCredential, tab, loadSessions]);
 
   // Role options the caller may mint — owner may mint any, admin only student.
   const roleOptions: AdminRole[] = currentRole === 'owner' ? ['student', 'admin', 'owner'] : ['student'];
