@@ -74,6 +74,18 @@ input, select, textarea {
 textarea.input {
   border-radius: var(--radius-card);
 }
+/* iOS Safari auto-zooms into any form control with font-size < 16px on focus
+   (the field is "too small to read", so Safari scales the whole page), which
+   breaks PWA layout mid-entry. DESIGN_SYSTEM.md ships --text-base at 15px, so
+   every input below inherits the zoom risk. Force ≥16px on touch devices only
+   (coarse pointer) — desktop keeps the tighter 15px type. `!important` wins the
+   cascade over the `className="input"` rule AND inline font-size (e.g. the
+   edit-max-uses number field at 0.74rem in AdminPortalView). */
+@media (pointer: coarse) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
 
 a {
   color: inherit;
