@@ -7,6 +7,7 @@ import { useAuthStore } from '../../store/authStore';
 import { QuickLink, StatTile, GlassButton, BottomSheet, Badge } from '../../components/ui';
 import { signOutSession } from '../../lib/accessKeys';
 import { getDeviceId } from '../../lib/deviceId';
+import { exportJSONFile } from '../../lib/fileExport';
 import {
   Moon, Sun, HardDrive, Users, BookOpen, Calendar, CalendarDays,
   BookMarked, Sliders, Trash2, Download, AlertTriangle, FileCode, Upload, User,
@@ -33,23 +34,17 @@ export const ProfileView: React.FC = () => {
 
   const totalCredits = subjects.reduce((sum, s) => sum + s.credits, 0);
 
-  // 1. Export JSON backup of all tables before clearing
+  // 1. Export JSON backup of all tables. Uses exportJSONFile (H4) which prefers
+  // the Web Share API on iOS (anchor downloads are silently ignored by Safari),
+  // and reads tables in parallel to stay inside the user-gesture window.
   const exportBackupJSON = async () => {
-    const backup: Record<string, any[]> = {};
-    for (const table of db.tables) {
-      backup[table.name] = await table.toArray();
-    }
+    const tableData = await Promise.all(
+      db.tables.map(async (table) => [table.name, await table.toArray()] as const),
+    );
+    const backup: Record<string, any[]> = Object.fromEntries(tableData);
 
-    const jsonStr = JSON.stringify(backup, null, 2);
-    const blob = new Blob([jsonStr], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `academic_os_backup_${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    const filename = `academic_os_backup_${new Date().toISOString().split('T')[0]}.json`;
+    await exportJSONFile(filename, backup);
     setIsExported(true);
     return backup;
   };
@@ -95,15 +90,21 @@ export const ProfileView: React.FC = () => {
   const handleClearAllData = async () => {
     if (confirmInput.trim().toUpperCase() !== 'DELETE') return;
 
-    // Step 0: Best-effort server-side session cleanup (prevents orphaned
+    // Close the wipe sheet first so the iOS share sheet (auto-export) is
+    // presented over the app, not layered on the dialog.
+    setIsConfirmingClear(false);
+
+    // Step 0: Auto export backup. Kept FIRST on purpose (H4): the DELETE
+    // confirm click is the user gesture that keeps navigator.share alive on
+    // iOS — a network round-trip before it would let the gesture expire.
+    await exportBackupJSON();
+
+    // Step 1: Best-effort server-side session cleanup (prevents orphaned
     // device_sessions rows when local storage is wiped). Non-fatal —
     // network failure is silently ignored, matching signOut()'s pattern.
     if (activation?.accountId) {
       await signOutSession(activation.accountId, getDeviceId()).catch(() => {});
     }
-
-    // Step 1: Auto export backup
-    await exportBackupJSON();
 
     // Step 2: Set flag in localStorage so seedDatabaseIfEmpty does NOT auto-reseed
     localStorage.setItem('academic_os_user_cleared', 'true');
@@ -113,7 +114,6 @@ export const ProfileView: React.FC = () => {
       await Promise.all(db.tables.map(table => table.clear()));
     });
 
-    setIsConfirmingClear(false);
     // Direct user to real Semester Setup flow immediately
     navigateToSubview('semester-setup');
   };
@@ -461,7 +461,7 @@ export const ProfileView: React.FC = () => {
           )}
           {isExported && (
             <div style={{ padding: 10, borderRadius: 'var(--radius-card)', backgroundColor: 'var(--color-success-bg)', color: 'var(--color-success)', fontSize: '0.85rem', fontWeight: 600 }}>
-              ✓ JSON backup downloaded to your device.
+              ✓ JSON backup exported to your device.
             </div>
           )}
         </div>
@@ -543,7 +543,7 @@ export const ProfileView: React.FC = () => {
           </ul>
 
           <div style={{ padding: 10, backgroundColor: 'var(--color-info-bg)', borderRadius: 'var(--radius-card)', fontSize: '0.8rem', color: 'var(--color-primary)' }}>
-            ℹ A JSON backup will be exported automatically to your downloads folder before deletion.
+            ℹ A JSON backup will be exported automatically to your device before deletion.
           </div>
 
           <div>
