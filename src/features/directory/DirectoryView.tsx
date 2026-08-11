@@ -4,6 +4,15 @@ import { useUIStore } from '../../store/uiStore';
 import { EmptyState } from '../../components/ui';
 import { ArrowLeft, Mail, Phone, MapPin, Clock } from 'lucide-react';
 
+/** Contact-grid row — shared so the mailto/tel links and the plain rows stay
+ *  visually aligned AND get a ≥ 32px touch target on iOS (0.85rem text is only
+ *  ~20px tall on its own). */
+const contactRowStyle: React.CSSProperties = {
+  display: 'flex', alignItems: 'center', gap: '8px',
+  color: 'var(--text-secondary)', fontSize: '0.85rem',
+  padding: '6px 2px', margin: '-2px 0',
+};
+
 export const DirectoryView: React.FC = () => {
   const teachers  = useTeachers()  || [];
   const subjects  = useSubjects()  || [];
@@ -63,24 +72,24 @@ export const DirectoryView: React.FC = () => {
 
                   {/* Contact Grid */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <a href={`mailto:${teacher.email}`} style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', fontSize: '0.85rem', textDecoration: 'none' }}>
+                    <a href={`mailto:${teacher.email}`} style={{ ...contactRowStyle, textDecoration: 'none' }}>
                       <Mail size={14} style={{ flexShrink: 0 }} />
                       <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{teacher.email}</span>
                     </a>
                     {teacher.phone && (
-                      <a href={`tel:${teacher.phone}`} style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', fontSize: '0.85rem', textDecoration: 'none' }}>
+                      <a href={`tel:${teacher.phone}`} style={{ ...contactRowStyle, textDecoration: 'none' }}>
                         <Phone size={14} style={{ flexShrink: 0 }} />
                         <span>{teacher.phone}</span>
                       </a>
                     )}
                     {teacher.cabin && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                      <div style={contactRowStyle}>
                         <MapPin size={14} style={{ flexShrink: 0 }} />
                         <span>Cabin {teacher.cabin}</span>
                       </div>
                     )}
                     {teacher.office_hours && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                      <div style={contactRowStyle}>
                         <Clock size={14} style={{ flexShrink: 0 }} />
                         <span>Office Hours: {teacher.office_hours}</span>
                       </div>

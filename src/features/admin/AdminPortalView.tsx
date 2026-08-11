@@ -549,9 +549,10 @@ export const AdminPortalView: React.FC = () => {
                       <button
                         onClick={() => copyCode(k.code)}
                         title="Copy code"
-                        style={{ color: 'var(--text-muted)', flexShrink: 0, display: 'flex' }}
+                        aria-label={copiedCode === k.code ? 'Copied' : 'Copy code'}
+                        style={{ color: 'var(--text-muted)', flexShrink: 0, display: 'flex', padding: 8 }}
                       >
-                        {copiedCode === k.code ? <Check size={15} /> : <Copy size={15} />}
+                        {copiedCode === k.code ? <Check size={16} /> : <Copy size={16} />}
                       </button>
                     )}
                   </div>
@@ -569,13 +570,20 @@ export const AdminPortalView: React.FC = () => {
                           onKeyDown={e => { if (e.key === 'Enter') handleUpdateMaxUses(k.id); if (e.key === 'Escape') setEditingMaxId(null); }}
                           style={{ width: 42, fontSize: '0.74rem', padding: '1px 4px', border: '1px solid var(--border-hairline)', borderRadius: 4, background: 'var(--bg-card)', color: 'var(--text-primary)' }}
                         />
-                        <button onClick={() => handleUpdateMaxUses(k.id)} style={{ color: 'var(--color-success)', display: 'flex' }}><Check size={13} /></button>
-                        <button onClick={() => setEditingMaxId(null)} style={{ color: 'var(--text-muted)', display: 'flex' }}>✕</button>
+                        <button onClick={() => handleUpdateMaxUses(k.id)} aria-label="Save usage limit" style={{ color: 'var(--color-success)', display: 'flex', padding: 5 }}><Check size={15} /></button>
+                        <button onClick={() => setEditingMaxId(null)} aria-label="Cancel edit" style={{ color: 'var(--text-muted)', display: 'flex', padding: 5 }}>✕</button>
                       </span>
                     ) : (
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, cursor: 'pointer' }} onClick={() => { setEditingMaxId(k.id); setEditingMaxVal(String(k.max_uses)); }}>
+                      <span
+                        role="button"
+                        tabIndex={0}
+                        aria-label="Edit usage limit"
+                        onClick={() => { setEditingMaxId(k.id); setEditingMaxVal(String(k.max_uses)); }}
+                        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setEditingMaxId(k.id); setEditingMaxVal(String(k.max_uses)); } }}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 3, cursor: 'pointer', padding: '6px 4px', margin: '-6px -4px' }}
+                      >
                         used {k.used_count}/{k.max_uses}
-                        <Pencil size={10} style={{ opacity: 0.45 }} />
+                        <Pencil size={12} style={{ opacity: 0.45 }} />
                       </span>
                     )}
                     <span>
