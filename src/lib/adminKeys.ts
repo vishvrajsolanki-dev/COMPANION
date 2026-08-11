@@ -72,12 +72,13 @@ export type AdminErrorCode =
   | 'GENERATION_CONFLICT'
   | 'CANNOT_MODIFY_SELF'
   | 'NOT_FOUND'
+  | 'SERVER'
   | 'NETWORK'
   | 'UNKNOWN';
 
 export type AdminResult<T> =
   | { ok: true; data: T }
-  | { ok: false; error: AdminErrorCode };
+  | { ok: false; error: AdminErrorCode; detail?: string };
 
 /** Server-side rejection codes returned by the admin RPCs. */
 const RPC_ERROR_CODES: readonly string[] = [
@@ -92,9 +93,46 @@ export const ADMIN_ERROR_MESSAGES: Record<AdminErrorCode, string> = {
   GENERATION_CONFLICT: 'Code collision — try again.',
   CANNOT_MODIFY_SELF: "You can't deactivate your own key.",
   NOT_FOUND: 'That key no longer exists.',
+  SERVER: 'The server rejected the request.',
   NETWORK: "Couldn't reach the server. Check your connection and try again.",
   UNKNOWN: 'Something went wrong. Please try again.',
 };
+
+/**
+ * Distinguishes a genuine transport failure from a server-side rejection.
+ *
+ * supabase-js surfaces PostgREST/Postgres rejections as objects with a `code`
+ * (PGRST202 = function not found, PGRST205 = table not found, 42501 =
+ * insufficient privilege, ...) plus a human message/details. Real network
+ * failures reject with a TypeError (e.g. "Failed to fetch") that carries no
+ * code. Collapsing both into 'NETWORK' is what turned "migration never applied
+ * (PGRST202)" into the misleading "Couldn't reach the server, check your
+ * connection" banner.
+ */
+export function classifyPostgrestError(err: unknown): { error: 'SERVER' | 'NETWORK'; detail?: string } {
+  if (isObj(err)) {
+    const code = typeof err.code === 'string' ? err.code : '';
+    if (code) {
+      const message = typeof err.message === 'string' ? err.message : '';
+      const details = typeof err.details === 'string' ? err.details : '';
+      return { error: 'SERVER', detail: [code, message, details].filter(Boolean).join(' — ') };
+    }
+  }
+  // No PostgREST/Postgres code → the request never reached a server (offline,
+  // DNS, CORS, abort). Genuine network failure.
+  return { error: 'NETWORK' };
+}
+
+/**
+ * Turns an AdminResult failure into a user-facing string, appending the
+ * server-side detail (PostgREST code + message) when the failure was a server
+ * rejection. Consumers store the returned string directly in their error state.
+ */
+export function formatAdminError(res: AdminResult<unknown>): string {
+  if (res.ok) return '';
+  const base = ADMIN_ERROR_MESSAGES[res.error];
+  return res.detail ? `${base} (${res.detail})` : base;
+}
 
 /* ── small parse helpers ──────────────────────────────────────────────────── */
 
@@ -250,12 +288,14 @@ async function rpc<T>(name: string, params: Record<string, unknown>, map: (raw: 
     const { data, error } = await supabase.rpc(name, params);
     if (error) {
       console.error(`Supabase RPC error (${name}):`, error);
-      return { ok: false, error: 'NETWORK' };
+      const c = classifyPostgrestError(error);
+      return { ok: false, error: c.error, detail: c.detail };
     }
     return map(data);
   } catch (err) {
     console.error(`${name} failed:`, err);
-    return { ok: false, error: 'NETWORK' };
+    const c = classifyPostgrestError(err);
+    return { ok: false, error: c.error, detail: c.detail };
   }
 }
 

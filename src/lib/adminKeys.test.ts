@@ -9,6 +9,8 @@ import {
   mapSessionListResult,
   isMaskedCode,
   ADMIN_ERROR_MESSAGES,
+  classifyPostgrestError,
+  formatAdminError,
   type AdminErrorCode,
   type AdminKeyRecord,
   type AdminProfileRecord,
@@ -50,6 +52,57 @@ describe('mapAdminError', () => {
     expect(mapAdminError({ ok: false })).toBe('UNKNOWN');
     expect(mapAdminError(null)).toBe('UNKNOWN');
     expect(mapAdminError('nope')).toBe('UNKNOWN');
+  });
+});
+
+describe('classifyPostgrestError', () => {
+  it('classifies a PostgREST error (has code) as SERVER with detail', () => {
+    const res = classifyPostgrestError({
+      code: 'PGRST202',
+      message: 'Could not find the function public.admin_update_key_limits',
+      details: 'Searched for the function public.admin_update_key_limits in schema cache',
+      hint: null,
+    });
+    expect(res.error).toBe('SERVER');
+    expect(res.detail).toContain('PGRST202');
+    expect(res.detail).toContain('Could not find the function');
+  });
+
+  it('classifies a Postgres SQL error (SQLSTATE code) as SERVER', () => {
+    const res = classifyPostgrestError({
+      code: '42501',
+      message: 'permission denied for function admin_upsert_reference_data',
+    });
+    expect(res.error).toBe('SERVER');
+    expect(res.detail).toContain('42501');
+  });
+
+  it('classifies a network TypeError (no code) as NETWORK', () => {
+    const err = new TypeError('Failed to fetch');
+    expect(classifyPostgrestError(err).error).toBe('NETWORK');
+  });
+
+  it('classifies junk without a code as NETWORK', () => {
+    expect(classifyPostgrestError(null).error).toBe('NETWORK');
+    expect(classifyPostgrestError(undefined).error).toBe('NETWORK');
+    expect(classifyPostgrestError('nope').error).toBe('NETWORK');
+    expect(classifyPostgrestError({}).error).toBe('NETWORK');
+    expect(classifyPostgrestError({ message: 'Failed to fetch' }).error).toBe('NETWORK');
+  });
+});
+
+describe('formatAdminError', () => {
+  it('returns empty string for a success result', () => {
+    expect(formatAdminError({ ok: true, data: [] })).toBe('');
+  });
+
+  it('returns the base message for an app-level rejection without detail', () => {
+    expect(formatAdminError({ ok: false, error: 'NOT_FOUND' })).toBe(ADMIN_ERROR_MESSAGES.NOT_FOUND);
+  });
+
+  it('appends the server-side detail for SERVER failures', () => {
+    const res = formatAdminError({ ok: false, error: 'SERVER', detail: 'PGRST202 — Could not find the function' });
+    expect(res).toBe(`${ADMIN_ERROR_MESSAGES.SERVER} (PGRST202 — Could not find the function)`);
   });
 });
 
@@ -392,7 +445,7 @@ describe('mapSessionListResult', () => {
 
 describe('ADMIN_ERROR_MESSAGES', () => {
   it('has a human-readable message for every AdminErrorCode', () => {
-    const codes: AdminErrorCode[] = ['UNAUTHORIZED', 'GENERATION_CONFLICT', 'CANNOT_MODIFY_SELF', 'NOT_FOUND', 'NETWORK', 'UNKNOWN'];
+    const codes: AdminErrorCode[] = ['UNAUTHORIZED', 'GENERATION_CONFLICT', 'CANNOT_MODIFY_SELF', 'NOT_FOUND', 'SERVER', 'NETWORK', 'UNKNOWN'];
     for (const code of codes) {
       expect(ADMIN_ERROR_MESSAGES[code]).toBeDefined();
       expect(typeof ADMIN_ERROR_MESSAGES[code]).toBe('string');
@@ -402,7 +455,7 @@ describe('ADMIN_ERROR_MESSAGES', () => {
 
   it('has no extra keys beyond the defined error codes', () => {
     const definedCodes = Object.keys(ADMIN_ERROR_MESSAGES) as AdminErrorCode[];
-    const expectedCodes: AdminErrorCode[] = ['UNAUTHORIZED', 'GENERATION_CONFLICT', 'CANNOT_MODIFY_SELF', 'NOT_FOUND', 'NETWORK', 'UNKNOWN'];
+    const expectedCodes: AdminErrorCode[] = ['UNAUTHORIZED', 'GENERATION_CONFLICT', 'CANNOT_MODIFY_SELF', 'NOT_FOUND', 'SERVER', 'NETWORK', 'UNKNOWN'];
     expect(definedCodes.sort()).toEqual(expectedCodes.sort());
   });
 });

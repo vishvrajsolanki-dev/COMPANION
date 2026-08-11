@@ -524,7 +524,25 @@ export const ProfileView: React.FC = () => {
       </div>
 
       {/* Confirmation Sheet */}
-      <BottomSheet open={isConfirmingClear} onClose={() => setIsConfirmingClear(false)}>
+      <BottomSheet
+        open={isConfirmingClear}
+        onClose={() => setIsConfirmingClear(false)}
+        footer={
+          <div style={{ display: 'flex', gap: 8 }}>
+            <GlassButton
+              variant={confirmInput.trim().toUpperCase() === 'DELETE' ? 'danger' : 'subtle'}
+              style={{ flex: 1 }}
+              disabled={confirmInput.trim().toUpperCase() !== 'DELETE'}
+              onClick={handleClearAllData}
+            >
+              Export & Wipe All Data
+            </GlassButton>
+            <GlassButton variant="ghost" onClick={() => setIsConfirmingClear(false)}>
+              Cancel
+            </GlassButton>
+          </div>
+        }
+      >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'var(--color-danger)' }}>
             <AlertTriangle size={24} />
@@ -558,20 +576,6 @@ export const ProfileView: React.FC = () => {
               className="input"
               style={{ marginTop: 4 }}
             />
-          </div>
-
-          <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-            <GlassButton
-              variant={confirmInput.trim().toUpperCase() === 'DELETE' ? 'danger' : 'subtle'}
-              style={{ flex: 1 }}
-              disabled={confirmInput.trim().toUpperCase() !== 'DELETE'}
-              onClick={handleClearAllData}
-            >
-              Export & Wipe All Data
-            </GlassButton>
-            <GlassButton variant="ghost" onClick={() => setIsConfirmingClear(false)}>
-              Cancel
-            </GlassButton>
           </div>
         </div>
       </BottomSheet>

@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import { getAdminCredential } from './adminKeys';
+import { getAdminCredential, classifyPostgrestError } from './adminKeys';
 
 /**
  * Reference data client — ADIT institutional faculty and subjects.
@@ -36,7 +36,36 @@ export interface ReferenceDataSummary {
   departments: string[];
 }
 
-export type ReferenceDataErrorCode = 'NETWORK' | 'EMPTY' | 'UNKNOWN';
+export type ReferenceDataErrorCode = 'UNAUTHORIZED' | 'SERVER' | 'NETWORK' | 'EMPTY' | 'UNKNOWN';
+
+export const REF_ERROR_MESSAGES: Record<ReferenceDataErrorCode, string> = {
+  UNAUTHORIZED: "Your key doesn't have admin access.",
+  SERVER: 'The server rejected the request.',
+  NETWORK: "Couldn't reach the server. Check your connection and try again.",
+  EMPTY: 'No reference data available yet.',
+  UNKNOWN: 'Something went wrong. Please try again.',
+};
+
+/**
+ * Turns an AdminRefResult failure into a user-facing string, appending the
+ * server-side detail (PostgREST code + message) when the failure was a server
+ * rejection. Consumers store the returned string directly in their error state.
+ */
+export function formatRefError(res: AdminRefResult<unknown>): string {
+  if (res.ok) return '';
+  const base = REF_ERROR_MESSAGES[res.error];
+  return res.detail ? `${base} (${res.detail})` : base;
+}
+
+/** App-level rejection codes the reference admin RPCs can return. */
+const REF_RPC_ERROR_CODES: readonly string[] = ['UNAUTHORIZED'];
+
+/** Normalizes a non-ok reference RPC payload into a ReferenceDataErrorCode. */
+function mapRefAdminError(raw: unknown): ReferenceDataErrorCode {
+  if (!isObj(raw)) return 'UNKNOWN';
+  const e = raw.error;
+  return typeof e === 'string' && REF_RPC_ERROR_CODES.includes(e) ? (e as ReferenceDataErrorCode) : 'UNKNOWN';
+}
 
 /* ── Mappers ───────────────────────────────────────────────────────────────── */
 
@@ -76,7 +105,7 @@ const asStr = (v: unknown): string | null => (typeof v === 'string' ? v : null);
 export async function getReferenceSubjects(opts?: {
   department?: string;
   semester?: number;
-}): Promise<{ data: ReferenceSubject[]; error: ReferenceDataErrorCode | null }> {
+}): Promise<{ data: ReferenceSubject[]; error: ReferenceDataErrorCode | null; detail?: string }> {
   if (!supabase) return { data: [], error: 'NETWORK' };
   try {
     let q = supabase.from('reference_subjects').select('*').eq('is_deleted', false);
@@ -87,12 +116,14 @@ export async function getReferenceSubjects(opts?: {
     const { data, error } = await q;
     if (error) {
       console.error('getReferenceSubjects error:', error);
-      return { data: [], error: 'NETWORK' };
+      const c = classifyPostgrestError(error);
+      return { data: [], error: c.error, detail: c.detail };
     }
     return { data: (data || []).map(mapReferenceSubject).filter(Boolean) as ReferenceSubject[], error: null };
   } catch (err) {
     console.error('getReferenceSubjects failed:', err);
-    return { data: [], error: 'NETWORK' };
+    const c = classifyPostgrestError(err);
+    return { data: [], error: c.error, detail: c.detail };
   }
 }
 
@@ -102,7 +133,7 @@ export async function getReferenceSubjects(opts?: {
  */
 export async function getReferenceFaculty(opts?: {
   department?: string;
-}): Promise<{ data: ReferenceFaculty[]; error: ReferenceDataErrorCode | null }> {
+}): Promise<{ data: ReferenceFaculty[]; error: ReferenceDataErrorCode | null; detail?: string }> {
   if (!supabase) return { data: [], error: 'NETWORK' };
   try {
     let q = supabase.from('reference_faculty').select('*').eq('is_deleted', false);
@@ -112,12 +143,14 @@ export async function getReferenceFaculty(opts?: {
     const { data, error } = await q;
     if (error) {
       console.error('getReferenceFaculty error:', error);
-      return { data: [], error: 'NETWORK' };
+      const c = classifyPostgrestError(error);
+      return { data: [], error: c.error, detail: c.detail };
     }
     return { data: (data || []).map(mapReferenceFaculty).filter(Boolean) as ReferenceFaculty[], error: null };
   } catch (err) {
     console.error('getReferenceFaculty failed:', err);
-    return { data: [], error: 'NETWORK' };
+    const c = classifyPostgrestError(err);
+    return { data: [], error: c.error, detail: c.detail };
   }
 }
 
@@ -133,7 +166,7 @@ export interface UpsertResult {
 /** Result type for admin operations. */
 export type AdminRefResult<T> =
   | { ok: true; data: T }
-  | { ok: false; error: ReferenceDataErrorCode };
+  | { ok: false; error: ReferenceDataErrorCode; detail?: string };
 
 /**
  * Bulk upsert reference data (owner-only). Called from the Admin Portal "Data" tab.
@@ -153,9 +186,10 @@ export async function upsertReferenceData(
     });
     if (error) {
       console.error('upsertReferenceData RPC error:', error);
-      return { ok: false, error: 'NETWORK' };
+      const c = classifyPostgrestError(error);
+      return { ok: false, error: c.error, detail: c.detail };
     }
-    if (!data?.ok) return { ok: false, error: 'NETWORK' };
+    if (!data?.ok) return { ok: false, error: mapRefAdminError(data) };
     return {
       ok: true,
       data: {
@@ -184,9 +218,10 @@ export async function listReferenceDataSummary(): Promise<AdminRefResult<Referen
     });
     if (error) {
       console.error('listReferenceDataSummary RPC error:', error);
-      return { ok: false, error: 'NETWORK' };
+      const c = classifyPostgrestError(error);
+      return { ok: false, error: c.error, detail: c.detail };
     }
-    if (!data?.ok) return { ok: false, error: 'NETWORK' };
+    if (!data?.ok) return { ok: false, error: mapRefAdminError(data) };
     return {
       ok: true,
       data: {

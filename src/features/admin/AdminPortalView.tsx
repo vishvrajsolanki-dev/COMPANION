@@ -4,15 +4,14 @@ import { useUIStore } from '../../store/uiStore';
 import { GlassButton, GlassCard, EmptyState, SegmentedControl, Badge, Banner, ConfirmDialog } from '../../components/ui';
 import {
   generateKey, listKeys, setKeyActive, updateKeyLimits, listProfiles, listActions, listSessions, revokeSession,
-  getAdminCredential, isMaskedCode,
-  ADMIN_ERROR_MESSAGES,
+  getAdminCredential, isMaskedCode, formatAdminError,
   type AdminKeyRecord, type AdminProfileRecord, type AdminActionRecord, type AdminSessionRecord,
-  type AdminErrorCode, type AdminRole,
+  type AdminRole,
 } from '../../lib/adminKeys';
 import { ArrowLeft, Copy, Check, KeyRound, ShieldCheck, Users, Plus, ScrollText, Upload, FileCode, Play, AlertCircle, Pencil, Smartphone, LogOut } from 'lucide-react';
 import {
-  upsertReferenceData, listReferenceDataSummary,
-  type ReferenceDataSummary, type UpsertResult, type ReferenceDataErrorCode,
+  upsertReferenceData, listReferenceDataSummary, formatRefError,
+  type ReferenceDataSummary, type UpsertResult,
 } from '../../lib/referenceData';
 
 type PortalTab = 'generate' | 'keys' | 'activations' | 'sessions' | 'audit' | 'data';
@@ -83,10 +82,10 @@ export const AdminPortalView: React.FC = () => {
   const [profiles, setProfiles] = useState<AdminProfileRecord[] | null>(null);
   const [sessions, setSessions] = useState<AdminSessionRecord[] | null>(null);
   const [actions, setActions] = useState<AdminActionRecord[] | null>(null);
-  const [keysError, setKeysError] = useState<AdminErrorCode | null>(null);
-  const [profilesError, setProfilesError] = useState<AdminErrorCode | null>(null);
-  const [sessionsError, setSessionsError] = useState<AdminErrorCode | null>(null);
-  const [actionsError, setActionsError] = useState<AdminErrorCode | null>(null);
+  const [keysError, setKeysError] = useState<string | null>(null);
+  const [profilesError, setProfilesError] = useState<string | null>(null);
+  const [sessionsError, setSessionsError] = useState<string | null>(null);
+  const [actionsError, setActionsError] = useState<string | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [revokingId, setRevokingId] = useState<string | null>(null);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
@@ -96,7 +95,7 @@ export const AdminPortalView: React.FC = () => {
 
   // Data tab (reference data)
   const [refSummary, setRefSummary] = useState<ReferenceDataSummary | null>(null);
-  const [refSummaryError, setRefSummaryError] = useState<ReferenceDataErrorCode | null>(null);
+  const [refSummaryError, setRefSummaryError] = useState<string | null>(null);
   const [refText, setRefText] = useState('');
   const [refParsed, setRefParsed] = useState<{ faculty: Array<{ name: string; designation?: string | null; department: string; email?: string | null }>; subjects: Array<{ course_code: string; name: string; department: string; semester: number; credits?: number; ltp?: string | null }> } | null>(null);
   const [refError, setRefError] = useState<string | null>(null);
@@ -107,7 +106,7 @@ export const AdminPortalView: React.FC = () => {
 
   const loadSessions = useCallback(async () => {
     const s = await listSessions();
-    if (s.ok) { setSessions(s.data); setSessionsError(null); } else setSessionsError(s.error);
+    if (s.ok) { setSessions(s.data); setSessionsError(null); } else setSessionsError(formatAdminError(s));
   }, []);
 
   const load = useCallback(async () => {
@@ -117,15 +116,15 @@ export const AdminPortalView: React.FC = () => {
       listSessions(),
       isOwner ? listActions() : Promise.resolve(null),
     ]);
-    if (k.ok) { setKeys(k.data); setKeysError(null); } else setKeysError(k.error);
-    if (p.ok) { setProfiles(p.data); setProfilesError(null); } else setProfilesError(p.error);
-    if (s.ok) { setSessions(s.data); setSessionsError(null); } else setSessionsError(s.error);
+    if (k.ok) { setKeys(k.data); setKeysError(null); } else setKeysError(formatAdminError(k));
+    if (p.ok) { setProfiles(p.data); setProfilesError(null); } else setProfilesError(formatAdminError(p));
+    if (s.ok) { setSessions(s.data); setSessionsError(null); } else setSessionsError(formatAdminError(s));
     if (a) {
-      if (a.ok) { setActions(a.data); setActionsError(null); } else setActionsError(a.error);
+      if (a.ok) { setActions(a.data); setActionsError(null); } else setActionsError(formatAdminError(a));
     }
     if (isOwner) {
       const r = await listReferenceDataSummary();
-      if (r.ok) { setRefSummary(r.data); setRefSummaryError(null); } else setRefSummaryError(r.error);
+      if (r.ok) { setRefSummary(r.data); setRefSummaryError(null); } else setRefSummaryError(formatRefError(r));
     }
   }, [isOwner]);
 
@@ -133,9 +132,6 @@ export const AdminPortalView: React.FC = () => {
     if (isAdmin && hasCredential) load();
   }, [isAdmin, hasCredential, load]);
 
-  // H17: refresh the sessions list whenever the Sessions tab becomes active so
-  // a device that activates AFTER the portal was opened still shows up. Without
-  // this the list only ever loaded on portal mount.
   useEffect(() => {
     if (isAdmin && hasCredential && tab === 'sessions') loadSessions();
   }, [isAdmin, hasCredential, tab, loadSessions]);
@@ -194,7 +190,7 @@ export const AdminPortalView: React.FC = () => {
         setExpiresAt('');
         load(); // refresh the keys list
       } else {
-        setGenError(ADMIN_ERROR_MESSAGES[res.error]);
+        setGenError(formatAdminError(res));
       }
     } finally {
       setGenerating(false);
@@ -206,7 +202,7 @@ export const AdminPortalView: React.FC = () => {
     try {
       const res = await setKeyActive(key.id, !key.is_active);
       if (!res.ok) {
-        setKeysError(res.error);
+        setKeysError(formatAdminError(res));
         return;
       }
       setKeysError(null);
@@ -221,7 +217,7 @@ export const AdminPortalView: React.FC = () => {
     if (isNaN(val) || val < 1 || val > 100) return;
     const res = await updateKeyLimits(keyId, val);
     if (!res.ok) {
-      setKeysError(res.error);
+      setKeysError(formatAdminError(res));
       return;
     }
     setKeysError(null);
@@ -234,7 +230,7 @@ export const AdminPortalView: React.FC = () => {
     try {
       const res = await revokeSession(session.id);
       if (!res.ok) {
-        setSessionsError(res.error);
+        setSessionsError(formatAdminError(res));
         return;
       }
       setSessionsError(null);
@@ -312,7 +308,7 @@ export const AdminPortalView: React.FC = () => {
         setRefText('');
         load(); // refresh the summary counts
       } else {
-        setRefError(res.error === 'NETWORK' ? 'Publish failed — check your connection and try again.' : 'Publish failed.');
+        setRefError(formatRefError(res));
       }
     } finally {
       setRefUpserting(false);
@@ -503,7 +499,7 @@ export const AdminPortalView: React.FC = () => {
         {tab === 'keys' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {keysError && (
-              <Banner tone="danger" title={ADMIN_ERROR_MESSAGES[keysError]} />
+              <Banner tone="danger" title={keysError} />
             )}
 
             {keys === null ? (
@@ -596,7 +592,7 @@ export const AdminPortalView: React.FC = () => {
         {tab === 'activations' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {profilesError && (
-              <Banner tone="danger" title={ADMIN_ERROR_MESSAGES[profilesError]} />
+              <Banner tone="danger" title={profilesError} />
             )}
 
             {profiles === null ? (
@@ -668,7 +664,7 @@ export const AdminPortalView: React.FC = () => {
         {tab === 'sessions' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {sessionsError && (
-              <Banner tone="danger" title={ADMIN_ERROR_MESSAGES[sessionsError]} />
+              <Banner tone="danger" title={sessionsError} />
             )}
 
             <p style={{ fontSize: '0.74rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
@@ -746,7 +742,7 @@ export const AdminPortalView: React.FC = () => {
         {tab === 'data' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
             {refSummaryError && (
-              <Banner tone="warning" title="Reference data summary unavailable" />
+              <Banner tone="warning" title={refSummaryError} />
             )}
 
             <GlassCard>
@@ -852,7 +848,7 @@ export const AdminPortalView: React.FC = () => {
         {tab === 'audit' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {actionsError && (
-              <Banner tone="danger" title={ADMIN_ERROR_MESSAGES[actionsError]} />
+              <Banner tone="danger" title={actionsError} />
             )}
 
             {actions === null ? (

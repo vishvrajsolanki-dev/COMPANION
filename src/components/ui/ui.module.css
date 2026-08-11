@@ -94,7 +94,8 @@
 
 .sheetOverlay {
   position: fixed;
-  inset: 0;
+  inset: 0; /* iOS Safari 14.5+ */
+  top: 0; right: 0; bottom: 0; left: 0; /* longhand fallback for older iOS where `inset` is unsupported */
   background-color: rgba(15,23,42,0.35);
   z-index: 100;
   display: flex;
@@ -118,7 +119,9 @@
   gap: var(--space-md);
   animation: sheetUp 0.28s cubic-bezier(0.22, 1, 0.36, 1);
   max-height: 88vh;
+  max-height: 88svh; /* iOS Safari: dynamic toolbar shrinks the real viewport; svh tracks it */
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch; /* iOS Safari: required for overflow-y to actually scroll on touch */
 }
 .sheetPanel::before {
   content: '';
@@ -138,6 +141,51 @@
   background: var(--neutral-300, #CBD5E1);
   align-self: center;
   flex-shrink: 0;
+}
+
+/* Footer mode: the sheet content scrolls in its own region while the action
+   row stays pinned at the bottom — always visible/reachable on small
+   viewports (Bug F#15: Clear All Data button cut off on real phones). */
+.sheetPanel.sheetFooterMode {
+  padding: 0;
+  gap: 0;
+  overflow: hidden;
+}
+.sheetPanel.sheetFooterMode::before {
+  content: none;
+}
+.sheetPanel.sheetFooterMode .sheetHandle {
+  margin-top: var(--space-sm);
+  margin-bottom: var(--space-sm);
+}
+.sheetBody {
+  flex: 1;
+  min-height: 0;
+  height: 0; /* iOS Safari: explicit height alongside flex:1 makes flex-child scrolling reliable */
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch; /* iOS Safari: momentum/touch scrolling on the scroll region */
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding: 0 var(--space-lg) var(--space-lg);
+}
+.sheetFooter {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-md) var(--space-lg) calc(var(--space-lg) + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--border-hairline);
+  background-color: var(--bg-card);
+  box-shadow: 0 -4px 12px rgba(15, 23, 42, 0.05);
+}
+/* Landscape: iPhone Safari's own bottom browser toolbar overlays the page
+   bottom and env(safe-area-inset-bottom) only covers the home indicator.
+   Bump the footer up so action buttons clear the toolbar. */
+@media (orientation: landscape) {
+  .sheetFooter {
+    padding-bottom: calc(var(--space-lg) + env(safe-area-inset-bottom) + 34px);
+  }
 }
 
 /* ── Toast ────────────────────────────────────────────────────────────────── */
