@@ -41,9 +41,12 @@
 /* Grid Layout */
 .gridWrapper {
   display: flex;
+  flex: 1;
+  min-height: 0;
   flex-direction: column;
   gap: var(--space-md);
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   padding-bottom: 80px; /* Space for bottom tab bar */
 }
 
@@ -53,7 +56,6 @@
   border-radius: var(--radius-card);
   border: 1px solid var(--border-hairline);
   box-shadow: var(--shadow-card);
-  overflow: hidden;
   position: relative;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
@@ -69,6 +71,7 @@
 
 .cardBody {
   flex: 1;
+  min-height: 48px;
   padding: var(--space-md);
   display: flex;
   flex-direction: column;

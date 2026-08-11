@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useAttendanceMath } from '../../hooks/useAttendanceMath';
 import { useSubjects, useLectureSlots, useAttendanceRecords, useTasks } from '../../db/useDatabase';
 import { useUIStore } from '../../store/uiStore';
 import { todayISO, datePart } from '../../utils/date';
+import { computeAttendanceTrend, hasTrendData, buildTrendPath } from '../../utils/attendanceTrend';
 import { SegmentedControl, GlassCard, Banner } from '../../components/ui';
 import { ArrowLeft, TrendingUp, AlertCircle, CheckCircle, Calendar } from 'lucide-react';
 
@@ -51,6 +52,52 @@ export const AnalyticsView: React.FC = () => {
 
   // Compute Faculty cancellation list
   const cancelledSlots = lectureSlots.filter(s => s.status === 'cancelled' && !s.is_deleted);
+
+  // ── Attendance Trend History (real data — Bug H1) ─────────────────────────
+  // Pure bucketing lives in utils/attendanceTrend (unit-tested): ISO-week
+  // buckets over the last 6 weeks, per subject + overall, with cancelled slots
+  // excluded. A fresh account with zero records yields `hasTrendData === false`
+  // and the chart renders an honest empty state instead of invented data.
+  const attendanceTrend = useMemo(
+    () => computeAttendanceTrend(lectureSlots, attendanceRecords),
+    [lectureSlots, attendanceRecords],
+  );
+
+  const hasTrend = hasTrendData(attendanceTrend);
+
+  // Series drawn in the chart: overall (primary) + the 2 subjects with the most
+  // marked attendance this window (secondary/tertiary), so the multi-line look
+  // is preserved while every line comes from real records.
+  const chartSeries = useMemo(() => {
+    const { overall, bySubject } = attendanceTrend;
+    const topSubjects = [...bySubject.entries()]
+      .map(([subjectId, buckets]) => ({
+        subjectId,
+        count: buckets.reduce((n, b) => n + b.effective, 0),
+      }))
+      .filter(s => s.count > 0)
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 2);
+
+    const series: {
+      key: string;
+      label: string;
+      color: string;
+      buckets: { effective: number; attended: number }[];
+    }[] = [
+      { key: '__overall__', label: 'Overall', color: 'var(--color-primary)', buckets: overall },
+      ...topSubjects.map((s, idx) => {
+        const sub = subjects.find(sub => sub.id === s.subjectId);
+        return {
+          key: s.subjectId,
+          label: sub?.code || 'Subject',
+          color: idx === 0 ? 'var(--color-secondary)' : 'var(--color-tertiary)',
+          buckets: bySubject.get(s.subjectId)!,
+        };
+      }),
+    ];
+    return series;
+  }, [attendanceTrend, subjects]);
 
   // ── Task analytics (real stats — Bug F#17–19) ─────────────────────────
   // The Task model has no `completed_at` field, so "completion speed" can't
@@ -104,7 +151,7 @@ export const AnalyticsView: React.FC = () => {
 
         {activeTab === 'attendance' && (
           <>
-            {/* Trend Line Chart — multi-series, no area fill per DESIGN_SYSTEM.md */}
+            {/* Trend Line Chart — real weekly attendance rate, no area fill per DESIGN_SYSTEM.md */}
             <GlassCard>
               <div style={cardTitleStyle}>
                 <TrendingUp size={16} color="var(--color-primary)" />
@@ -114,58 +161,58 @@ export const AnalyticsView: React.FC = () => {
                 </span>
               </div>
 
-              <div style={{ height: '120px', width: '100%', position: 'relative' }}>
-                <svg width="100%" height="100%" viewBox="0 0 300 100" preserveAspectRatio="none">
-                  {/* Grid Lines */}
-                  <line x1="0" y1="25" x2="300" y2="25" stroke="var(--border-hairline)" strokeWidth="0.5" strokeDasharray="4" />
-                  <line x1="0" y1="50" x2="300" y2="50" stroke="var(--border-hairline)" strokeWidth="0.5" strokeDasharray="4" />
-                  <line x1="0" y1="75" x2="300" y2="75" stroke="var(--border-hairline)" strokeWidth="0.5" strokeDasharray="4" />
-
-                  {/* Multi-series thin lines (primary / secondary / tertiary accents) */}
-                  <path
-                    d="M 10,80 L 70,60 L 130,70 L 190,45 L 250,55 L 290,25"
-                    fill="none"
-                    stroke="var(--color-primary)"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  />
-                  <path
-                    d="M 10,88 L 70,72 L 130,78 L 190,60 L 250,68 L 290,45"
-                    fill="none"
-                    stroke="var(--color-secondary)"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  />
-                  <path
-                    d="M 10,92 L 70,84 L 130,86 L 190,74 L 250,80 L 290,62"
-                    fill="none"
-                    stroke="var(--color-tertiary)"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </div>
-
-              {/* Legend */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
-                  {[
-                    { color: 'var(--color-primary)', code: 'CS301' },
-                    { color: 'var(--color-secondary)', code: 'MATH401' },
-                    { color: 'var(--color-tertiary)', code: 'PHY205' },
-                  ].map(s => (
-                    <span key={s.code} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                      <span style={{ width: 10, height: 10, borderRadius: 3, backgroundColor: s.color, display: 'inline-block' }} />
-                      {s.code}
-                    </span>
-                  ))}
+              {!hasTrend ? (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '24px 8px', textAlign: 'center' }}>
+                  <TrendingUp size={28} style={{ color: 'var(--text-muted)' }} />
+                  <p style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                    No attendance marked yet
+                  </p>
+                  <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', maxWidth: 240 }}>
+                    Mark attendance on your timetable slots and your weekly trend will appear here.
+                  </p>
                 </div>
-              </div>
+              ) : (
+                <>
+                  <div style={{ height: '120px', width: '100%', position: 'relative' }}>
+                    <svg width="100%" height="100%" viewBox="0 0 300 100" preserveAspectRatio="none">
+                      {/* Grid Lines — 25 / 50 / 75% attendance */}
+                      <line x1="0" y1="69" x2="300" y2="69" stroke="var(--border-hairline)" strokeWidth="0.5" strokeDasharray="4" />
+                      <line x1="0" y1="50" x2="300" y2="50" stroke="var(--border-hairline)" strokeWidth="0.5" strokeDasharray="4" />
+                      <line x1="0" y1="31" x2="300" y2="31" stroke="var(--border-hairline)" strokeWidth="0.5" strokeDasharray="4" />
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-family-mono)' }}>
-                <span>Week 1</span>
-                <span>Week 2 (Current)</span>
-              </div>
+                      {/* Real attendance series — one thin line per series */}
+                      {chartSeries.map(s => {
+                        const d = buildTrendPath(s.buckets, attendanceTrend.weekStarts);
+                        if (!d) return null;
+                        return (
+                          <path key={s.key} d={d} fill="none" stroke={s.color} strokeWidth="2" strokeLinecap="round" />
+                        );
+                      })}
+                    </svg>
+                  </div>
+
+                  {/* Legend — real subjects */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+                      {chartSeries.map(s => (
+                        <span key={s.key} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                          <span style={{ width: 10, height: 10, borderRadius: 3, backgroundColor: s.color, display: 'inline-block' }} />
+                          {s.label}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* X-axis — real week-start dates */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-family-mono)' }}>
+                    {attendanceTrend.weekStarts.map((ws, i) => (
+                      <span key={i}>
+                        {ws.toLocaleDateString(undefined, { month: 'numeric', day: 'numeric' })}
+                      </span>
+                    ))}
+                  </div>
+                </>
+              )}
             </GlassCard>
 
             {/* Weekday Absence Frequency Bars — lavender track, red intensity */}
