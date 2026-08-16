@@ -7,9 +7,10 @@ import { AppShell } from '../components/layout/AppShell';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { GlobalErrorCatcher } from '../components/GlobalErrorCatcher';
 import { ToastProvider } from '../components/ui';
-import { ActivationView } from '../features/auth/ActivationView';
-import { OnboardingView } from '../features/auth/OnboardingView';
 import { NotFoundView } from '../features/notfound/NotFoundView';
+
+const ActivationView = React.lazy(() => import('../features/auth/ActivationView').then(m => ({ default: m.ActivationView })));
+const OnboardingView = React.lazy(() => import('../features/auth/OnboardingView').then(m => ({ default: m.OnboardingView })));
 
 const KNOWN_SUBVIEWS = new Set([
   'attendance',
@@ -113,7 +114,9 @@ export const App: React.FC = () => {
   if (supabaseConfigured && authStatus === 'unactivated') {
     return (
       <ErrorBoundary scope="Activation Gate">
-        <ActivationView />
+        <Suspense fallback={<ViewLoading scope="Activation Gate" />}>
+          <ActivationView />
+        </Suspense>
       </ErrorBoundary>
     );
   }
@@ -122,7 +125,9 @@ export const App: React.FC = () => {
   if (needsOnboarding) {
     return (
       <ErrorBoundary scope="Student Onboarding">
-        <OnboardingView />
+        <Suspense fallback={<ViewLoading scope="Student Onboarding" />}>
+          <OnboardingView />
+        </Suspense>
       </ErrorBoundary>
     );
   }
