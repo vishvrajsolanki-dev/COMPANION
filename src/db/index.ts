@@ -250,12 +250,22 @@ export async function migrateLegacyDataIfNeeded(
   // Legacy database has nothing to copy → nothing to migrate.
   if ((await legacyDB.semesters.count()) === 0) return false;
 
-  await accountDB.transaction('rw', accountDB.tables, async () => {
-    for (const name of DB_TABLE_NAMES) {
-      const rows = await legacyDB.table(name).toArray();
-      if (rows.length > 0) await accountDB.table(name).bulkPut(rows);
+  // Read legacy table rows outside accountDB transaction to avoid cross-database transaction errors.
+  const legacyDataMap = new Map<string, any[]>();
+  for (const name of DB_TABLE_NAMES) {
+    const rows = await legacyDB.table(name).toArray();
+    if (rows.length > 0) {
+      legacyDataMap.set(name, rows);
     }
-  });
+  }
+
+  if (legacyDataMap.size > 0) {
+    await accountDB.transaction('rw', accountDB.tables, async () => {
+      for (const [name, rows] of legacyDataMap.entries()) {
+        await accountDB.table(name).bulkPut(rows);
+      }
+    });
+  }
 
   return true;
 }

@@ -25,11 +25,11 @@ export async function ensureAditCalendarDefaults(target: AcademicOSDB) {
  *
  *   1. Already populated → no-op.
  *   2. Owner upgrade path → one-time copy of the legacy `AcademicOSDB`.
- *   3. Otherwise → fresh install: seed the standard ADIT reference data.
+ *   3. Fresh install → starts with an empty workspace (user populates via onboarding/import).
  *
  * Students/admins never inherit the legacy (owner) database — that is the A2
- * isolation guarantee. Seeding respects `academic_os_user_cleared`, so a user
- * who deliberately wiped their database is not re-seeded.
+ * isolation guarantee. Seeding of demo data is NOT performed automatically on
+ * fresh production activations; users start with an empty academic workspace.
  */
 export async function ensureAccountData(accountId: string, role: 'student' | 'admin' | 'owner' | string): Promise<void> {
   const accountDB = getDB(accountId);
@@ -38,10 +38,7 @@ export async function ensureAccountData(accountId: string, role: 'student' | 'ad
   if ((await accountDB.semesters.count()) > 0) return;
 
   // Owner upgrade: copy the pre-account database (one-time).
-  const migrated = await migrateLegacyDataIfNeeded(accountId, role);
-  if (migrated) return;
-
-  await seedDatabase(accountDB);
+  await migrateLegacyDataIfNeeded(accountId, role);
 }
 
 /** Seeds the given database if it is empty and the user hasn't cleared data. */
