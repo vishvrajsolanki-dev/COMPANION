@@ -28,10 +28,8 @@ const { rpcMock, supabaseHolder, setSupabase } = vi.hoisted(() => {
 
 vi.mock('./supabase', () => ({
   supabaseConfigured: true,
-  // Re-read through the shared holder so tests can null the client out.
-  get supabase() {
-    return supabaseHolder.current;
-  },
+  getSupabase: async () => supabaseHolder.current,
+  getSupabaseSync: () => supabaseHolder.current,
 }));
 
 import { saveStudentProfile } from './accessKeys';

@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { getSupabase } from './supabase';
 import { useAuthStore } from '../store/authStore';
 
 /**
@@ -283,6 +283,7 @@ export interface GenerateKeyOptions {
 }
 
 async function rpc<T>(name: string, params: Record<string, unknown>, map: (raw: unknown) => AdminResult<T>): Promise<AdminResult<T>> {
+  const supabase = await getSupabase();
   if (!supabase) return { ok: false, error: 'NETWORK' };
   try {
     const { data, error } = await supabase.rpc(name, params);

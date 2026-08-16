@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { getSupabase } from './supabase';
 import { getAdminCredential, classifyPostgrestError } from './adminKeys';
 
 /**
@@ -106,6 +106,7 @@ export async function getReferenceSubjects(opts?: {
   department?: string;
   semester?: number;
 }): Promise<{ data: ReferenceSubject[]; error: ReferenceDataErrorCode | null; detail?: string }> {
+  const supabase = await getSupabase();
   if (!supabase) return { data: [], error: 'NETWORK' };
   try {
     let q = supabase.from('reference_subjects').select('*').eq('is_deleted', false);
@@ -134,6 +135,7 @@ export async function getReferenceSubjects(opts?: {
 export async function getReferenceFaculty(opts?: {
   department?: string;
 }): Promise<{ data: ReferenceFaculty[]; error: ReferenceDataErrorCode | null; detail?: string }> {
+  const supabase = await getSupabase();
   if (!supabase) return { data: [], error: 'NETWORK' };
   try {
     let q = supabase.from('reference_faculty').select('*').eq('is_deleted', false);
@@ -176,6 +178,7 @@ export async function upsertReferenceData(
   subjects: Array<{ course_code: string; name: string; department: string; semester: number; credits?: number; ltp?: string | null }>,
 ): Promise<AdminRefResult<UpsertResult>> {
   const cred = getAdminCredential();
+  const supabase = await getSupabase();
   if (!cred || !supabase) return { ok: false, error: 'NETWORK' };
 
   try {
@@ -210,6 +213,7 @@ export async function upsertReferenceData(
  */
 export async function listReferenceDataSummary(): Promise<AdminRefResult<ReferenceDataSummary>> {
   const cred = getAdminCredential();
+  const supabase = await getSupabase();
   if (!cred || !supabase) return { ok: false, error: 'NETWORK' };
 
   try {

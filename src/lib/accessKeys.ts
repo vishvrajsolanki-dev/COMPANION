@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { getSupabase } from './supabase';
 import type { Profile } from '../store/profileStore';
 
 /** Roles assigned by an access key — matches profileStore's Profile.role. */
@@ -103,6 +103,7 @@ export async function activateAccessKey(
   deviceId: string,
   deviceName?: string | null,
 ): Promise<ActivationResult> {
+  const supabase = await getSupabase();
   if (!supabase) return { ok: false, error: 'SUPABASE_NOT_CONFIGURED' };
 
   try {
@@ -133,7 +134,9 @@ export async function saveStudentProfile(
   department: string,
   enrollmentNumber: string,
 ): Promise<boolean> {
-  if (!supabase || !sessionToken) return false;
+  if (!sessionToken) return false;
+  const supabase = await getSupabase();
+  if (!supabase) return false;
   try {
     const { data, error } = await supabase.rpc('save_student_profile', {
       p_session_token: sessionToken,
@@ -159,7 +162,9 @@ export async function saveStudentProfile(
 export async function signOutSession(
   sessionToken: string,
 ): Promise<void> {
-  if (!supabase || !sessionToken) return;
+  if (!sessionToken) return;
+  const supabase = await getSupabase();
+  if (!supabase) return;
   try {
     await supabase.rpc('sign_out_session', {
       p_session_token: sessionToken,
