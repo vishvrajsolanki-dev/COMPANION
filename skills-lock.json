@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "skills": {
+    "playwright-automation": {
+      "source": "petrkindlmann/qa-skills",
+      "sourceType": "github",
+      "skillPath": "skills/playwright-automation/SKILL.md",
+      "computedHash": "0eb62e8c9d03ff836bc96e38ea767a8343ad0487ab8003939aebec1a91f92785"
+    },
+    "test-strategy": {
+      "source": "petrkindlmann/qa-skills",
+      "sourceType": "github",
+      "skillPath": "skills/test-strategy/SKILL.md",
+      "computedHash": "aade285b6f0804632b13dd14d4695006e64dc7b820d76038ef8e1d7a623da1fc"
+    }
+  }
+}

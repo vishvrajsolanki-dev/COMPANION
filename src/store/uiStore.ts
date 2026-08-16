@@ -27,7 +27,8 @@ export type SubviewType =
   | 'calendar-import'
   | 'calendar-events'
   | 'admin-portal'
-  | 'style-guide';
+  | 'style-guide'
+  | 'not-found';
 
 interface UIState {
   activeTab: TabType;
@@ -41,6 +42,7 @@ interface UIState {
   navigateToSubview: (subview: SubviewType, data?: { subjectId?: string; examId?: string; noteId?: string }) => void;
   closeSubview: () => void;
   toggleTheme: () => void;
+  setTheme: (theme: 'light' | 'dark') => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -73,5 +75,14 @@ export const useUIStore = create<UIState>((set) => ({
       /* ignore — persistence is best-effort */
     }
     return { theme: nextTheme };
+  }),
+  setTheme: (theme) => set(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    try {
+      localStorage.setItem(THEME_STORAGE_KEY, theme);
+    } catch {
+      /* ignore */
+    }
+    return { theme };
   }),
 }));

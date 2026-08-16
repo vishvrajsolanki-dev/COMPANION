@@ -5,7 +5,7 @@ import { useUIStore, SubviewType } from '../../store/uiStore';
 import { useProfileStore, profileFirstName } from '../../store/profileStore';
 import { todayISO, isToday, nowMinutes, timePart, datePart, formatHeaderDate } from '../../utils/date';
 import styles from './QuietDashboard.module.css';
-import { StatTile } from '../../components/ui';
+import { StatTile, Card, Badge, Banner } from '../../components/ui';
 import {
   AlertTriangle, Clock, MapPin, CheckCircle, ArrowRight,
   BookOpen, BarChart2, Award, Calendar
@@ -20,7 +20,7 @@ export const QuietDashboard: React.FC = () => {
   const navigateToSubview = useUIStore(state => state.navigateToSubview);
   const setActiveTab = useUIStore(state => state.setActiveTab);
 
-  // Real-time clock — ticks every minute so the "Starts at HH:MM" label stays live
+  // Real-time clock — ticks every minute so the countdown & greeting stay live
   const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
@@ -28,15 +28,14 @@ export const QuietDashboard: React.FC = () => {
     return () => clearInterval(timer);
   }, []);
 
-  // Real-date engine — no simulated "Aug 5 2026" hardcoding anymore
   const profile = useProfileStore(s => s.profile);
   const firstName = profileFirstName(profile);
   const now = currentTime;
 
-  // Format date header from the actual clock
+  // Format date header
   const dateStr = formatHeaderDate(now);
 
-  // Slots for the real current date
+  // Slots for current date
   const todaySlots = lectureSlots
     .filter(slot => {
       if (slot.is_deleted) return false;
@@ -44,9 +43,7 @@ export const QuietDashboard: React.FC = () => {
     })
     .sort((a, b) => a.start_time.localeCompare(b.start_time));
 
-  // When the seeded semester has no class on today's real date (demo data is
-  // anchored to the ADIT ODD 2026 semester), fall back to the nearest upcoming
-  // slot so the hero card is never dead.
+  // Fallback slot if today has no slots scheduled
   const upcomingSlots = lectureSlots
     .filter(s => !s.is_deleted && s.status !== 'cancelled')
     .filter(s => datePart(s.start_time) >= todayISO())
@@ -54,103 +51,99 @@ export const QuietDashboard: React.FC = () => {
   const fallbackSlot = todaySlots.length > 0 ? null : upcomingSlots[0] || null;
   const isFallback = !!fallbackSlot;
 
-  // In fallback mode pick the slot as-is (no time-greater-than-now filter,
-  // since the slot may be on a different day).  In normal mode pick the next
-  // non-cancelled slot whose start time is after the real clock.
+  // Next lecture resolution
   const nextSlot = isFallback
     ? fallbackSlot
     : todaySlots.find(slot => slot.status !== 'cancelled' && timePart(slot.start_time) > nowMinutes()) || null;
 
   const nextSubject = nextSlot ? subjects.find(s => s.id === nextSlot.subject_id) : null;
 
-  // Compute countdown display if next class exists
   let countdownText = '';
   if (nextSlot) {
     countdownText = `Starts at ${timePart(nextSlot.start_time)}`;
   }
 
-  // Time-of-day greeting
+  // Greeting by hour
   const hour = now.getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
 
-  // Active tasks due soon (max 2-3), sorted by due date ascending
+  // Tasks due soon
   const activeTasks = tasks
     .filter(t => t.status !== 'completed' && !t.is_deleted)
     .sort((a, b) => (a.due_at || '').localeCompare(b.due_at || ''))
     .slice(0, 3);
 
-  // SVG circular ring configurations
-  const radius = 28;
+  // SVG progress ring math
+  const radius = 26;
   const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - (overall.overallPercentage / 100) * circumference;
+  const safePercentage = Math.min(100, Math.max(0, overall.overallPercentage || 0));
+  const strokeDashoffset = circumference - (safePercentage / 100) * circumference;
 
   return (
-    <div className={styles.container}>
+    <div className={styles.container} data-testid="today-view">
       {/* Header Greeting */}
-      <div className={styles.header}>
-        <h1 className={styles.greeting}>{greeting}{firstName ? `, ${firstName}` : ''}</h1>
+      <header className={styles.header}>
+        <h1 className={styles.greeting}>
+          {greeting}{firstName ? `, ${firstName}` : ''}
+        </h1>
         <p className={styles.dateSubtitle}>{dateStr}</p>
-      </div>
+      </header>
 
-      {/* SETUP GUIDE BANNER — shown only on a fresh account (no subjects yet).
-          Walks the user through the real setup order so the app is never a
-          blank page (Bug F#12). */}
+      {/* Setup Guide Banner — shown only on fresh account */}
       {subjects.length === 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, margin: 'var(--space-sm) var(--space-md)', padding: 'var(--space-md)', backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius-card)', border: '1px solid var(--border-hairline)', boxShadow: 'var(--shadow-card)' }}>
-          <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>Get started in 4 steps</div>
-          {[
-            { label: 'Set up your semester', sub: 'Dates & active term', go: 'semester-setup' as SubviewType },
-            { label: 'Add your subjects', sub: 'Course codes & credits', go: 'manage-subjects' as SubviewType },
-            { label: 'Build your timetable', sub: 'Weekly patterns → slots', go: 'timetable-builder' as SubviewType },
-            { label: 'Mark attendance', sub: 'After each lecture', go: 'attendance' as SubviewType },
-          ].map((step, i) => (
-            <button
-              key={step.go}
-              onClick={() => navigateToSubview(step.go)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10,
-                padding: '8px 4px',
-                borderRadius: 'var(--radius-card)',
-                textAlign: 'left',
-                cursor: 'pointer',
-              }}
-            >
-              <span style={{ width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', backgroundColor: 'var(--color-primary)', color: '#FFFFFF', fontSize: '0.75rem', fontWeight: 700, flexShrink: 0 }}>
-                {i + 1}
-              </span>
-              <span style={{ flex: 1, minWidth: 0 }}>
-                <span style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>{step.label}</span>
-                <span style={{ display: 'block', fontSize: '0.72rem', color: 'var(--text-secondary)' }}>{step.sub}</span>
-              </span>
-              <ArrowRight size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
-            </button>
-          ))}
-        </div>
+        <Card variant="surface-low" className={styles.setupCard}>
+          <div className={styles.setupHeader}>Get started in 4 steps</div>
+          <div className={styles.setupList}>
+            {[
+              { label: 'Set up your semester', sub: 'Dates & active term', go: 'semester-setup' as SubviewType },
+              { label: 'Add your subjects', sub: 'Course codes & credits', go: 'manage-subjects' as SubviewType },
+              { label: 'Build your timetable', sub: 'Weekly patterns → slots', go: 'timetable-builder' as SubviewType },
+              { label: 'Mark attendance', sub: 'After each lecture', go: 'attendance' as SubviewType },
+            ].map((step, i) => (
+              <button
+                key={step.go}
+                onClick={() => navigateToSubview(step.go)}
+                className={styles.setupStepBtn}
+              >
+                <span className={styles.setupStepBadge}>{i + 1}</span>
+                <span className={styles.setupStepText}>
+                  <span className={styles.setupStepTitle}>{step.label}</span>
+                  <span className={styles.setupStepSub}>{step.sub}</span>
+                </span>
+                <ArrowRight size={14} className={styles.setupStepArrow} />
+              </button>
+            ))}
+          </div>
+        </Card>
       )}
 
-      {/* CONDITIONAL WARNING BANNER (Quiet Dashboard Rule: ONLY show if isAnyAtRisk is true) */}
+      {/* Attendance Risk Alert Banner */}
       {overall.isAnyAtRisk && (
-        <div className={styles.alertBanner} onClick={() => navigateToSubview('attendance')}>
-          <AlertTriangle size={20} style={{ flexShrink: 0 }} />
+        <div
+          className={styles.alertBanner}
+          onClick={() => navigateToSubview('attendance')}
+          role="button"
+          tabIndex={0}
+          aria-label="Attendance Alert: view details"
+        >
+          <AlertTriangle size={20} className={styles.alertIcon} />
           <div className={styles.alertText}>
             Attendance Alert: {overall.atRiskSubjectIds.length} subject(s) below 75% threshold.
           </div>
-          <ArrowRight size={16} style={{ marginLeft: 'auto' }} />
+          <ArrowRight size={16} className={styles.alertArrow} />
         </div>
       )}
 
-      {/* Next Lecture Hero Card */}
+      {/* Hero Next Lecture Card */}
       {nextSlot && nextSubject ? (
-        <div className={styles.heroCard}>
+        <div className={`${styles.heroCard} ${styles.heroAccent}`}>
           <div className={styles.heroTop}>
-            <span className={styles.heroTag}>{isFallback ? 'Next Up' : 'Next Class Today'}</span>
+            <span className={styles.heroTag}>{isFallback ? 'NEXT UP' : 'NEXT CLASS TODAY'}</span>
             {countdownText && (
               <span className={styles.countdownBadge}>{countdownText}</span>
             )}
           </div>
-          <h3 className={styles.heroTitle}>{nextSubject.name}</h3>
+          <h2 className={styles.heroTitle}>{nextSubject.name}</h2>
           <div className={styles.heroMeta}>
             <span
               className={styles.subjectPill}
@@ -172,78 +165,110 @@ export const QuietDashboard: React.FC = () => {
       ) : (
         <div className={styles.heroCard}>
           <div className={styles.heroTop}>
-            <span className={styles.heroTag}>Schedule Status</span>
+            <span className={styles.heroTag}>SCHEDULE STATUS</span>
           </div>
-          <h3 className={styles.heroTitle}>No more classes today</h3>
+          <h2 className={styles.heroTitle}>No more classes today</h2>
           <p className={styles.dateSubtitle}>All scheduled sessions completed.</p>
         </div>
       )}
 
-      {/* Quick Access Grid Links */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 'var(--space-md)' }}>
-        <button className={styles.quickLinkCard} onClick={() => navigateToSubview('attendance')}>
-          <Award size={20} className={styles.quickLinkIcon} style={{ color: 'var(--color-primary)' }} />
-          <span className={styles.quickLinkLabel}>Attendance</span>
+      {/* Quick Access Grid */}
+      <section className={styles.quickGrid} aria-label="Quick Navigation">
+        <button
+          className={styles.quickCard}
+          onClick={() => navigateToSubview('attendance')}
+          aria-label="Attendance"
+        >
+          <div className={styles.quickIconTile}>
+            <Award size={20} />
+          </div>
+          <span className={styles.quickLabel}>Attendance</span>
         </button>
 
-        <button className={styles.quickLinkCard} onClick={() => navigateToSubview('notes')}>
-          <BookOpen size={20} className={styles.quickLinkIcon} style={{ color: 'var(--color-secondary)' }} />
-          <span className={styles.quickLinkLabel}>Study Notes</span>
+        <button
+          className={styles.quickCard}
+          onClick={() => navigateToSubview('notes')}
+          aria-label="Study Notes"
+        >
+          <div className={styles.quickIconTile}>
+            <BookOpen size={20} />
+          </div>
+          <span className={styles.quickLabel}>Study Notes</span>
         </button>
 
-        <button className={styles.quickLinkCard} onClick={() => navigateToSubview('exams')}>
-          <Calendar size={20} className={styles.quickLinkIcon} style={{ color: 'var(--color-tertiary)' }} />
-          <span className={styles.quickLinkLabel}>Exams & Quizzes</span>
+        <button
+          className={styles.quickCard}
+          onClick={() => navigateToSubview('exams')}
+          aria-label="Exams & Quizzes"
+        >
+          <div className={styles.quickIconTile}>
+            <Calendar size={20} />
+          </div>
+          <span className={styles.quickLabel}>Exams & Quizzes</span>
         </button>
 
-        <button className={styles.quickLinkCard} onClick={() => navigateToSubview('analytics')}>
-          <BarChart2 size={20} className={styles.quickLinkIcon} style={{ color: 'var(--color-success)' }} />
-          <span className={styles.quickLinkLabel}>Performance</span>
+        <button
+          className={styles.quickCard}
+          onClick={() => navigateToSubview('analytics')}
+          aria-label="Performance"
+        >
+          <div className={styles.quickIconTile}>
+            <BarChart2 size={20} />
+          </div>
+          <span className={styles.quickLabel}>Performance</span>
         </button>
-      </div>
+      </section>
 
-      {/* Metric tiles */}
-      <div className={styles.statRow}>
+      {/* Metric Tiles Row */}
+      <section className={styles.statRow} aria-label="Daily Metrics">
         <StatTile value={todaySlots.length} label="Classes Today" />
         <StatTile value={activeTasks.length} label="Active Tasks" />
         <StatTile
           value={`${Math.round(overall.overallPercentage)}%`}
           label="Attendance"
-          valueColor={overall.isAnyAtRisk ? 'var(--color-danger)' : 'var(--color-success)'}
+          valueColor={overall.isAnyAtRisk ? 'var(--error)' : 'var(--primary)'}
         />
-      </div>
+      </section>
 
-      {/* Attendance Ring and Summary */}
-      <div className={styles.attendanceCard} onClick={() => navigateToSubview('attendance')}>
+      {/* Attendance Ring and Summary Card */}
+      <div
+        className={styles.attendanceCard}
+        onClick={() => navigateToSubview('attendance')}
+        role="button"
+        tabIndex={0}
+        aria-label="Attendance Summary"
+      >
         <div className={styles.ringWrapper}>
-          <svg width="64" height="64" viewBox="0 0 64 64">
+          <svg width="60" height="60" viewBox="0 0 60 60">
             <circle
-              cx="32"
-              cy="32"
+              cx="30"
+              cy="30"
               r={radius}
               fill="transparent"
-              stroke="var(--neutral-200)"
-              strokeWidth="5"
+              stroke="var(--surface-container-high)"
+              strokeWidth="4.5"
             />
             <circle
-              cx="32"
-              cy="32"
+              cx="30"
+              cy="30"
               r={radius}
               fill="transparent"
-              stroke={overall.isAnyAtRisk ? 'var(--color-danger)' : 'var(--color-primary)'}
-              strokeWidth="5"
+              stroke={overall.isAnyAtRisk ? 'var(--error)' : 'var(--primary)'}
+              strokeWidth="4.5"
               strokeDasharray={circumference}
               strokeDashoffset={strokeDashoffset}
               strokeLinecap="round"
-              transform="rotate(-90 32 32)"
+              transform="rotate(-90 30 30)"
               style={{ transition: 'stroke-dashoffset 0.4s ease' }}
             />
           </svg>
-          <span className={styles.ringPercentage}>{Math.round(overall.overallPercentage)}%</span>
+          <span className={styles.ringPercentage}>
+            {Math.round(overall.overallPercentage)}%
+          </span>
         </div>
 
         <div className={styles.attendanceInfo}>
-          <span 
+          <span
             className={`${styles.attendanceStatusLabel} ${
               overall.isAnyAtRisk ? styles.labelRisk : styles.labelHealthy
             }`}
@@ -251,73 +276,93 @@ export const QuietDashboard: React.FC = () => {
             {overall.isAnyAtRisk ? 'Risk Detected' : `${Math.round(overall.overallPercentage)}% Healthy`}
           </span>
           <span className={styles.attendanceSubtext}>
-            {overall.isAnyAtRisk 
-              ? 'Attendance requires recovery action' 
+            {overall.isAnyAtRisk
+              ? 'Attendance requires recovery action'
               : 'All subjects are safely above 75% threshold'}
           </span>
         </div>
       </div>
 
       {/* Tasks Section */}
-      <div className={styles.section}>
+      <section className={styles.section}>
         <div className={styles.sectionHeader}>
-          <h3 className={styles.overline}>Tasks Due Soon</h3>
-          <button className={styles.viewAllButton} onClick={() => setActiveTab('tasks')}>
+          <h3 className={styles.overline}>TASKS DUE SOON</h3>
+          <button
+            className={styles.viewAllBtn}
+            onClick={() => setActiveTab('tasks')}
+            aria-label="View All Tasks"
+          >
             View All <ArrowRight size={14} />
           </button>
         </div>
 
         {activeTasks.length === 0 ? (
-          <div className={styles.emptyTaskCard}>
-            <CheckCircle size={16} style={{ color: 'var(--color-success)' }} />
+          <div className={styles.emptyCard}>
+            <CheckCircle size={16} className={styles.emptyIconSuccess} />
             <span>All tasks completed!</span>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
+          <div className={styles.stackList}>
             {activeTasks.map(t => {
               const sub = subjects.find(s => s.id === t.subject_id);
               return (
-                <div key={t.id} className={styles.taskCard} onClick={() => setActiveTab('tasks')}>
-                  <div 
-                    className={styles.priorityDot} 
-                    style={{ 
-                      backgroundColor: 
+                <div
+                  key={t.id}
+                  className={styles.taskCard}
+                  onClick={() => setActiveTab('tasks')}
+                  role="button"
+                  tabIndex={0}
+                >
+                  <div
+                    className={styles.priorityDot}
+                    style={{
+                      backgroundColor:
                         t.priority === 'urgent' || t.priority === 'high'
-                          ? 'var(--color-danger)'
+                          ? 'var(--error)'
                           : t.priority === 'medium'
-                          ? 'var(--color-warning)'
-                          : 'var(--text-muted)'
+                          ? 'var(--secondary)'
+                          : 'var(--on-surface-variant)',
                     }}
                   />
-                  <div style={{ flex: 1 }}>
+                  <div className={styles.taskContent}>
                     <div className={styles.taskTitle}>{t.title}</div>
-                    {sub && <span className={styles.taskSubjectCode} style={{ color: sub.color }}>{sub.code}</span>}
+                    {sub && (
+                      <span className={styles.taskSubjectCode} style={{ color: sub.color }}>
+                        {sub.code}
+                      </span>
+                    )}
                   </div>
                   <span className={styles.taskDueText}>
-                    {t.due_at ? new Date(t.due_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'No date'}
+                    {t.due_at
+                      ? new Date(t.due_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                      : 'No date'}
                   </span>
                 </div>
               );
             })}
           </div>
         )}
-      </div>
+      </section>
 
-      {/* Today's Timeline */}
-      <div className={styles.section}>
+      {/* Today's Schedule Timeline Section */}
+      <section className={styles.section}>
         <div className={styles.sectionHeader}>
-          <h3 className={styles.overline}>Today's Schedule</h3>
-          <button className={styles.viewAllButton} onClick={() => setActiveTab('schedule')}>
+          <h3 className={styles.overline}>TODAY'S SCHEDULE</h3>
+          <button
+            className={styles.viewAllBtn}
+            onClick={() => setActiveTab('schedule')}
+            aria-label="View Timetable"
+          >
             Timetable <ArrowRight size={14} />
           </button>
         </div>
 
         {todaySlots.length === 0 ? (
-          <div className={styles.emptyTaskCard}>
+          <div className={styles.emptyCard}>
             <span>No lectures scheduled today.</span>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
+          <div className={styles.stackList}>
             {todaySlots.map(slot => {
               const sub = subjects.find(s => s.id === slot.subject_id);
               if (!sub) return null;
@@ -331,7 +376,10 @@ export const QuietDashboard: React.FC = () => {
                   <div className={styles.timelineColorBar} style={{ backgroundColor: sub.color }} />
                   <div className={styles.timelineBody}>
                     <div className={styles.timelineHeader}>
-                      <span className={styles.timelineSubjectCode} style={{ backgroundColor: `${sub.color}15`, color: sub.color }}>
+                      <span
+                        className={styles.timelineSubjectCode}
+                        style={{ backgroundColor: `${sub.color}15`, color: sub.color }}
+                      >
                         {sub.code}
                       </span>
                       <span className={styles.timelineTime}>
@@ -346,9 +394,9 @@ export const QuietDashboard: React.FC = () => {
                         <MapPin size={12} style={{ marginRight: '4px' }} />
                         {slot.room_id || 'Classroom'}
                       </span>
-                      {isCancelled && <span className={`${styles.badge} ${styles.badgeCancelled}`}>Cancelled</span>}
-                      {isRescheduled && <span className={`${styles.badge} ${styles.badgeRescheduled}`}>Rescheduled</span>}
-                      {isExtra && <span className={`${styles.badge} ${styles.badgeExtra}`}>Extra Class</span>}
+                      {isCancelled && <Badge tone="danger">Cancelled</Badge>}
+                      {isRescheduled && <Badge tone="warning">Rescheduled</Badge>}
+                      {isExtra && <Badge tone="info">Extra Class</Badge>}
                     </div>
                   </div>
                 </div>
@@ -356,7 +404,9 @@ export const QuietDashboard: React.FC = () => {
             })}
           </div>
         )}
-      </div>
+      </section>
     </div>
   );
 };
+
+export default QuietDashboard;

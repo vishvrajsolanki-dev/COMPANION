@@ -1,17 +1,25 @@
-/* Academic Core bottom tab bar: white surface, hairline top border,
-   blue active icon+label, neutral-gray inactive. No glass, no pill glow. */
+/* Academic OS canonical bottom tab bar: 64px height, safe-area aware,
+   surface container lowest fill, 1px outline-variant top border. */
 .navBar {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
-  height: var(--tabbar-height);
-  background-color: var(--bg-card);
-  border-top: 1px solid var(--border-hairline);
+  height: calc(64px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  background-color: var(--surface-container-lowest);
+  border-top: 1px solid var(--outline-variant);
   display: flex;
   align-items: center;
   justify-content: space-around;
   z-index: 50;
+}
+
+/* Hide mobile tab bar on desktop/tablet (width >= 768px and height > 500px) */
+@media (min-width: 768px) and (min-height: 501px) {
+  .navBar {
+    display: none !important;
+  }
 }
 
 .tabItem {
@@ -22,35 +30,41 @@
   gap: 3px;
   flex: 1;
   height: 100%;
-  color: var(--text-muted);
+  min-height: 44px; /* Touch target requirement */
+  color: var(--on-surface-variant);
   transition: color 0.15s ease;
+  background: none;
+  border: none;
+  cursor: pointer;
 }
 
 .tabItemActive {
-  color: var(--color-primary);
+  color: var(--primary);
 }
 
-/* Icon container — no pill background in Academic Core; color carries state. */
 .tabPill {
-  width: 34px;
-  height: 30px;
+  width: 36px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: color 0.18s ease;
+  border-radius: var(--radius-full);
+  transition: background-color 0.18s ease, color 0.18s ease;
 }
 
 .tabPillActive {
-  color: var(--color-primary);
+  color: var(--primary);
+  background-color: var(--surface-container-low);
 }
 
 .tabLabel {
-  font-size: 0.72rem;
-  font-weight: 600;
+  font-family: var(--font-primary);
+  font-size: 0.75rem;
+  font-weight: 500;
   transition: color 0.15s ease;
 }
 
 .tabItemActive .tabLabel {
-  color: var(--color-primary);
+  color: var(--primary);
   font-weight: 700;
 }

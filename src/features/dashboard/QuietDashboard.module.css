@@ -1,128 +1,238 @@
-/* Academic OS — Home (Quiet Dashboard) matched to DESIGN_SYSTEM.md:
-   white cards on flat warm-gray page, hairline borders, soft shadows,
-   pill badges, semantic status colors. No gradients, no glass blur. */
+/* Academic OS — Today View (Refined Stitch Design System Compliance)
+   Canonical Screens: 0f5e4d00c6f44e31bca196d955e74848 (Light) & 5bc8c0ad02ff4bdb8027e493427a7ea9 (Dark)
+   Theme Parity: Uses CSS custom properties (--surface-container-lowest, --outline-variant, etc.) */
+
 .container {
   display: flex;
   flex-direction: column;
-  padding: var(--space-md);
-  gap: var(--space-lg);
-  padding-bottom: var(--tabbar-clear);
-  overflow-y: auto;
+  gap: var(--stack-lg, 24px);
+  padding: var(--gutter-mobile, 16px);
+  padding-bottom: calc(var(--tabbar-clear, 80px) + 16px);
+  max-width: 1080px;
+  margin: 0 auto;
+  width: 100%;
 }
 
+@media (min-width: 768px) {
+  .container {
+    padding: var(--gutter-desktop, 32px);
+    gap: var(--stack-lg, 32px);
+  }
+}
+
+/* Header Greeting */
 .header {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
 }
 
 .greeting {
+  font-family: var(--font-primary);
   font-size: 1.5rem;
   font-weight: 700;
-  color: var(--text-primary);
-  letter-spacing: -0.5px;
+  color: var(--on-surface);
+  letter-spacing: -0.02em;
+  margin: 0;
+  line-height: 1.2;
 }
 
 .dateSubtitle {
-  font-size: 0.85rem;
+  font-family: var(--font-primary);
+  font-size: 0.875rem;
   font-weight: 500;
-  color: var(--text-secondary);
+  color: var(--on-surface-variant);
+  margin: 0;
 }
 
-/* Section overline — uppercase micro-label */
-.overline {
+/* Setup Guide Card */
+.setupCard {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+}
+
+.setupHeader {
+  font-family: var(--font-primary);
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--on-surface);
+}
+
+.setupList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.setupStepBtn {
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-size: var(--text-2xs);
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--text-muted);
+  gap: 12px;
+  padding: 10px 12px;
+  min-height: 44px;
+  border-radius: var(--radius-md, 8px);
+  background-color: var(--surface-container-low);
+  border: 1px solid var(--outline-variant);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.1s ease;
 }
 
-/* Alert Banner — soft danger pill card */
+.setupStepBtn:hover {
+  background-color: var(--surface-container-high);
+}
+
+.setupStepBtn:active {
+  transform: scale(0.99);
+}
+
+.setupStepBadge {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: var(--primary);
+  color: var(--on-primary);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.setupStepText {
+  flex: 1;
+  min-width: 0;
+}
+
+.setupStepTitle {
+  display: block;
+  font-family: var(--font-primary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--on-surface);
+}
+
+.setupStepSub {
+  display: block;
+  font-family: var(--font-primary);
+  font-size: 0.75rem;
+  color: var(--on-surface-variant);
+}
+
+.setupStepArrow {
+  color: var(--on-surface-variant);
+  flex-shrink: 0;
+}
+
+/* Alert Banner */
 .alertBanner {
   display: flex;
   align-items: center;
-  gap: var(--space-sm);
-  padding: var(--space-md);
-  border-radius: var(--radius-card);
-  background-color: var(--color-danger-bg);
-  border: 1px solid var(--color-danger-bg);
-  color: var(--color-danger-fg);
+  gap: 12px;
+  padding: 14px 16px;
+  min-height: 44px;
+  border-radius: var(--radius-lg, 12px);
+  background-color: var(--error-container);
+  border: 1px solid var(--error-container);
+  color: var(--on-error-container);
   cursor: pointer;
-  animation: fadeIn 0.3s ease;
-  transition: transform 0.12s ease, box-shadow 0.15s ease;
+  transition: transform 0.12s ease, opacity 0.15s ease;
+}
+
+.alertBanner:hover {
+  opacity: 0.95;
 }
 
 .alertBanner:active {
   transform: scale(0.98);
 }
 
-.alertText {
-  font-size: 0.85rem;
-  font-weight: 600;
+.alertIcon {
+  flex-shrink: 0;
 }
 
-/* Hero Next Lecture Card — white card, hairline border, soft shadow */
+.alertText {
+  font-family: var(--font-primary);
+  font-size: 0.875rem;
+  font-weight: 600;
+  flex: 1;
+}
+
+.alertArrow {
+  flex-shrink: 0;
+}
+
+/* Hero Next Lecture Card */
 .heroCard {
-  border-radius: var(--radius-card);
-  background-color: var(--bg-card);
-  border: 1px solid var(--border-hairline);
-  box-shadow: var(--shadow-card);
-  padding: var(--space-lg);
+  border-radius: var(--radius-lg, 12px);
+  background-color: var(--surface-container-lowest);
+  border: 1px solid var(--outline-variant);
+  padding: 20px;
   display: flex;
   flex-direction: column;
-  gap: var(--space-sm);
+  gap: 12px;
   position: relative;
   overflow: hidden;
+}
+
+.heroAccent::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background-color: var(--primary-container);
 }
 
 .heroTop {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  position: relative;
-  z-index: 1;
+  gap: 8px;
 }
 
 .heroTag {
-  font-size: 0.75rem;
+  font-family: var(--font-mono);
+  font-size: 11px;
   font-weight: 700;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--text-secondary);
+  color: var(--on-surface-variant);
 }
 
 .countdownBadge {
-  font-family: var(--font-family-mono);
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: var(--color-primary);
-  background-color: var(--bg-card-tint);
-  padding: 4px 12px;
-  border-radius: var(--radius-pill);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--primary);
+  background-color: var(--surface-container-low);
+  padding: 4px 10px;
+  border-radius: var(--radius-full, 9999px);
+  border: 1px solid var(--outline-variant);
 }
 
 .heroTitle {
+  font-family: var(--font-primary);
   font-size: 1.25rem;
   font-weight: 700;
-  color: var(--text-primary);
-  position: relative;
-  z-index: 1;
+  color: var(--on-surface);
+  margin: 0;
+  line-height: 1.3;
 }
 
 .heroMeta {
   display: flex;
   align-items: center;
-  gap: var(--space-md);
-  font-family: var(--font-family-mono);
-  font-size: 0.85rem;
-  color: var(--text-secondary);
+  gap: 16px;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--on-surface-variant);
   flex-wrap: wrap;
-  position: relative;
-  z-index: 1;
 }
 
 .heroMetaItem {
@@ -131,69 +241,94 @@
   gap: 4px;
 }
 
-/* Subject pill chip */
 .subjectPill {
-  font-family: var(--font-family-mono);
+  font-family: var(--font-mono);
   font-weight: 700;
-  padding: 2px 10px;
-  border-radius: var(--radius-pill);
+  padding: 2px 8px;
+  border-radius: var(--radius-full, 9999px);
   font-size: 0.75rem;
 }
 
-/* Quick Links Grid — white cards with tinted icon tile */
-.quickLinkCard {
-  background-color: var(--bg-card);
-  border: 1px solid var(--border-hairline);
-  border-radius: var(--radius-card);
-  box-shadow: var(--shadow-card);
-  padding: var(--space-md);
+/* Quick Access Grid */
+.quickGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+@media (min-width: 768px) {
+  .quickGrid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+}
+
+.quickCard {
+  background-color: var(--surface-container-lowest);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-lg, 12px);
+  padding: 16px;
+  min-height: 44px;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: var(--space-sm);
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  gap: 12px;
+  cursor: pointer;
+  transition: transform 0.12s ease, border-color 0.15s ease, background-color 0.15s ease;
   width: 100%;
   text-align: left;
 }
 
-.quickLinkCard:active {
+.quickCard:hover {
+  background-color: var(--surface-container-low);
+  border-color: var(--primary);
+}
+
+.quickCard:active {
   transform: scale(0.97);
 }
 
-.quickLinkIcon {
+.quickIconTile {
   width: 40px;
   height: 40px;
+  border-radius: var(--radius-md, 8px);
+  background-color: var(--surface-container-low);
+  color: var(--primary);
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 12px;
-  background-color: var(--bg-card-tint);
 }
 
-.quickLinkLabel {
-  font-size: 0.9rem;
+.quickLabel {
+  font-family: var(--font-primary);
+  font-size: 0.875rem;
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--on-surface);
 }
 
-/* Metric tiles row */
+/* Stat Row */
 .statRow {
-  display: flex;
-  gap: var(--space-sm);
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
 }
 
-/* Attendance Summary Card — white card, tinted ring wrapper */
+/* Attendance Ring Summary Card */
 .attendanceCard {
-  border-radius: var(--radius-card);
-  background-color: var(--bg-card);
-  border: 1px solid var(--border-hairline);
-  box-shadow: var(--shadow-card);
-  padding: var(--space-md);
+  border-radius: var(--radius-lg, 12px);
+  background-color: var(--surface-container-lowest);
+  border: 1px solid var(--outline-variant);
+  padding: 16px;
+  min-height: 44px;
   display: flex;
   align-items: center;
-  gap: var(--space-md);
+  gap: 16px;
   cursor: pointer;
-  transition: transform 0.12s ease;
+  transition: transform 0.12s ease, border-color 0.15s ease;
+}
+
+.attendanceCard:hover {
+  border-color: var(--primary);
 }
 
 .attendanceCard:active {
@@ -202,8 +337,8 @@
 
 .ringWrapper {
   position: relative;
-  width: 64px;
-  height: 64px;
+  width: 60px;
+  height: 60px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -211,10 +346,10 @@
 }
 
 .ringPercentage {
-  font-family: var(--font-family-mono);
-  font-size: 0.9rem;
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
   font-weight: 700;
-  color: var(--text-primary);
+  color: var(--on-surface);
   position: absolute;
 }
 
@@ -225,28 +360,30 @@
 }
 
 .attendanceStatusLabel {
-  font-size: 0.95rem;
+  font-family: var(--font-primary);
+  font-size: 0.9375rem;
   font-weight: 700;
 }
 
 .labelHealthy {
-  color: var(--color-success);
+  color: var(--primary);
 }
 
 .labelRisk {
-  color: var(--color-danger);
+  color: var(--error);
 }
 
 .attendanceSubtext {
-  font-size: 0.8rem;
-  color: var(--text-secondary);
+  font-family: var(--font-primary);
+  font-size: 0.78125rem;
+  color: var(--on-surface-variant);
 }
 
-/* Sections */
+/* Section Containers */
 .section {
   display: flex;
   flex-direction: column;
-  gap: var(--space-sm);
+  gap: 12px;
 }
 
 .sectionHeader {
@@ -255,61 +392,79 @@
   justify-content: space-between;
 }
 
-.sectionTitle {
-  font-size: var(--text-md);
+.overline {
+  font-family: var(--font-mono);
+  font-size: 11px;
   font-weight: 700;
-  color: var(--text-primary);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--on-surface-variant);
+  margin: 0;
 }
 
-.viewAllButton {
-  font-size: 0.85rem;
+.viewAllBtn {
+  font-family: var(--font-primary);
+  font-size: 0.8125rem;
   font-weight: 600;
-  color: var(--color-primary);
-  display: flex;
+  color: var(--primary);
+  display: inline-flex;
   align-items: center;
   gap: 4px;
   padding: 6px 12px;
-  border-radius: var(--radius-pill);
-  background-color: var(--bg-card-tint);
+  min-height: 44px;
+  border-radius: var(--radius-full, 9999px);
+  background-color: var(--surface-container-low);
+  border: 1px solid var(--outline-variant);
+  cursor: pointer;
+  transition: background-color 0.15s ease;
 }
 
-.emptyTaskCard {
-  background-color: var(--bg-card);
-  border-radius: var(--radius-card);
-  border: 1px dashed var(--border-hairline);
-  padding: var(--space-md);
+.viewAllBtn:hover {
+  background-color: var(--surface-container-high);
+}
+
+.emptyCard {
+  background-color: var(--surface-container-lowest);
+  border-radius: var(--radius-lg, 12px);
+  border: 1px dashed var(--outline-variant);
+  padding: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--space-sm);
-  color: var(--text-secondary);
-  font-size: 0.85rem;
+  gap: 8px;
+  color: var(--on-surface-variant);
+  font-family: var(--font-primary);
+  font-size: 0.875rem;
 }
 
-/* Task cards — white card, solid accent bar */
+.emptyIconSuccess {
+  color: var(--primary);
+}
+
+.stackList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Task Cards */
 .taskCard {
   position: relative;
   overflow: hidden;
-  background-color: var(--bg-card);
-  border: 1px solid var(--border-hairline);
-  border-radius: var(--radius-card);
-  box-shadow: var(--shadow-card);
-  padding: var(--space-md);
+  background-color: var(--surface-container-lowest);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-lg, 12px);
+  padding: 14px 16px;
+  min-height: 44px;
   display: flex;
   align-items: center;
-  gap: var(--space-sm);
+  gap: 12px;
   cursor: pointer;
-  transition: transform 0.12s ease;
+  transition: transform 0.12s ease, border-color 0.15s ease;
 }
 
-.taskCard::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 3px;
-  background: var(--color-primary);
+.taskCard:hover {
+  border-color: var(--primary);
 }
 
 .taskCard:active {
@@ -323,48 +478,56 @@
   flex-shrink: 0;
 }
 
+.taskContent {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
 .taskTitle {
-  font-size: 0.9rem;
+  font-family: var(--font-primary);
+  font-size: 0.875rem;
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--on-surface);
 }
 
 .taskSubjectCode {
-  font-family: var(--font-family-mono);
+  font-family: var(--font-mono);
   font-size: 0.7rem;
   font-weight: 700;
   text-transform: uppercase;
 }
 
 .taskDueText {
-  font-family: var(--font-family-mono);
+  font-family: var(--font-mono);
   font-size: 0.75rem;
-  color: var(--text-secondary);
+  color: var(--on-surface-variant);
   margin-left: auto;
+  flex-shrink: 0;
 }
 
-/* Timeline — white cards with solid subject color bar */
+/* Timeline Schedule Cards */
 .timelineItem {
   display: flex;
-  background-color: var(--bg-card);
-  border: 1px solid var(--border-hairline);
-  border-radius: var(--radius-card);
+  background-color: var(--surface-container-lowest);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-lg, 12px);
   overflow: hidden;
-  box-shadow: var(--shadow-card);
 }
 
 .timelineColorBar {
-  width: 5px;
+  width: 4px;
   flex-shrink: 0;
-  background: var(--color-primary);
 }
 
 .timelineBody {
   flex: 1;
-  padding: var(--space-md);
+  padding: 14px 16px;
   display: flex;
   flex-direction: column;
-  gap: var(--space-xs);
+  gap: 4px;
 }
 
 .timelineHeader {
@@ -374,68 +537,42 @@
 }
 
 .timelineSubjectCode {
-  font-family: var(--font-family-mono);
+  font-family: var(--font-mono);
   font-size: 0.7rem;
   font-weight: 700;
-  padding: 1px 8px;
-  border-radius: var(--radius-pill);
+  padding: 2px 8px;
+  border-radius: var(--radius-full, 9999px);
 }
 
 .timelineTime {
-  font-family: var(--font-family-mono);
+  font-family: var(--font-mono);
   font-size: 0.75rem;
-  color: var(--text-secondary);
+  color: var(--on-surface-variant);
 }
 
 .timelineSubjectName {
-  font-size: 0.95rem;
+  font-family: var(--font-primary);
+  font-size: 0.9375rem;
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--on-surface);
 }
 
 .lineThrough {
   text-decoration: line-through;
-  color: var(--text-muted);
+  color: var(--on-surface-variant);
 }
 
 .timelineFooter {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 2px;
+  margin-top: 4px;
 }
 
 .timelineRoom {
-  font-family: var(--font-family-mono);
+  font-family: var(--font-mono);
   font-size: 0.75rem;
-  color: var(--text-secondary);
+  color: var(--on-surface-variant);
   display: flex;
   align-items: center;
-}
-
-.badge {
-  font-size: 0.7rem;
-  font-weight: 700;
-  padding: 2px 8px;
-  border-radius: var(--radius-pill);
-}
-
-.badgeCancelled {
-  background-color: var(--color-danger-bg);
-  color: var(--color-danger);
-}
-
-.badgeRescheduled {
-  background-color: var(--color-warning-bg);
-  color: var(--color-warning);
-}
-
-.badgeExtra {
-  background-color: var(--bg-card-tint);
-  color: var(--color-primary);
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-4px); }
-  to { opacity: 1; transform: translateY(0); }
 }

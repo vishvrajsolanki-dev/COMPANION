@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { db, CalendarEvent } from '../../db/index';
 import { useUIStore } from '../../store/uiStore';
-import { GlassButton } from '../../components/ui';
+import { Button } from '../../components/ui';
 import { ArrowLeft, Upload, CheckCircle2, AlertCircle, Calendar } from 'lucide-react';
 
 interface JSONSemesterDefaults {
@@ -205,7 +205,7 @@ export const AcademicCalendarImportView: React.FC = () => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: 'var(--bg-page)', paddingBottom: '80px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-page)' }}>
       <h1 className="sr-only">Import Academic Calendar</h1>
       {/* Header */}
       <header style={{
@@ -229,9 +229,9 @@ export const AcademicCalendarImportView: React.FC = () => {
         <div style={{ margin: 'var(--space-md)', padding: '14px', backgroundColor: 'var(--color-success-bg)', borderRadius: 'var(--radius-card)', border: '1px solid var(--color-success)', color: 'var(--color-success-fg)', fontWeight: 600 }}>
           {successMsg}
           <div style={{ marginTop: '8px' }}>
-            <GlassButton size="sm" onClick={() => navigateToSubview('semester-setup')}>
+            <Button size="sm" onClick={() => navigateToSubview('semester-setup')}>
               Open Semester Setup to Edit
-            </GlassButton>
+            </Button>
           </div>
         </div>
       )}
@@ -240,13 +240,13 @@ export const AcademicCalendarImportView: React.FC = () => {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
           <label style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Calendar JSON Data</label>
           <div style={{ display: 'flex', gap: '8px' }}>
-            <GlassButton
+            <Button
               size="sm"
               variant="ghost"
               onClick={() => { setJsonText(sampleCalendarJSON); setError(null); setSuccessMsg(null); }}
             >
               Sample Calendar JSON
-            </GlassButton>
+            </Button>
             <label style={{ fontSize: '0.78rem', padding: '7px 12px', borderRadius: 'var(--radius-pill)', backgroundColor: 'var(--color-primary)', color: '#FFFFFF', cursor: 'pointer', fontWeight: 600 }}>
               <Upload size={12} style={{ display: 'inline', marginRight: '4px' }} /> Upload .json
               <input type="file" accept=".json" onChange={handleFileUpload} style={{ display: 'none' }} />
@@ -269,9 +269,9 @@ export const AcademicCalendarImportView: React.FC = () => {
           </div>
         )}
 
-        <GlassButton onClick={handleValidate} variant="ghost" fullWidth>
+        <Button onClick={handleValidate} variant="ghost" fullWidth>
           <Calendar size={16} /> Validate Calendar Payload
-        </GlassButton>
+        </Button>
 
         {parsed && (
           <div style={{ padding: 'var(--space-md)', backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius-card)', border: '1px solid var(--border-hairline)', boxShadow: 'var(--shadow-card)', display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
@@ -307,9 +307,9 @@ export const AcademicCalendarImportView: React.FC = () => {
               </div>
             )}
 
-            <GlassButton onClick={handleCommitImport} disabled={isImporting} fullWidth>
+            <Button onClick={handleCommitImport} disabled={isImporting} fullWidth>
               {isImporting ? 'Importing…' : 'Import Academic Calendar Defaults'}
-            </GlassButton>
+            </Button>
           </div>
         )}
       </div>

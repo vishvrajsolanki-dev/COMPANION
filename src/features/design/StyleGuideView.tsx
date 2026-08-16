@@ -143,7 +143,7 @@ export const StyleGuideView: React.FC = () => {
   const closeSubview = useUIStore(state => state.closeSubview);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: 'var(--bg-page)', paddingBottom: '80px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-page)' }}>
       <h1 className="sr-only">Design System</h1>
 
       {/* Screen header */}

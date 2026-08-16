@@ -3,19 +3,19 @@ import styles from './ui.module.css';
 
 export type ToastType = 'success' | 'error' | 'info';
 
-interface ToastItem {
+export interface ToastItem {
   id: number;
   message: string;
   type: ToastType;
 }
 
-interface ToastContextValue {
+export interface ToastContextValue {
   show: (message: string, type?: ToastType) => void;
 }
 
 const ToastContext = createContext<ToastContextValue>({ show: () => {} });
 
-/** Access from any component under <ToastProvider>: const toast = useToast(); toast.show('Saved', 'success'); */
+/** Access toast notifications from any component under <ToastProvider>: const toast = useToast(); toast.show('Saved', 'success'); */
 export const useToast = () => useContext(ToastContext);
 
 let nextId = 1;
@@ -42,3 +42,5 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     </ToastContext.Provider>
   );
 };
+
+export default ToastProvider;

@@ -26,6 +26,7 @@ Thumbs.db
 # Playwright test artifacts (scripts are committed, outputs are not)
 scripts/verify-sw-offline.cjs
 test-results/
+artifacts/
 
 # Local Gemini agent scratch files
 .agents/

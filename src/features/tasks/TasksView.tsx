@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { useTasks, useSubjects } from '../../db/useDatabase';
 import { db } from '../../db/index';
-import { useUIStore } from '../../store/uiStore';
 import { todayISO, datePart } from '../../utils/date';
-import { BottomSheet, SegmentedControl, GlassButton, GlassCard, Badge } from '../../components/ui';
-import { Plus, Trash2, Check } from 'lucide-react';
+import { navigateTo, CANONICAL_HASHES } from '../../hooks/useHashLocation';
+import { BottomSheet, SegmentedControl, Button, Card, Badge } from '../../components/ui';
+import { Plus, Trash2, Check, BookOpen, Calendar, Folder, BarChart2 } from 'lucide-react';
 
 export const TasksView: React.FC = () => {
   const tasks = useTasks() || [];
@@ -17,10 +17,6 @@ export const TasksView: React.FC = () => {
   const [isAdding, setIsAdding] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [newSubjectId, setNewSubjectId] = useState('');
-  // Due date/time split into native date+time inputs (Bug F#11): the combined
-  // <input type="datetime-local"> has no standard confirm button on mobile and
-  // renders inconsistently across browsers. Separate pickers match the Extra
-  // Class form pattern elsewhere in the app.
   const [newDueDate, setNewDueDate] = useState(() => todayISO());
   const [newDueTime, setNewDueTime] = useState('23:59');
   const [newPriority, setNewPriority] = useState<'low' | 'medium' | 'high' | 'urgent'>('medium');
@@ -97,7 +93,7 @@ export const TasksView: React.FC = () => {
   });
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: 'var(--bg-page)', paddingBottom: '80px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-page)' }} data-testid="tasks-view">
       <h1 className="sr-only">Tasks</h1>
       {/* Screen header */}
       <header
@@ -105,27 +101,138 @@ export const TasksView: React.FC = () => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: 'var(--space-md)',
-          paddingTop: 'calc(var(--space-md) + env(safe-area-inset-top))',
-          borderBottom: '1px solid var(--border-hairline)',
-          backgroundColor: 'var(--bg-page)',
+          padding: 'var(--stack-md, 16px)',
+          paddingTop: 'calc(var(--stack-md, 16px) + env(safe-area-inset-top))',
+          borderBottom: '1px solid var(--outline-variant, #c4c6d1)',
+          backgroundColor: 'var(--surface-container-lowest, #ffffff)',
           position: 'sticky',
           top: 0,
           zIndex: 10,
         }}
       >
-        <h2 style={{ fontSize: 'var(--text-xl)', fontWeight: 700, color: 'var(--text-primary)' }}>Tasks</h2>
-        <GlassButton size="sm" onClick={() => setIsAdding(true)}>
+        <div>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--on-surface, #1a1c1c)', fontFamily: 'var(--font-primary)' }}>Study Hub</h2>
+          <div style={{ fontSize: '0.7rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--on-surface-variant, #444750)', fontFamily: 'var(--font-mono)' }}>
+            Tasks & Coursework
+          </div>
+        </div>
+        <Button size="sm" variant="primary" onClick={() => setIsAdding(true)}>
           <Plus size={16} /> Add Task
-        </GlassButton>
+        </Button>
       </header>
 
+      {/* Subview Quick Links */}
+      <div style={{ display: 'flex', gap: '8px', padding: '12px 16px 4px', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+        <button
+          onClick={() => navigateTo(CANONICAL_HASHES.studyTasks)}
+          style={{
+            padding: '8px 16px',
+            borderRadius: 'var(--radius-full, 9999px)',
+            fontSize: '0.8rem',
+            fontWeight: 700,
+            fontFamily: 'var(--font-primary)',
+            backgroundColor: 'var(--primary, #001e4c)',
+            color: 'var(--on-primary, #ffffff)',
+            border: 'none',
+            minHeight: '36px',
+            cursor: 'pointer',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          Tasks
+        </button>
+        <button
+          onClick={() => navigateTo(CANONICAL_HASHES.studyNotes)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '8px 16px',
+            borderRadius: 'var(--radius-full, 9999px)',
+            fontSize: '0.8rem',
+            fontWeight: 600,
+            fontFamily: 'var(--font-primary)',
+            backgroundColor: 'var(--surface-container-low, #f4f3f2)',
+            color: 'var(--on-surface, #1a1c1c)',
+            border: '1px solid var(--outline-variant, #c4c6d1)',
+            minHeight: '36px',
+            cursor: 'pointer',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          <BookOpen size={14} /> Notes
+        </button>
+        <button
+          onClick={() => navigateTo(CANONICAL_HASHES.studyExams)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '8px 16px',
+            borderRadius: 'var(--radius-full, 9999px)',
+            fontSize: '0.8rem',
+            fontWeight: 600,
+            fontFamily: 'var(--font-primary)',
+            backgroundColor: 'var(--surface-container-low, #f4f3f2)',
+            color: 'var(--on-surface, #1a1c1c)',
+            border: '1px solid var(--outline-variant, #c4c6d1)',
+            minHeight: '36px',
+            cursor: 'pointer',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          <Calendar size={14} /> Exams
+        </button>
+        <button
+          onClick={() => navigateTo(CANONICAL_HASHES.studyResources)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '8px 16px',
+            borderRadius: 'var(--radius-full, 9999px)',
+            fontSize: '0.8rem',
+            fontWeight: 600,
+            fontFamily: 'var(--font-primary)',
+            backgroundColor: 'var(--surface-container-low, #f4f3f2)',
+            color: 'var(--on-surface, #1a1c1c)',
+            border: '1px solid var(--outline-variant, #c4c6d1)',
+            minHeight: '36px',
+            cursor: 'pointer',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          <Folder size={14} /> Resources
+        </button>
+        <button
+          onClick={() => navigateTo(CANONICAL_HASHES.studyAnalytics)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '8px 16px',
+            borderRadius: 'var(--radius-full, 9999px)',
+            fontSize: '0.8rem',
+            fontWeight: 600,
+            fontFamily: 'var(--font-primary)',
+            backgroundColor: 'var(--surface-container-low, #f4f3f2)',
+            color: 'var(--on-surface, #1a1c1c)',
+            border: '1px solid var(--outline-variant, #c4c6d1)',
+            minHeight: '36px',
+            cursor: 'pointer',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          <BarChart2 size={14} /> Analytics
+        </button>
+      </div>
+
       {/* Filter Tabs */}
-      <div style={{ padding: 'var(--space-sm) var(--space-md)' }}>
+      <div style={{ padding: 'var(--stack-sm, 8px) var(--stack-md, 16px)' }}>
         <SegmentedControl
           options={[
-            { value: 'all', label: 'All' },
-            { value: 'today', label: 'Today' },
+            { value: 'all', label: 'All Tasks' },
+            { value: 'today', label: 'Due Today' },
             { value: 'upcoming', label: 'Upcoming' },
           ]}
           value={activeFilter}
@@ -133,13 +240,13 @@ export const TasksView: React.FC = () => {
         />
       </div>
 
-      <div style={{ padding: '0 var(--space-md)', display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
+      <div style={{ padding: '0 var(--stack-md, 16px)', display: 'flex', flexDirection: 'column', gap: 'var(--stack-md, 16px)' }}>
         {/* Task List */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--stack-sm, 8px)' }}>
           {filteredTasks.length === 0 ? (
-            <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-              No tasks found.
-            </div>
+            <Card style={{ padding: '40px 16px', textAlign: 'center', color: 'var(--on-surface-variant, #444750)', fontSize: '0.9rem' }}>
+              No tasks found. Tap "+ Add Task" to create one.
+            </Card>
           ) : (
             filteredTasks.map(t => {
               const sub = subjects.find(s => s.id === t.subject_id);
@@ -152,49 +259,85 @@ export const TasksView: React.FC = () => {
                   style={{
                     position: 'relative',
                     overflow: 'hidden',
-                    backgroundColor: 'var(--bg-card)',
-                    borderRadius: 'var(--radius-card)',
-                    border: '1px solid var(--border-hairline)',
-                    boxShadow: 'var(--shadow-card)',
-                    padding: 'var(--space-md)',
-                    paddingLeft: 'calc(var(--space-md) + 4px)',
+                    backgroundColor: 'var(--surface-container-lowest, #ffffff)',
+                    borderRadius: 'var(--radius-lg, 12px)',
+                    border: '1px solid var(--outline-variant, #c4c6d1)',
+                    padding: 'var(--stack-md, 16px)',
+                    paddingLeft: 'calc(var(--stack-md, 16px) + 4px)',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: 'var(--space-sm)',
-                    opacity: isDone ? 0.55 : 1,
+                    gap: '12px',
+                    minHeight: '64px',
+                    opacity: isDone ? 0.6 : 1,
                     transition: 'opacity 0.2s ease',
                   }}
                 >
-                  {/* Left accent bar — neutral when done */}
+                  {/* Left 4px accent bar */}
                   <div
                     style={{
                       position: 'absolute',
                       left: 0,
                       top: 0,
                       bottom: 0,
-                      width: 3,
-                      background: isDone ? 'var(--neutral-200, #E2E8F0)' : isUrgent ? 'var(--color-danger)' : 'var(--color-primary)',
+                      width: 4,
+                      background: isDone ? 'var(--outline-variant, #c4c6d1)' : isUrgent ? 'var(--error, #ba1a1a)' : (sub?.color || 'var(--primary-container, #1b3462)'),
                     }}
                   />
 
-                  {/* Checkbox */}
+                  {/* Checkbox button — 44px touch target */}
                   <button
                     onClick={() => toggleTask(t.id, t.status)}
                     style={{
-                      width: 24,
-                      height: 24,
-                      borderRadius: 8,
-                      border: isDone ? 'none' : '2px solid var(--border-hairline)',
-                      backgroundColor: isDone ? 'var(--color-success)' : 'transparent',
+                      width: 44,
+                      height: 44,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      color: 'var(--color-on-accent)',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
                       flexShrink: 0,
                     }}
+                    aria-label={isDone ? "Mark incomplete" : "Mark complete"}
                   >
-                    {isDone && <Check size={14} />}
+                    <div
+                      style={{
+                        width: 24,
+                        height: 24,
+                        borderRadius: 6,
+                        border: isDone ? 'none' : '2px solid var(--outline, #747781)',
+                        backgroundColor: isDone ? 'var(--primary, #001e4c)' : 'transparent',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'var(--on-primary, #ffffff)',
+                      }}
+                    >
+                      {isDone && <Check size={14} strokeWidth={3} />}
+                    </div>
                   </button>
+
+                  {/* Details */}
+                  <div
+                    onClick={() => setSelectedTaskId(t.id)}
+                    style={{ flex: 1, cursor: 'pointer', minWidth: 0 }}
+                  >
+                    <div style={{ fontSize: '0.95rem', fontWeight: 600, textDecoration: isDone ? 'line-through' : 'none', color: 'var(--on-surface, #1a1c1c)', fontFamily: 'var(--font-primary)' }}>
+                      {t.title}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: 4, flexWrap: 'wrap' }}>
+                      {sub && (
+                        <span style={{ fontSize: '0.72rem', fontFamily: 'var(--font-mono)', color: sub.color, fontWeight: 700 }}>
+                          {sub.code}
+                        </span>
+                      )}
+                      {t.due_at && (
+                        <span style={{ fontSize: '0.72rem', fontFamily: 'var(--font-mono)', color: 'var(--on-surface-variant, #444750)' }}>
+                          Due: {new Date(t.due_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                        </span>
+                      )}
+                    </div>
+                  </div>
 
                   {/* Priority badge */}
                   <Badge
@@ -209,34 +352,27 @@ export const TasksView: React.FC = () => {
                     {t.priority}
                   </Badge>
 
-                  {/* Details */}
-                  <div
-                    onClick={() => setSelectedTaskId(t.id)}
-                    style={{ flex: 1, cursor: 'pointer', minWidth: 0 }}
+                  {/* Delete button — 44px touch target */}
+                  <button
+                    onClick={() => deleteTask(t.id)}
+                    style={{
+                      width: 44,
+                      height: 44,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      borderRadius: 'var(--radius-md, 8px)',
+                      color: 'var(--error, #ba1a1a)',
+                      background: 'transparent',
+                      border: 'none',
+                      cursor: 'pointer',
+                      flexShrink: 0,
+                    }}
+                    title="Delete task"
+                    aria-label="Delete task"
                   >
-                    <div style={{ fontSize: '0.95rem', fontWeight: 600, textDecoration: isDone ? 'line-through' : 'none', color: 'var(--text-primary)' }}>
-                      {t.title}
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: 2 }}>
-                      {sub && (
-                        <span style={{ fontSize: '0.75rem', fontFamily: 'var(--font-family-mono)', color: sub.color, fontWeight: 700 }}>
-                          {sub.code}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div style={{ display: 'flex', gap: 4 }}>
-                    <button
-                      onClick={() => deleteTask(t.id)}
-                      style={{ padding: 6, borderRadius: 8, color: 'var(--color-danger)', background: 'var(--color-danger-bg)' }}
-                      title="Delete task"
-                      aria-label="Delete task"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
+                    <Trash2 size={18} />
+                  </button>
                 </div>
               );
             })
@@ -248,30 +384,30 @@ export const TasksView: React.FC = () => {
       <BottomSheet open={isAdding} onClose={() => setIsAdding(false)}>
         <form
           onSubmit={handleCreateTask}
-          style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}
+          style={{ display: 'flex', flexDirection: 'column', gap: 'var(--stack-md, 16px)' }}
         >
-          <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-primary)' }}>Add New Task</h3>
+          <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--on-surface, #1a1c1c)', fontFamily: 'var(--font-primary)' }}>Add New Task</h3>
 
           <div>
-            <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Task Title</label>
+            <label style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--on-surface-variant, #444750)', fontFamily: 'var(--font-mono)' }}>Task Title</label>
             <input
               type="text"
               placeholder="e.g. Complete assignment 3"
               value={newTitle}
               onChange={e => setNewTitle(e.target.value)}
               className="input"
-              style={{ marginTop: 4 }}
+              style={{ marginTop: 6, width: '100%', minHeight: '44px' }}
               required
             />
           </div>
 
           <div>
-            <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Subject Connection</label>
+            <label style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--on-surface-variant, #444750)', fontFamily: 'var(--font-mono)' }}>Subject Connection</label>
             <select
               value={newSubjectId}
               onChange={e => setNewSubjectId(e.target.value)}
               className="input"
-              style={{ marginTop: 4 }}
+              style={{ marginTop: 6, width: '100%', minHeight: '44px' }}
             >
               <option value="">General (No Subject)</option>
               {subjects.map(s => (
@@ -280,39 +416,39 @@ export const TasksView: React.FC = () => {
             </select>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-md)' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 'var(--stack-md, 16px)' }}>
             <div>
-              <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Due Date</label>
+              <label style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--on-surface-variant, #444750)', fontFamily: 'var(--font-mono)' }}>Due Date</label>
               <input
                 type="date"
                 value={newDueDate}
                 onChange={e => setNewDueDate(e.target.value)}
                 required
                 className="input"
-                style={{ marginTop: 4 }}
+                style={{ marginTop: 6, width: '100%', minHeight: '44px' }}
               />
             </div>
 
             <div>
-              <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Due Time</label>
+              <label style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--on-surface-variant, #444750)', fontFamily: 'var(--font-mono)' }}>Due Time</label>
               <input
                 type="time"
                 value={newDueTime}
                 onChange={e => setNewDueTime(e.target.value)}
                 required
                 className="input"
-                style={{ marginTop: 4 }}
+                style={{ marginTop: 6, width: '100%', minHeight: '44px' }}
               />
             </div>
           </div>
 
           <div>
-            <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Priority</label>
+            <label style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--on-surface-variant, #444750)', fontFamily: 'var(--font-mono)' }}>Priority</label>
             <select
               value={newPriority}
               onChange={e => setNewPriority(e.target.value as any)}
               className="input"
-              style={{ marginTop: 4 }}
+              style={{ marginTop: 6, width: '100%', minHeight: '44px' }}
             >
               <option value="low">Low</option>
               <option value="medium">Medium</option>
@@ -322,18 +458,18 @@ export const TasksView: React.FC = () => {
           </div>
 
           {dbError && (
-            <div style={{ padding: '10px', borderRadius: 'var(--radius-card)', backgroundColor: 'var(--color-danger-bg)', color: 'var(--color-danger)', fontSize: '0.85rem', fontWeight: 600 }}>
+            <div style={{ padding: '10px 14px', borderRadius: 'var(--radius-md, 8px)', backgroundColor: 'var(--error-container, #ffdad6)', color: 'var(--on-error-container, #93000a)', fontSize: '0.85rem', fontWeight: 600 }}>
               {dbError}
             </div>
           )}
 
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <GlassButton type="submit" style={{ flex: 1 }}>
+          <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+            <Button type="submit" variant="primary" style={{ flex: 1 }}>
               Create Task
-            </GlassButton>
-            <GlassButton type="button" variant="ghost" onClick={() => setIsAdding(false)}>
+            </Button>
+            <Button type="button" variant="ghost" onClick={() => setIsAdding(false)}>
               Cancel
-            </GlassButton>
+            </Button>
           </div>
         </form>
       </BottomSheet>
@@ -341,47 +477,47 @@ export const TasksView: React.FC = () => {
       {/* Task Details Sheet */}
       {selectedTaskId && selectedTask && (
         <BottomSheet open onClose={() => setSelectedTaskId(null)}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--stack-md, 16px)' }}>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span
                   style={{
-                    fontFamily: 'var(--font-family-mono)',
+                    fontFamily: 'var(--font-mono)',
                     fontSize: '0.75rem',
                     fontWeight: 700,
                     padding: '2px 8px',
-                    borderRadius: 'var(--radius-pill)',
-                    color: selectedTaskSubject?.color || 'var(--text-secondary)',
-                    backgroundColor: `${selectedTaskSubject?.color || 'var(--neutral-100)'}1A`,
+                    borderRadius: 'var(--radius-full, 9999px)',
+                    color: selectedTaskSubject?.color || 'var(--on-surface-variant, #444750)',
+                    backgroundColor: `${selectedTaskSubject?.color || 'var(--surface-container, #eeeeed)'}20`,
                   }}
                 >
                   {selectedTaskSubject?.code || 'General'}
                 </span>
-                <span style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-muted)' }}>
+                <span style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--on-surface-variant, #444750)', fontFamily: 'var(--font-mono)' }}>
                   {selectedTask.priority} Priority
                 </span>
               </div>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginTop: '4px', color: 'var(--text-primary)' }}>{selectedTask.title}</h3>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginTop: '6px', color: 'var(--on-surface, #1a1c1c)', fontFamily: 'var(--font-primary)' }}>{selectedTask.title}</h3>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius-card)', border: '1px solid var(--border-hairline)' }}>
-                <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Due Date</span>
-                <span style={{ fontSize: '0.85rem', fontWeight: 600, fontFamily: 'var(--font-family-mono)', color: 'var(--text-primary)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 16px', backgroundColor: 'var(--surface-container-low, #f4f3f2)', borderRadius: 'var(--radius-md, 8px)', border: '1px solid var(--outline-variant, #c4c6d1)' }}>
+                <span style={{ fontSize: '0.85rem', color: 'var(--on-surface-variant, #444750)' }}>Due Date</span>
+                <span style={{ fontSize: '0.85rem', fontWeight: 600, fontFamily: 'var(--font-mono)', color: 'var(--on-surface, #1a1c1c)' }}>
                   {selectedTask.due_at ? new Date(selectedTask.due_at).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }) : 'No due date set'}
                 </span>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius-card)', border: '1px solid var(--border-hairline)' }}>
-                <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Status</span>
-                <span style={{ fontSize: '0.85rem', fontWeight: 600, textTransform: 'capitalize', color: 'var(--text-primary)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 16px', backgroundColor: 'var(--surface-container-low, #f4f3f2)', borderRadius: 'var(--radius-md, 8px)', border: '1px solid var(--outline-variant, #c4c6d1)' }}>
+                <span style={{ fontSize: '0.85rem', color: 'var(--on-surface-variant, #444750)' }}>Status</span>
+                <span style={{ fontSize: '0.85rem', fontWeight: 600, textTransform: 'capitalize', color: 'var(--on-surface, #1a1c1c)' }}>
                   {selectedTask.status.replace('_', ' ')}
                 </span>
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <GlassButton
+            <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+              <Button
                 variant={selectedTask.status === 'completed' ? 'subtle' : 'success'}
                 style={{ flex: 1 }}
                 onClick={() => {
@@ -390,10 +526,10 @@ export const TasksView: React.FC = () => {
                 }}
               >
                 {selectedTask.status === 'completed' ? 'Mark Incomplete' : 'Mark Complete'}
-              </GlassButton>
-              <GlassButton variant="ghost" onClick={() => setSelectedTaskId(null)}>
+              </Button>
+              <Button variant="ghost" onClick={() => setSelectedTaskId(null)}>
                 Close
-              </GlassButton>
+              </Button>
             </div>
           </div>
         </BottomSheet>
