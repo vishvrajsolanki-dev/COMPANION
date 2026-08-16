@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { getSupabase } from './supabase';
 import { useAuthStore } from '../store/authStore';
 
 /**
@@ -12,6 +12,13 @@ import { useAuthStore } from '../store/authStore';
 
 export type AdminRole = 'student' | 'admin' | 'owner';
 
+/** Self-declared student identity (name, department, enrollment number). */
+export interface StudentProfile {
+  name?: string | null;
+  department?: string | null;
+  enrollment_number?: string | null;
+}
+
 /** One row from admin_list_keys. */
 export interface AdminKeyRecord {
   id: string;
@@ -23,6 +30,8 @@ export interface AdminKeyRecord {
   used_count: number;
   created_at: string | null;
   expires_at: string | null;
+  account_id: string;
+  student_profile?: StudentProfile | null;
 }
 
 /** One row from admin_list_profiles. */
@@ -33,6 +42,8 @@ export interface AdminProfileRecord {
   role: AdminRole;
   created_at: string | null;
   key_label: string | null;
+  account_id?: string;
+  student_profile?: StudentProfile | null;
 }
 
 /** One row from admin_list_actions (the action-audit trail). */
@@ -44,17 +55,30 @@ export interface AdminActionRecord {
   created_at: string | null;
 }
 
+/** One row from admin_list_sessions. */
+export interface AdminSessionRecord {
+  id: string;
+  account_id: string;
+  device_id: string;
+  device_name: string | null;
+  last_seen: string | null;
+  created_at: string | null;
+  account_name: string | null;
+  account_role: AdminRole;
+}
+
 export type AdminErrorCode =
   | 'UNAUTHORIZED'
   | 'GENERATION_CONFLICT'
   | 'CANNOT_MODIFY_SELF'
   | 'NOT_FOUND'
+  | 'SERVER'
   | 'NETWORK'
   | 'UNKNOWN';
 
 export type AdminResult<T> =
   | { ok: true; data: T }
-  | { ok: false; error: AdminErrorCode };
+  | { ok: false; error: AdminErrorCode; detail?: string };
 
 /** Server-side rejection codes returned by the admin RPCs. */
 const RPC_ERROR_CODES: readonly string[] = [
@@ -69,9 +93,46 @@ export const ADMIN_ERROR_MESSAGES: Record<AdminErrorCode, string> = {
   GENERATION_CONFLICT: 'Code collision — try again.',
   CANNOT_MODIFY_SELF: "You can't deactivate your own key.",
   NOT_FOUND: 'That key no longer exists.',
+  SERVER: 'The server rejected the request.',
   NETWORK: "Couldn't reach the server. Check your connection and try again.",
   UNKNOWN: 'Something went wrong. Please try again.',
 };
+
+/**
+ * Distinguishes a genuine transport failure from a server-side rejection.
+ *
+ * supabase-js surfaces PostgREST/Postgres rejections as objects with a `code`
+ * (PGRST202 = function not found, PGRST205 = table not found, 42501 =
+ * insufficient privilege, ...) plus a human message/details. Real network
+ * failures reject with a TypeError (e.g. "Failed to fetch") that carries no
+ * code. Collapsing both into 'NETWORK' is what turned "migration never applied
+ * (PGRST202)" into the misleading "Couldn't reach the server, check your
+ * connection" banner.
+ */
+export function classifyPostgrestError(err: unknown): { error: 'SERVER' | 'NETWORK'; detail?: string } {
+  if (isObj(err)) {
+    const code = typeof err.code === 'string' ? err.code : '';
+    if (code) {
+      const message = typeof err.message === 'string' ? err.message : '';
+      const details = typeof err.details === 'string' ? err.details : '';
+      return { error: 'SERVER', detail: [code, message, details].filter(Boolean).join(' — ') };
+    }
+  }
+  // No PostgREST/Postgres code → the request never reached a server (offline,
+  // DNS, CORS, abort). Genuine network failure.
+  return { error: 'NETWORK' };
+}
+
+/**
+ * Turns an AdminResult failure into a user-facing string, appending the
+ * server-side detail (PostgREST code + message) when the failure was a server
+ * rejection. Consumers store the returned string directly in their error state.
+ */
+export function formatAdminError(res: AdminResult<unknown>): string {
+  if (res.ok) return '';
+  const base = ADMIN_ERROR_MESSAGES[res.error];
+  return res.detail ? `${base} (${res.detail})` : base;
+}
 
 /* ── small parse helpers ──────────────────────────────────────────────────── */
 
@@ -86,6 +147,15 @@ const asStr = (v: unknown): string | null => (typeof v === 'string' ? v : null);
 const asBool = (v: unknown, dflt: boolean): boolean => (typeof v === 'boolean' ? v : dflt);
 const asNum = (v: unknown, dflt: number): number => (typeof v === 'number' ? v : dflt);
 const asRole = (v: unknown): AdminRole => (typeof v === 'string' && ROLES.includes(v) ? (v as AdminRole) : 'student');
+
+const asStudentProfile = (v: unknown): StudentProfile | null => {
+  if (!isObj(v)) return null;
+  return {
+    name: asStr(v.name),
+    department: asStr(v.department),
+    enrollment_number: asStr(v.enrollment_number),
+  };
+};
 
 /** Normalizes any non-ok RPC payload into an AdminErrorCode. */
 export function mapAdminError(raw: unknown): AdminErrorCode {
@@ -106,6 +176,8 @@ const mapKeyRecord = (raw: unknown): AdminKeyRecord | null => {
     used_count: asNum(raw.used_count, 0),
     created_at: asStr(raw.created_at),
     expires_at: asStr(raw.expires_at),
+    account_id: typeof raw.account_id === 'string' ? raw.account_id : '',
+    student_profile: 'student_profile' in raw ? asStudentProfile(raw.student_profile) : null,
   };
 };
 
@@ -118,6 +190,8 @@ const mapProfileRecord = (raw: unknown): AdminProfileRecord | null => {
     role: asRole(raw.role),
     created_at: asStr(raw.created_at),
     key_label: asStr(raw.key_label),
+    account_id: typeof raw.account_id === 'string' ? raw.account_id : undefined,
+    student_profile: 'student_profile' in raw ? asStudentProfile(raw.student_profile) : null,
   };
 };
 
@@ -129,6 +203,20 @@ const mapActionRecord = (raw: unknown): AdminActionRecord | null => {
     target_code: asStr(raw.target_code) ?? '',
     detail: isObj(raw.detail) ? raw.detail : {},
     created_at: asStr(raw.created_at),
+  };
+};
+
+const mapSessionRecord = (raw: unknown): AdminSessionRecord | null => {
+  if (!isObj(raw) || typeof raw.id !== 'string') return null;
+  return {
+    id: raw.id,
+    account_id: typeof raw.account_id === 'string' ? raw.account_id : '',
+    device_id: typeof raw.device_id === 'string' ? raw.device_id : '',
+    device_name: asStr(raw.device_name),
+    last_seen: asStr(raw.last_seen),
+    created_at: asStr(raw.created_at),
+    account_name: asStr(raw.account_name),
+    account_role: asRole(raw.account_role),
   };
 };
 
@@ -171,6 +259,14 @@ export function mapActionListResult(raw: unknown): AdminResult<AdminActionRecord
   return { ok: true, data: actions };
 }
 
+export function mapSessionListResult(raw: unknown): AdminResult<AdminSessionRecord[]> {
+  if (!isObj(raw)) return { ok: false, error: 'UNKNOWN' };
+  if (raw.ok !== true) return { ok: false, error: mapAdminError(raw) };
+  if (!Array.isArray(raw.sessions)) return { ok: false, error: 'UNKNOWN' };
+  const sessions = raw.sessions.map(mapSessionRecord).filter((s): s is AdminSessionRecord => s !== null);
+  return { ok: true, data: sessions };
+}
+
 /* ── live RPC calls ───────────────────────────────────────────────────────── */
 
 /** The raw key held by the current device, when its role is admin/owner. */
@@ -187,17 +283,20 @@ export interface GenerateKeyOptions {
 }
 
 async function rpc<T>(name: string, params: Record<string, unknown>, map: (raw: unknown) => AdminResult<T>): Promise<AdminResult<T>> {
+  const supabase = await getSupabase();
   if (!supabase) return { ok: false, error: 'NETWORK' };
   try {
     const { data, error } = await supabase.rpc(name, params);
     if (error) {
       console.error(`Supabase RPC error (${name}):`, error);
-      return { ok: false, error: 'NETWORK' };
+      const c = classifyPostgrestError(error);
+      return { ok: false, error: c.error, detail: c.detail };
     }
     return map(data);
   } catch (err) {
     console.error(`${name} failed:`, err);
-    return { ok: false, error: 'NETWORK' };
+    const c = classifyPostgrestError(err);
+    return { ok: false, error: c.error, detail: c.detail };
   }
 }
 
@@ -229,6 +328,13 @@ export async function setKeyActive(id: string, active: boolean): Promise<AdminRe
   return rpc('admin_set_key_active', { p_admin_code: cred, p_key_id: id, p_active: active }, mapSetActiveResult);
 }
 
+/** Owner-only: adjust the max_uses session cap on an existing key. */
+export async function updateKeyLimits(keyId: string, maxUses: number): Promise<AdminResult<boolean>> {
+  const cred = getAdminCredential();
+  if (!cred) return { ok: false, error: 'UNAUTHORIZED' };
+  return rpc('admin_update_key_limits', { p_admin_code: cred, p_key_id: keyId, p_max_uses: maxUses }, mapSetActiveResult);
+}
+
 export async function listProfiles(): Promise<AdminResult<AdminProfileRecord[]>> {
   const cred = getAdminCredential();
   if (!cred) return { ok: false, error: 'UNAUTHORIZED' };
@@ -240,4 +346,18 @@ export async function listActions(): Promise<AdminResult<AdminActionRecord[]>> {
   const cred = getAdminCredential();
   if (!cred) return { ok: false, error: 'UNAUTHORIZED' };
   return rpc('admin_list_actions', { p_admin_code: cred }, mapActionListResult);
+}
+
+/** Owner sees all sessions; admin sees only their own account's sessions. */
+export async function listSessions(): Promise<AdminResult<AdminSessionRecord[]>> {
+  const cred = getAdminCredential();
+  if (!cred) return { ok: false, error: 'UNAUTHORIZED' };
+  return rpc('admin_list_sessions', { p_admin_code: cred }, mapSessionListResult);
+}
+
+/** Revoke a single device session (signs that device out). */
+export async function revokeSession(sessionId: string): Promise<AdminResult<boolean>> {
+  const cred = getAdminCredential();
+  if (!cred) return { ok: false, error: 'UNAUTHORIZED' };
+  return rpc('admin_revoke_session', { p_admin_code: cred, p_session_id: sessionId }, mapSetActiveResult);
 }

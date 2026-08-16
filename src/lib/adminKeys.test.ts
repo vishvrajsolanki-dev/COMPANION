@@ -6,12 +6,16 @@ import {
   mapSetActiveResult,
   mapProfileListResult,
   mapActionListResult,
+  mapSessionListResult,
   isMaskedCode,
   ADMIN_ERROR_MESSAGES,
+  classifyPostgrestError,
+  formatAdminError,
   type AdminErrorCode,
   type AdminKeyRecord,
   type AdminProfileRecord,
   type AdminActionRecord,
+  type AdminSessionRecord,
 } from './adminKeys';
 
 describe('isMaskedCode', () => {
@@ -51,6 +55,57 @@ describe('mapAdminError', () => {
   });
 });
 
+describe('classifyPostgrestError', () => {
+  it('classifies a PostgREST error (has code) as SERVER with detail', () => {
+    const res = classifyPostgrestError({
+      code: 'PGRST202',
+      message: 'Could not find the function public.admin_update_key_limits',
+      details: 'Searched for the function public.admin_update_key_limits in schema cache',
+      hint: null,
+    });
+    expect(res.error).toBe('SERVER');
+    expect(res.detail).toContain('PGRST202');
+    expect(res.detail).toContain('Could not find the function');
+  });
+
+  it('classifies a Postgres SQL error (SQLSTATE code) as SERVER', () => {
+    const res = classifyPostgrestError({
+      code: '42501',
+      message: 'permission denied for function admin_upsert_reference_data',
+    });
+    expect(res.error).toBe('SERVER');
+    expect(res.detail).toContain('42501');
+  });
+
+  it('classifies a network TypeError (no code) as NETWORK', () => {
+    const err = new TypeError('Failed to fetch');
+    expect(classifyPostgrestError(err).error).toBe('NETWORK');
+  });
+
+  it('classifies junk without a code as NETWORK', () => {
+    expect(classifyPostgrestError(null).error).toBe('NETWORK');
+    expect(classifyPostgrestError(undefined).error).toBe('NETWORK');
+    expect(classifyPostgrestError('nope').error).toBe('NETWORK');
+    expect(classifyPostgrestError({}).error).toBe('NETWORK');
+    expect(classifyPostgrestError({ message: 'Failed to fetch' }).error).toBe('NETWORK');
+  });
+});
+
+describe('formatAdminError', () => {
+  it('returns empty string for a success result', () => {
+    expect(formatAdminError({ ok: true, data: [] })).toBe('');
+  });
+
+  it('returns the base message for an app-level rejection without detail', () => {
+    expect(formatAdminError({ ok: false, error: 'NOT_FOUND' })).toBe(ADMIN_ERROR_MESSAGES.NOT_FOUND);
+  });
+
+  it('appends the server-side detail for SERVER failures', () => {
+    const res = formatAdminError({ ok: false, error: 'SERVER', detail: 'PGRST202 — Could not find the function' });
+    expect(res).toBe(`${ADMIN_ERROR_MESSAGES.SERVER} (PGRST202 — Could not find the function)`);
+  });
+});
+
 describe('mapGenerateKeyResult', () => {
   it('maps a success payload into a typed key with all fields defaulted', () => {
     const res = mapGenerateKeyResult({
@@ -69,6 +124,8 @@ describe('mapGenerateKeyResult', () => {
         used_count: 0,
         created_at: null,
         expires_at: null,
+        account_id: '',
+        student_profile: null,
       },
     });
   });
@@ -173,8 +230,8 @@ describe('mapProfileListResult', () => {
     const res = mapProfileListResult({
       ok: true,
       profiles: [
-        { id: 'p-1', name: 'Vishvraj', email: 'v@x.com', role: 'owner', created_at: '2026-08-06T00:00:00Z', key_label: 'Vishvraj' },
-        { id: 'p-2', name: null, email: null, role: 'student', created_at: '2026-08-05T00:00:00Z', key_label: null },
+        { id: 'p-1', name: 'Vishvraj', email: 'v@x.com', role: 'owner', created_at: '2026-08-06T00:00:00Z', key_label: 'Vishvraj', account_id: 'acc-1', student_profile: null },
+        { id: 'p-2', name: null, email: null, role: 'student', created_at: '2026-08-05T00:00:00Z', key_label: null, account_id: 'acc-2', student_profile: null },
       ],
     });
     expect(res.ok).toBe(true);
@@ -183,10 +240,38 @@ describe('mapProfileListResult', () => {
       expect(res.data[0]).toEqual({
         id: 'p-1', name: 'Vishvraj', email: 'v@x.com', role: 'owner',
         created_at: '2026-08-06T00:00:00Z', key_label: 'Vishvraj',
+        account_id: 'acc-1', student_profile: null,
       });
       expect(res.data[1].name).toBeNull();
       expect(res.data[1].email).toBeNull();
       expect(res.data[1].key_label).toBeNull();
+    }
+  });
+
+  it('passes through the account-scoped student profile', () => {
+    const res = mapProfileListResult({
+      ok: true,
+      profiles: [
+        {
+          id: 'p-3',
+          name: 'Drashti',
+          email: 'd@x.com',
+          role: 'student',
+          created_at: '2026-08-06T00:00:00Z',
+          key_label: 'Drashti Key',
+          account_id: '9a1c9f1a-0000-4000-8000-000000000009',
+          student_profile: { name: 'Drashti', department: 'CE', enrollment_number: '2204039' },
+        },
+      ],
+    });
+    expect(res.ok).toBe(true);
+    if (res.ok) {
+      expect(res.data[0].account_id).toBe('9a1c9f1a-0000-4000-8000-000000000009');
+      expect(res.data[0].student_profile).toEqual({
+        name: 'Drashti',
+        department: 'CE',
+        enrollment_number: '2204039',
+      });
     }
   });
 
@@ -286,9 +371,81 @@ describe('mapActionListResult', () => {
   });
 });
 
+describe('mapSessionListResult', () => {
+  it('maps a device-session array with all fields', () => {
+    const res = mapSessionListResult({
+      ok: true,
+      sessions: [
+        {
+          id: 's-1',
+          account_id: '9a1c9f1a-0000-4000-8000-000000000001',
+          device_id: 'dev-1',
+          device_name: 'Chrome on Windows',
+          last_seen: '2026-08-07T09:00:00Z',
+          created_at: '2026-08-07T08:00:00Z',
+          account_name: 'Vishvraj',
+          account_role: 'owner',
+        },
+      ],
+    });
+    expect(res.ok).toBe(true);
+    if (res.ok) {
+      expect(res.data).toHaveLength(1);
+      expect(res.data[0]).toEqual({
+        id: 's-1',
+        account_id: '9a1c9f1a-0000-4000-8000-000000000001',
+        device_id: 'dev-1',
+        device_name: 'Chrome on Windows',
+        last_seen: '2026-08-07T09:00:00Z',
+        created_at: '2026-08-07T08:00:00Z',
+        account_name: 'Vishvraj',
+        account_role: 'owner',
+      });
+    }
+  });
+
+  it('defaults missing optional fields', () => {
+    const res = mapSessionListResult({
+      ok: true,
+      sessions: [{ id: 's-2', account_id: 'acc-1', device_id: 'dev-2' }],
+    });
+    expect(res.ok).toBe(true);
+    if (res.ok) {
+      expect(res.data[0]).toEqual({
+        id: 's-2',
+        account_id: 'acc-1',
+        device_id: 'dev-2',
+        device_name: null,
+        last_seen: null,
+        created_at: null,
+        account_name: null,
+        account_role: 'student',
+      });
+    }
+  });
+
+  it('returns empty array for empty sessions list', () => {
+    const res = mapSessionListResult({ ok: true, sessions: [] });
+    expect(res).toEqual({ ok: true, data: [] });
+  });
+
+  it('drops malformed rows instead of failing the whole list', () => {
+    const res = mapSessionListResult({ ok: true, sessions: [{ device_id: 'no-id' }, 'junk', null] });
+    expect(res.ok).toBe(true);
+    if (res.ok) expect(res.data).toHaveLength(0);
+  });
+
+  it('rejects non-array sessions payloads', () => {
+    expect(mapSessionListResult({ ok: true, sessions: {} })).toEqual({ ok: false, error: 'UNKNOWN' });
+    expect(mapSessionListResult({ ok: false, error: 'UNAUTHORIZED' })).toEqual({ ok: false, error: 'UNAUTHORIZED' });
+    expect(mapSessionListResult({ ok: true })).toEqual({ ok: false, error: 'UNKNOWN' });
+    expect(mapSessionListResult(null)).toEqual({ ok: false, error: 'UNKNOWN' });
+  });
+});
+
 describe('ADMIN_ERROR_MESSAGES', () => {
   it('has a human-readable message for every AdminErrorCode', () => {
-    const codes: AdminErrorCode[] = ['UNAUTHORIZED', 'GENERATION_CONFLICT', 'CANNOT_MODIFY_SELF', 'NOT_FOUND', 'NETWORK', 'UNKNOWN'];
+    const codes: AdminErrorCode[] = ['UNAUTHORIZED', 'GENERATION_CONFLICT', 'CANNOT_MODIFY_SELF', 'NOT_FOUND', 'SERVER', 'NETWORK', 'UNKNOWN'];
     for (const code of codes) {
       expect(ADMIN_ERROR_MESSAGES[code]).toBeDefined();
       expect(typeof ADMIN_ERROR_MESSAGES[code]).toBe('string');
@@ -298,7 +455,7 @@ describe('ADMIN_ERROR_MESSAGES', () => {
 
   it('has no extra keys beyond the defined error codes', () => {
     const definedCodes = Object.keys(ADMIN_ERROR_MESSAGES) as AdminErrorCode[];
-    const expectedCodes: AdminErrorCode[] = ['UNAUTHORIZED', 'GENERATION_CONFLICT', 'CANNOT_MODIFY_SELF', 'NOT_FOUND', 'NETWORK', 'UNKNOWN'];
+    const expectedCodes: AdminErrorCode[] = ['UNAUTHORIZED', 'GENERATION_CONFLICT', 'CANNOT_MODIFY_SELF', 'NOT_FOUND', 'SERVER', 'NETWORK', 'UNKNOWN'];
     expect(definedCodes.sort()).toEqual(expectedCodes.sort());
   });
 });
@@ -315,6 +472,7 @@ describe('Type inference sanity', () => {
       used_count: 0,
       created_at: '2026-08-06T00:00:00Z',
       expires_at: null,
+      account_id: '9a1c9f1a-0000-4000-8000-000000000001',
     };
     expect(key).toBeDefined();
   });
@@ -340,5 +498,19 @@ describe('Type inference sanity', () => {
       created_at: '2026-08-07T12:00:00Z',
     };
     expect(action).toBeDefined();
+  });
+
+  it('AdminSessionRecord has all expected fields', () => {
+    const session: AdminSessionRecord = {
+      id: 's-1',
+      account_id: '9a1c9f1a-0000-4000-8000-000000000001',
+      device_id: 'dev-1',
+      device_name: 'Chrome on Windows',
+      last_seen: '2026-08-07T09:00:00Z',
+      created_at: '2026-08-07T08:00:00Z',
+      account_name: 'Vishvraj',
+      account_role: 'owner',
+    };
+    expect(session).toBeDefined();
   });
 });

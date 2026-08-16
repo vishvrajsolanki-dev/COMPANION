@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useResources, useSubjects } from '../../db/useDatabase';
 import { db } from '../../db/index';
-import { useUIStore } from '../../store/uiStore';
-import { GlassButton, BottomSheet, EmptyState } from '../../components/ui';
+import { navigateTo, CANONICAL_HASHES } from '../../hooks/useHashLocation';
+import { Button, Card, BottomSheet, EmptyState } from '../../components/ui';
 import { ArrowLeft, Plus, ExternalLink, Github, FileText, Globe, Link, Trash2 } from 'lucide-react';
 
 const TYPE_ICON = {
@@ -14,17 +14,17 @@ const TYPE_ICON = {
 };
 
 const TYPE_COLOR: Record<string, string> = {
-  pdf:    'var(--color-danger)',
-  drive:  'var(--color-info)',
-  github: 'var(--color-secondary)',
-  url:    'var(--color-success)',
-  other:  'var(--color-warning)',
+  pdf:    'var(--error, #ba1a1a)',
+  drive:  'var(--primary, #001e4c)',
+  github: 'var(--secondary, #5a54a4)',
+  url:    'var(--success-attendance, #0f336d)',
+  other:  'var(--color-warning, #d97706)',
 };
 
 export const ResourcesView: React.FC = () => {
   const resources = useResources() || [];
   const subjects  = useSubjects()  || [];
-  const closeSubview = useUIStore(state => state.closeSubview);
+  const closeSubview = () => navigateTo(CANONICAL_HASHES.studyTasks);
 
   const [filterSubjectId, setFilterSubjectId] = useState<string>('');
   const [isAdding, setIsAdding] = useState(false);
@@ -82,27 +82,65 @@ export const ResourcesView: React.FC = () => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: 'var(--bg-page)', paddingBottom: '80px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-page)' }} data-testid="resources-view">
       <h1 className="sr-only">Resources Shelf</h1>
 
       {/* Header */}
-      <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'var(--space-md)', paddingTop: 'calc(var(--space-md) + env(safe-area-inset-top))', borderBottom: '1px solid var(--border-hairline)', backgroundColor: 'var(--bg-page)', position: 'sticky', top: 0, zIndex: 10 }}>
+      <header
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: 'var(--stack-md, 16px)',
+          paddingTop: 'calc(var(--stack-md, 16px) + env(safe-area-inset-top))',
+          borderBottom: '1px solid var(--outline-variant, #c4c6d1)',
+          backgroundColor: 'var(--surface-container-lowest, #ffffff)',
+          position: 'sticky',
+          top: 0,
+          zIndex: 10,
+        }}
+      >
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button onClick={closeSubview} style={{ color: 'var(--text-primary)' }} aria-label="Go back">
+          <button
+            onClick={closeSubview}
+            style={{
+              width: 44,
+              height: 44,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'var(--on-surface, #1a1c1c)',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+            }}
+            aria-label="Go back"
+          >
             <ArrowLeft size={24} />
           </button>
-          <h2 style={{ fontSize: 'var(--text-xl)', fontWeight: 700, color: 'var(--text-primary)' }}>Resources Shelf</h2>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--on-surface, #1a1c1c)', fontFamily: 'var(--font-primary)' }}>Resources Shelf</h2>
         </div>
-        <GlassButton size="sm" onClick={() => setIsAdding(true)}>
+        <Button size="sm" variant="primary" onClick={() => setIsAdding(true)}>
           <Plus size={16} /> Add
-        </GlassButton>
+        </Button>
       </header>
 
       {/* Subject filter pills */}
-      <div style={{ padding: 'var(--space-md) var(--space-md) 0', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+      <div style={{ padding: 'var(--stack-md, 16px) var(--stack-md, 16px) 0', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
         <button
           onClick={() => setFilterSubjectId('')}
-          style={{ padding: '6px 12px', borderRadius: 'var(--radius-pill)', fontSize: '0.8rem', fontWeight: 600, backgroundColor: filterSubjectId === '' ? 'var(--color-primary)' : 'var(--bg-card)', color: filterSubjectId === '' ? '#ffffff' : 'var(--text-secondary)', border: filterSubjectId === '' ? '1px solid var(--color-primary)' : '1px solid var(--border-hairline)' }}
+          style={{
+            padding: '8px 16px',
+            borderRadius: 'var(--radius-full, 9999px)',
+            fontSize: '0.8rem',
+            fontWeight: 700,
+            fontFamily: 'var(--font-primary)',
+            backgroundColor: filterSubjectId === '' ? 'var(--primary, #001e4c)' : 'var(--surface-container-low, #f4f3f2)',
+            color: filterSubjectId === '' ? 'var(--on-primary, #ffffff)' : 'var(--on-surface, #1a1c1c)',
+            border: filterSubjectId === '' ? 'none' : '1px solid var(--outline-variant, #c4c6d1)',
+            minHeight: '36px',
+            cursor: 'pointer',
+          }}
         >
           All
         </button>
@@ -110,7 +148,18 @@ export const ResourcesView: React.FC = () => {
           <button
             key={s.id}
             onClick={() => setFilterSubjectId(s.id)}
-            style={{ padding: '6px 12px', borderRadius: 'var(--radius-pill)', fontSize: '0.8rem', fontWeight: 600, backgroundColor: filterSubjectId === s.id ? s.color : 'var(--bg-card)', color: filterSubjectId === s.id ? '#ffffff' : s.color, border: `1px solid ${s.color}40` }}
+            style={{
+              padding: '8px 16px',
+              borderRadius: 'var(--radius-full, 9999px)',
+              fontSize: '0.8rem',
+              fontWeight: 600,
+              fontFamily: 'var(--font-mono)',
+              backgroundColor: filterSubjectId === s.id ? s.color : 'var(--surface-container-low, #f4f3f2)',
+              color: filterSubjectId === s.id ? '#ffffff' : s.color,
+              border: `1px solid ${s.color}40`,
+              minHeight: '36px',
+              cursor: 'pointer',
+            }}
           >
             {s.code}
           </button>
@@ -118,12 +167,12 @@ export const ResourcesView: React.FC = () => {
       </div>
 
       {/* Resource list grouped by subject */}
-      <div style={{ padding: 'var(--space-md)', display: 'flex', flexDirection: 'column', gap: 'var(--space-lg)' }}>
+      <div style={{ padding: 'var(--stack-md, 16px)', display: 'flex', flexDirection: 'column', gap: 'var(--stack-lg, 32px)' }}>
         {Object.keys(grouped).length === 0 ? (
           <EmptyState
             icon={<Link size={40} />}
             title="No resources yet"
-            body="Tap + to add course slides, GitHub links, or PDFs."
+            body="Tap + Add to link course slides, GitHub links, or PDFs."
           />
         ) : (
           Object.entries(grouped).map(([subjectId, items]) => {
@@ -131,46 +180,67 @@ export const ResourcesView: React.FC = () => {
             return (
               <div key={subjectId}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: sub?.color || 'var(--text-muted)' }} />
-                  <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)' }}>{sub?.name || 'Removed Subject'}</span>
+                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: sub?.color || 'var(--on-surface-variant, #444750)' }} />
+                  <span style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--on-surface, #1a1c1c)', fontFamily: 'var(--font-primary)' }}>{sub?.name || 'Removed Subject'}</span>
                   {sub && (
-                    <span style={{ fontFamily: 'var(--font-family-mono)', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{sub.code}</span>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: 'var(--on-surface-variant, #444750)' }}>{sub.code}</span>
                   )}
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--stack-sm, 8px)' }}>
                   {items.map(r => {
                     const Icon = TYPE_ICON[r.type] || ExternalLink;
-                    const iconColor = TYPE_COLOR[r.type] || 'var(--text-secondary)';
+                    const iconColor = TYPE_COLOR[r.type] || 'var(--on-surface-variant, #444750)';
                     return (
-                      <div
+                      <Card
                         key={r.id}
-                        style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px var(--space-md)', backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius-card)', border: '1px solid var(--border-hairline)', boxShadow: 'var(--shadow-card)' }}
+                        style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', minHeight: '64px' }}
                       >
-                        <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: 'var(--bg-card-tint)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <div style={{ width: '38px', height: '38px', borderRadius: '10px', backgroundColor: 'var(--surface-container-low, #f4f3f2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                           <Icon size={18} color={iconColor} />
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.title}</div>
-                          {r.description && <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '1px' }}>{r.description}</div>}
+                          <div style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--on-surface, #1a1c1c)', fontFamily: 'var(--font-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.title}</div>
+                          {r.description && <div style={{ fontSize: '0.75rem', color: 'var(--on-surface-variant, #444750)', marginTop: '2px' }}>{r.description}</div>}
                         </div>
                         <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
                           <a
                             href={r.url_or_file_ref}
                             target="_blank"
                             rel="noopener noreferrer"
-                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: 'var(--radius-pill)', backgroundColor: 'var(--bg-card-tint)', color: 'var(--color-primary)' }}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              width: 44,
+                              height: 44,
+                              borderRadius: 'var(--radius-full, 9999px)',
+                              color: 'var(--primary, #001e4c)',
+                              textDecoration: 'none',
+                            }}
+                            aria-label={`Open link for ${r.title}`}
                           >
-                            <ExternalLink size={15} />
+                            <ExternalLink size={18} />
                           </a>
                           <button
                             onClick={() => handleDelete(r.id)}
-                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: 'var(--radius-pill)', backgroundColor: 'var(--color-danger-bg)', color: 'var(--color-danger)' }}
-                            aria-label="Delete resource"
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              width: 44,
+                              height: 44,
+                              borderRadius: 'var(--radius-full, 9999px)',
+                              color: 'var(--error, #ba1a1a)',
+                              background: 'none',
+                              border: 'none',
+                              cursor: 'pointer',
+                            }}
+                            aria-label={`Delete resource ${r.title}`}
                           >
-                            <Trash2 size={15} />
+                            <Trash2 size={18} />
                           </button>
                         </div>
-                      </div>
+                      </Card>
                     );
                   })}
                 </div>
@@ -183,22 +253,25 @@ export const ResourcesView: React.FC = () => {
       {/* Add Resource Sheet */}
       {isAdding && (
         <BottomSheet open onClose={() => setIsAdding(false)}>
-          <form onSubmit={handleAdd} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
-            <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-primary)' }}>Add Resource</h3>
+          <form onSubmit={handleAdd} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--stack-md, 16px)' }}>
+            <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--on-surface, #1a1c1c)', fontFamily: 'var(--font-primary)' }}>Add Resource</h3>
 
-            <input type="text" placeholder="Resource title" value={newTitle} onChange={e => setNewTitle(e.target.value)} required className="input" />
+            <div>
+              <label style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--on-surface-variant, #444750)', fontFamily: 'var(--font-mono)' }}>Title</label>
+              <input type="text" placeholder="Resource title" value={newTitle} onChange={e => setNewTitle(e.target.value)} required className="input" style={{ marginTop: 6, width: '100%', minHeight: '44px' }} />
+            </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 'var(--stack-md, 16px)' }}>
               <div>
-                <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Subject</label>
-                <select value={newSubjectId} onChange={e => setNewSubjectId(e.target.value)} required className="input" style={{ marginTop: 4 }}>
+                <label style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--on-surface-variant, #444750)', fontFamily: 'var(--font-mono)' }}>Subject</label>
+                <select value={newSubjectId} onChange={e => setNewSubjectId(e.target.value)} required className="input" style={{ marginTop: 6, width: '100%', minHeight: '44px' }}>
                   <option value="">Select</option>
                   {subjects.map(s => <option key={s.id} value={s.id}>{s.code}</option>)}
                 </select>
               </div>
               <div>
-                <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Type</label>
-                <select value={newType} onChange={e => setNewType(e.target.value as any)} className="input" style={{ marginTop: 4 }}>
+                <label style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--on-surface-variant, #444750)', fontFamily: 'var(--font-mono)' }}>Type</label>
+                <select value={newType} onChange={e => setNewType(e.target.value as any)} className="input" style={{ marginTop: 6, width: '100%', minHeight: '44px' }}>
                   <option value="url">URL</option>
                   <option value="pdf">PDF</option>
                   <option value="drive">Drive</option>
@@ -208,18 +281,25 @@ export const ResourcesView: React.FC = () => {
               </div>
             </div>
 
-            <input type="url" placeholder="https://..." value={newUrl} onChange={e => setNewUrl(e.target.value)} required className="input" />
-            <input type="text" placeholder="Short description (optional)" value={newDesc} onChange={e => setNewDesc(e.target.value)} className="input" />
+            <div>
+              <label style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--on-surface-variant, #444750)', fontFamily: 'var(--font-mono)' }}>URL or File Reference</label>
+              <input type="url" placeholder="https://..." value={newUrl} onChange={e => setNewUrl(e.target.value)} required className="input" style={{ marginTop: 6, width: '100%', minHeight: '44px' }} />
+            </div>
+
+            <div>
+              <label style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--on-surface-variant, #444750)', fontFamily: 'var(--font-mono)' }}>Description (Optional)</label>
+              <input type="text" placeholder="Short description" value={newDesc} onChange={e => setNewDesc(e.target.value)} className="input" style={{ marginTop: 6, width: '100%', minHeight: '44px' }} />
+            </div>
 
             {dbError && (
-              <div style={{ padding: '10px', borderRadius: 'var(--radius-card)', backgroundColor: 'var(--color-danger-bg)', color: 'var(--color-danger)', fontSize: '0.85rem', fontWeight: 600 }}>
+              <div style={{ padding: '10px 14px', borderRadius: 'var(--radius-md, 8px)', backgroundColor: 'var(--error-container, #ffdad6)', color: 'var(--on-error-container, #93000a)', fontSize: '0.85rem', fontWeight: 600 }}>
                 {dbError}
               </div>
             )}
 
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <GlassButton type="submit" style={{ flex: 1 }}>Save Resource</GlassButton>
-              <GlassButton type="button" variant="ghost" onClick={() => setIsAdding(false)}>Cancel</GlassButton>
+            <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+              <Button type="submit" variant="primary" style={{ flex: 1 }}>Save Resource</Button>
+              <Button type="button" variant="ghost" onClick={() => setIsAdding(false)}>Cancel</Button>
             </div>
           </form>
         </BottomSheet>

@@ -1,19 +1,30 @@
 import React from 'react';
 import styles from './ui.module.css';
 
-interface ChipProps {
+export interface ChipProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   active?: boolean;
-  onClick?: () => void;
+  onClick?: (e: React.MouseEvent<HTMLButtonElement>) => void;
   children: React.ReactNode;
 }
 
-/** Selectable filter chip. */
-export const Chip: React.FC<ChipProps> = ({ active = false, onClick, children }) => (
+/** Academic OS canonical Chip filter button component. */
+export const Chip: React.FC<ChipProps> = ({
+  active = false,
+  onClick,
+  children,
+  className,
+  type = 'button',
+  ...rest
+}) => (
   <button
-    type="button"
+    type={type}
     onClick={onClick}
-    className={`${styles.chip} ${active ? styles.chipActive : ''}`}
+    aria-pressed={active}
+    className={[styles.chip, active ? styles.chipActive : '', className || ''].join(' ')}
+    {...rest}
   >
     {children}
   </button>
 );
+
+export default Chip;

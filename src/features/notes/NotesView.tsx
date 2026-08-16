@@ -1,18 +1,16 @@
 import React, { useState } from 'react';
 import { useNotes, useSubjects } from '../../db/useDatabase';
 import { db, Note } from '../../db/index';
-import { useUIStore } from '../../store/uiStore';
-import { GlassButton } from '../../components/ui';
+import { navigateTo, CANONICAL_HASHES } from '../../hooks/useHashLocation';
+import { Button, Card, Chip, useToast, ConfirmDialog } from '../../components/ui';
 import {
-  ArrowLeft, Search, Plus, Tag, Edit, Trash2,
-  Eye, EyeOff, Paperclip, Save
+  ArrowLeft, Search, Plus, Edit, Trash2,
+  Eye, Paperclip, Save
 } from 'lucide-react';
 
 /**
- * §4.8 markdown preview: the raw source stays visible (`#`, `##`, `##`,
- * `**bold**` markers kept literally), but heading lines are colored primary
- * blue + bold. Body lines remain default text-primary. Visual-only — the
- * stored markdown is never modified.
+ * Markdown preview: the raw source stays visible (`#`, `##`, `**bold**`),
+ * heading lines are styled in primary blue + bold.
  */
 const renderMarkdownBody = (text: string) => {
   const lines = text.split('\n');
@@ -21,12 +19,11 @@ const renderMarkdownBody = (text: string) => {
     const styledLine = (
       <span
         key={i}
-        style={isHeading ? { color: 'var(--color-primary)', fontWeight: 700 } : undefined}
+        style={isHeading ? { color: 'var(--primary, #001e4c)', fontWeight: 700 } : undefined}
       >
         {line}
       </span>
     );
-    // Re-append the newline so line breaks survive in the pre-wrap container.
     return i < lines.length - 1
       ? <React.Fragment key={i}>{styledLine}{'\n'}</React.Fragment>
       : styledLine;
@@ -37,7 +34,8 @@ export const NotesView: React.FC = () => {
   const notes = useNotes() || [];
   const subjects = useSubjects() || [];
 
-  const closeSubview = useUIStore(state => state.closeSubview);
+  const closeSubview = () => navigateTo(CANONICAL_HASHES.studyTasks);
+  const toast = useToast();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
@@ -86,6 +84,7 @@ export const NotesView: React.FC = () => {
   };
 
   const [dbError, setDbError] = useState<string | null>(null);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   const handleSave = async () => {
     if (!editTitle.trim()) return;
@@ -123,60 +122,72 @@ export const NotesView: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('Are you sure you want to delete this note?')) {
-      try {
-        await db.notes.update(id, { is_deleted: true });
-        if (editingNoteId === id) setEditingNoteId(null);
-      } catch (err) {
-        console.error('Failed to delete note:', err);
-        setDbError('Failed to delete note. Please try again.');
-      }
+    try {
+      await db.notes.update(id, { is_deleted: true });
+      if (editingNoteId === id) setEditingNoteId(null);
+    } catch (err) {
+      console.error('Failed to delete note:', err);
+      setDbError('Failed to delete note. Please try again.');
     }
   };
 
   if (editingNoteId) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', backgroundColor: 'var(--bg-page)' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%', backgroundColor: 'var(--bg-page)' }} data-testid="note-editor">
         {/* Editor Header */}
         <header
           style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            padding: 'var(--space-md)',
-            paddingTop: 'calc(var(--space-md) + env(safe-area-inset-top))',
-            borderBottom: '1px solid var(--border-hairline)',
-            backgroundColor: 'var(--bg-page)',
+            padding: 'var(--stack-md, 16px)',
+            paddingTop: 'calc(var(--stack-md, 16px) + env(safe-area-inset-top))',
+            borderBottom: '1px solid var(--outline-variant, #c4c6d1)',
+            backgroundColor: 'var(--surface-container-lowest, #ffffff)',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <button onClick={() => setEditingNoteId(null)} style={{ color: 'var(--text-primary)' }}>
+            <button
+              onClick={() => setEditingNoteId(null)}
+              style={{
+                width: 44,
+                height: 44,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'var(--on-surface, #1a1c1c)',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+              }}
+              aria-label="Go back"
+            >
               <ArrowLeft size={24} />
             </button>
-            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--on-surface, #1a1c1c)', fontFamily: 'var(--font-primary)' }}>
               {editingNoteId === 'new' ? 'Create Note' : 'Edit Note'}
             </h3>
           </div>
 
           <div style={{ display: 'flex', gap: '8px' }}>
-            <GlassButton variant="ghost" size="sm" onClick={() => setIsPreview(!isPreview)}>
+            <Button variant="subtle" size="sm" onClick={() => setIsPreview(!isPreview)}>
               {isPreview ? <Edit size={16} /> : <Eye size={16} />}
               <span>{isPreview ? 'Editor' : 'Preview'}</span>
-            </GlassButton>
+            </Button>
 
-            <GlassButton size="sm" onClick={handleSave}>
+            <Button size="sm" variant="primary" onClick={handleSave}>
               <Save size={16} />
               <span>Save</span>
-            </GlassButton>
+            </Button>
           </div>
         </header>
 
         {/* Editor Body */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: 'var(--space-md)', overflowY: 'auto' }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: 'var(--stack-md, 16px)', overflowY: 'auto' }}>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: 'var(--space-md)' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: 'var(--stack-md, 16px)' }}>
             {dbError && (
-              <div style={{ padding: '10px', borderRadius: 'var(--radius-card)', backgroundColor: 'var(--color-danger-bg)', color: 'var(--color-danger)', fontSize: '0.85rem', fontWeight: 600 }}>
+              <div style={{ padding: '10px 14px', borderRadius: 'var(--radius-md, 8px)', backgroundColor: 'var(--error-container, #ffdad6)', color: 'var(--on-error-container, #93000a)', fontSize: '0.85rem', fontWeight: 600 }}>
                 {dbError}
               </div>
             )}
@@ -187,14 +198,15 @@ export const NotesView: React.FC = () => {
               value={editTitle}
               onChange={e => setEditTitle(e.target.value)}
               className="input"
-              style={{ fontSize: '1.1rem', fontWeight: 700 }}
+              style={{ fontSize: '1.1rem', fontWeight: 700, minHeight: '44px' }}
             />
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-md)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 'var(--stack-md, 16px)' }}>
               <select
                 value={editSubjectId}
                 onChange={e => setEditSubjectId(e.target.value)}
                 className="input"
+                style={{ minHeight: '44px' }}
               >
                 <option value="">General Subject</option>
                 {subjects.map(s => (
@@ -208,14 +220,15 @@ export const NotesView: React.FC = () => {
                 value={editTagsString}
                 onChange={e => setEditTagsString(e.target.value)}
                 className="input"
+                style={{ minHeight: '44px' }}
               />
             </div>
           </div>
 
           {isPreview ? (
-            <div style={{ flex: 1, padding: '12px', border: '1px solid var(--border-hairline)', borderRadius: 'var(--radius-card)', backgroundColor: 'var(--bg-card)', overflowY: 'auto' }}>
-              <h3 style={{ marginBottom: '8px' }}>{editTitle || 'Untitled Note'}</h3>
-              <p style={{ whiteSpace: 'pre-wrap', color: 'var(--text-primary)' }}>
+            <div style={{ flex: 1, padding: '16px', border: '1px solid var(--outline-variant, #c4c6d1)', borderRadius: 'var(--radius-lg, 12px)', backgroundColor: 'var(--surface-container-lowest, #ffffff)', overflowY: 'auto' }}>
+              <h3 style={{ marginBottom: '12px', fontSize: '1.25rem', fontWeight: 700, color: 'var(--on-surface, #1a1c1c)', fontFamily: 'var(--font-primary)' }}>{editTitle || 'Untitled Note'}</h3>
+              <p style={{ whiteSpace: 'pre-wrap', color: 'var(--on-surface, #1a1c1c)', lineHeight: 1.6 }}>
                 {editBody ? renderMarkdownBody(editBody) : 'No content written yet.'}
               </p>
             </div>
@@ -227,38 +240,31 @@ export const NotesView: React.FC = () => {
               className="input"
               style={{
                 flex: 1,
-                fontFamily: 'var(--font-family-mono)',
+                fontFamily: 'var(--font-mono, monospace)',
                 fontSize: '0.95rem',
                 resize: 'none',
                 minHeight: '200px',
+                backgroundColor: 'var(--surface-container-lowest, #ffffff)',
+                padding: '12px 16px',
+                lineHeight: 1.5,
               }}
             />
           )}
 
-          {/* CRITICAL RULE: Spacing between content and attachment strip must be >= 24px/space-lg */}
-          <div style={{ marginTop: 'var(--space-lg)' }} />
-
           {/* Attachment Strip Block */}
-          <div style={{ borderTop: '1px dashed var(--border-hairline)', paddingTop: '16px' }}>
-            <h4 style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
-              <Paperclip size={16} /> Attachments
+          <div style={{ marginTop: 'var(--stack-lg, 32px)', borderTop: '1px dashed var(--outline-variant, #c4c6d1)', paddingTop: '16px' }}>
+            <h4 style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--on-surface-variant, #444750)', fontFamily: 'var(--font-mono)', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
+              <Paperclip size={16} /> Attachments & Resources
             </h4>
             <div style={{ display: 'flex', gap: '8px' }}>
-              <button
+              <Button
                 type="button"
-                onClick={() => alert('Offline attachment uploading will be implemented in Phase 3 sync stack')}
-                style={{
-                  padding: '8px 12px',
-                  borderRadius: 'var(--radius-pill)',
-                  backgroundColor: 'var(--bg-card)',
-                  border: '1px solid var(--border-hairline)',
-                  fontSize: '0.8rem',
-                  fontWeight: 600,
-                  color: 'var(--text-secondary)',
-                }}
+                variant="subtle"
+                size="sm"
+                onClick={() => toast.show('Offline attachments are coming in the Phase 3 sync stack.', 'info')}
               >
                 + Link Resource
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -268,7 +274,7 @@ export const NotesView: React.FC = () => {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: 'var(--bg-page)', paddingBottom: '80px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-page)' }} data-testid="notes-view">
       <h1 className="sr-only">Notes</h1>
 
       {/* Screen header */}
@@ -277,115 +283,110 @@ export const NotesView: React.FC = () => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: 'var(--space-md)',
-          paddingTop: 'calc(var(--space-md) + env(safe-area-inset-top))',
-          borderBottom: '1px solid var(--border-hairline)',
-          backgroundColor: 'var(--bg-page)',
+          padding: 'var(--stack-md, 16px)',
+          paddingTop: 'calc(var(--stack-md, 16px) + env(safe-area-inset-top))',
+          borderBottom: '1px solid var(--outline-variant, #c4c6d1)',
+          backgroundColor: 'var(--surface-container-lowest, #ffffff)',
           position: 'sticky',
           top: 0,
           zIndex: 10,
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button onClick={closeSubview} style={{ color: 'var(--text-primary)' }} aria-label="Go back">
+          <button
+            onClick={closeSubview}
+            style={{
+              width: 44,
+              height: 44,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'var(--on-surface, #1a1c1c)',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+            }}
+            aria-label="Go back"
+          >
             <ArrowLeft size={24} />
           </button>
-          <h2 style={{ fontSize: 'var(--text-xl)', fontWeight: 700, color: 'var(--text-primary)' }}>Study Notes</h2>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--on-surface, #1a1c1c)', fontFamily: 'var(--font-primary)' }}>Study Notes</h2>
         </div>
 
-        <GlassButton size="sm" onClick={handleCreateNew}>
+        <Button size="sm" variant="primary" onClick={handleCreateNew}>
           <Plus size={16} /> New Note
-        </GlassButton>
+        </Button>
       </header>
 
       {/* Search and Tags */}
-      <div style={{ padding: 'var(--space-md)', display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
+      <div style={{ padding: 'var(--stack-md, 16px)', display: 'flex', flexDirection: 'column', gap: 'var(--stack-sm, 8px)' }}>
 
         <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-          <Search size={18} style={{ position: 'absolute', left: '12px', color: 'var(--text-muted)' }} />
+          <Search size={18} style={{ position: 'absolute', left: '14px', color: 'var(--on-surface-variant, #444750)' }} />
           <input
             type="text"
-            placeholder="Search notes body..."
+            placeholder="Search notes content..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             className="input"
-            style={{ paddingLeft: 38 }}
+            style={{ paddingLeft: 42, minHeight: '44px', width: '100%' }}
           />
         </div>
 
-        {/* Tag chips */}
-        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', paddingBottom: '4px' }}>
-          <button
+        {/* Tag chips using Chip component */}
+        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', paddingTop: '4px' }}>
+          <Chip
+            active={selectedTag === null}
             onClick={() => setSelectedTag(null)}
-            style={{
-              padding: '5px 12px',
-              borderRadius: 'var(--radius-pill)',
-              backgroundColor: selectedTag === null ? 'var(--color-primary)' : 'var(--bg-card)',
-              border: selectedTag === null ? 'none' : '1px solid var(--border-hairline)',
-              color: selectedTag === null ? '#ffffff' : 'var(--text-secondary)',
-              fontSize: '0.8rem',
-              fontWeight: 600,
-            }}
           >
-            All
-          </button>
+            All Notes
+          </Chip>
           {allTags.map(tag => (
-            <button
+            <Chip
               key={tag}
+              active={selectedTag === tag}
               onClick={() => setSelectedTag(tag)}
-              style={{
-                padding: '5px 12px',
-                borderRadius: 'var(--radius-pill)',
-                backgroundColor: selectedTag === tag ? 'var(--color-primary)' : 'var(--bg-card)',
-                border: selectedTag === tag ? 'none' : '1px solid var(--border-hairline)',
-                color: selectedTag === tag ? '#ffffff' : 'var(--text-secondary)',
-                fontSize: '0.8rem',
-                fontWeight: 600,
-              }}
             >
               #{tag}
-            </button>
+            </Chip>
           ))}
         </div>
       </div>
 
       {/* Note List */}
-      <div style={{ padding: '0 var(--space-md)', display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
+      <div style={{ padding: '0 var(--stack-md, 16px)', display: 'flex', flexDirection: 'column', gap: 'var(--stack-sm, 8px)' }}>
         {filteredNotes.length === 0 ? (
-          <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
-            No study notes found.
-          </div>
+          <Card style={{ padding: '40px 16px', textAlign: 'center', color: 'var(--on-surface-variant, #444750)', fontSize: '0.9rem' }}>
+            No study notes found. Tap "+ New Note" to write one.
+          </Card>
         ) : (
           filteredNotes.map(n => {
             const sub = subjects.find(s => s.id === n.subject_id);
 
             return (
-              <div
+              <Card
                 key={n.id}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  padding: 'var(--space-md)',
-                  backgroundColor: 'var(--bg-card)',
-                  borderRadius: 'var(--radius-card)',
-                  border: '1px solid var(--border-hairline)',
-                  boxShadow: 'var(--shadow-card)',
+                  padding: 'var(--stack-md, 16px)',
+                  gap: '12px',
                 }}
               >
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <h4 style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)' }}>{n.title}</h4>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <h4 style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--on-surface, #1a1c1c)', fontFamily: 'var(--font-primary)' }}>{n.title}</h4>
                     {sub && (
                       <span
                         style={{
                           fontSize: '0.7rem',
-                          fontFamily: 'var(--font-family-mono)',
+                          fontFamily: 'var(--font-mono)',
                           fontWeight: 700,
                           color: sub.color,
                           backgroundColor: `${sub.color}1A`,
                           padding: '2px 8px',
-                          borderRadius: 'var(--radius-pill)',
+                          borderRadius: 'var(--radius-full, 9999px)',
                         }}
                       >
                         {sub.code}
@@ -394,28 +395,89 @@ export const NotesView: React.FC = () => {
                   </div>
 
                   {/* Tag strip inside card */}
-                  <div style={{ display: 'flex', gap: '4px', marginTop: '6px' }}>
-                    {n.tags.map(t => (
-                      <span key={t} style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                        #{t}
-                      </span>
-                    ))}
-                  </div>
+                  {n.tags.length > 0 && (
+                    <div style={{ display: 'flex', gap: '6px', marginTop: '6px', flexWrap: 'wrap' }}>
+                      {n.tags.map(t => (
+                        <span key={t} style={{ fontSize: '0.72rem', color: 'var(--on-surface-variant, #444750)', fontFamily: 'var(--font-mono)' }}>
+                          #{t}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Truncated body preview */}
+                  {n.body_markdown.trim() && (
+                    <p
+                      style={{
+                        marginTop: '6px',
+                        fontSize: '0.8rem',
+                        color: 'var(--on-surface-variant, #444750)',
+                        lineHeight: 1.4,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                      }}
+                    >
+                      {n.body_markdown.replace(/[#*_`>]/g, '').trim()}
+                    </p>
+                  )}
                 </div>
 
-                <div style={{ display: 'flex', gap: '4px' }}>
-                  <button onClick={() => handleStartEdit(n)} style={{ padding: '6px', color: 'var(--text-secondary)' }} aria-label="Edit note">
-                    <Edit size={16} />
+                <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
+                  <button
+                    onClick={() => handleStartEdit(n)}
+                    style={{
+                      width: 44,
+                      height: 44,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      borderRadius: 'var(--radius-md, 8px)',
+                      color: 'var(--on-surface-variant, #444750)',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                    }}
+                    aria-label="Edit note"
+                  >
+                    <Edit size={18} />
                   </button>
-                  <button onClick={() => handleDelete(n.id)} style={{ padding: '6px', color: 'var(--color-danger)' }} aria-label="Delete note">
-                    <Trash2 size={16} />
+                  <button
+                    onClick={() => setPendingDeleteId(n.id)}
+                    style={{
+                      width: 44,
+                      height: 44,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      borderRadius: 'var(--radius-md, 8px)',
+                      color: 'var(--error, #ba1a1a)',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                    }}
+                    aria-label="Delete note"
+                  >
+                    <Trash2 size={18} />
                   </button>
                 </div>
-              </div>
+              </Card>
             );
           })
         )}
       </div>
+
+      {/* Delete confirmation */}
+      <ConfirmDialog
+        open={!!pendingDeleteId}
+        title={`Delete "${notes.find(n => n.id === pendingDeleteId)?.title ?? 'this note'}"?`}
+        message="This note will be permanently removed."
+        confirmLabel="Delete Note"
+        onConfirm={() => { if (pendingDeleteId) handleDelete(pendingDeleteId); setPendingDeleteId(null); }}
+        onCancel={() => setPendingDeleteId(null)}
+      />
 
     </div>
   );

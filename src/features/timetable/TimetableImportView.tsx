@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db, Subject, LectureSlot } from '../../db/index';
+import { db, LectureSlot } from '../../db/index';
 import { useUIStore } from '../../store/uiStore';
-import { GlassButton } from '../../components/ui';
-import { ArrowLeft, Upload, CheckCircle2, AlertCircle, FileCode, Play, Copy } from 'lucide-react';
+import { Button } from '../../components/ui';
+import { ArrowLeft, Upload, CheckCircle2, AlertCircle, FileCode, Play, Copy, UserCheck, Pencil } from 'lucide-react';
 import { SUBJECT_COLORS } from '../subjects/ManageSubjectsView';
+import { getReferenceFaculty, findBestFacultyMatch, type ReferenceFaculty } from '../../lib/referenceData';
 
 interface JSONSubjectImport {
   code: string;
@@ -16,9 +17,9 @@ interface JSONSubjectImport {
 
 interface JSONPatternImport {
   subject_code: string;
-  day_of_week: number; // 1=Mon ... 7=Sun
-  start_time: string;  // "09:00"
-  end_time: string;    // "10:15"
+  day_of_week: number;
+  start_time: string;
+  end_time: string;
   room_id?: string;
   faculty_name?: string;
 }
@@ -29,10 +30,13 @@ interface JSONTimetablePayload {
   patterns?: JSONPatternImport[];
 }
 
-// Student-facing prompt they paste into any AI (ChatGPT/Gemini/Claude/…) along
-// with their timetable to get back JSON matching the exact schema validated in
-// handleValidate and consumed by handleCommitImport. Colors are auto-assigned
-// from the 8 locked subject tokens, so the AI is told not to emit them.
+interface FacultyMatch {
+  key: string;
+  input: string;
+  matched: ReferenceFaculty | null;
+  override: string;
+}
+
 const CONVERSION_PROMPT = `I need to convert my college timetable into a specific JSON format. I'll describe or show you my weekly timetable — convert it into this exact structure:
 
 {
@@ -47,15 +51,9 @@ const CONVERSION_PROMPT = `I need to convert my college timetable into a specifi
 Rules:
 - "day_of_week" is an integer: 1 = Monday, 2 = Tuesday, 3 = Wednesday, 4 = Thursday, 5 = Friday, 6 = Saturday, 7 = Sunday.
 - "start_time" and "end_time" are 24-hour "HH:MM" strings (e.g. "09:00", "14:30").
-- One entry in "subjects" per real course, using its short code (e.g. "DS", "DBMS"). Every "subject_code" used in "patterns" MUST have a matching entry in "subjects".
-- Labs and tutorials are NOT separate subjects — they are extra entries in "patterns" using the SAME "subject_code" as the parent lecture. Example: if "DS" has a lecture on Monday and a lab on Wednesday, both go in "patterns" with "subject_code": "DS". Do NOT create a "DS Lab" subject.
-- Every distinct weekly time slot (lecture, lab, or tutorial) is its own entry in "patterns", even if several slots share a subject_code.
-- Do NOT include a "color" field — subject colors are assigned automatically.
-- Only include real, confirmed classes — don't guess or fill in gaps.
+- One entry in "subjects" per real course.
+- Every distinct weekly time slot is its own entry in "patterns".`;
 
-Here's my timetable: [paste your timetable text, or describe it, or attach an image]`;
-
-/** Parse "YYYY-MM-DD" as a local Date (avoids UTC-midnight timezone drift). */
 const parseLocalDate = (isoDate: string): Date => {
   const [y, m, d] = isoDate.split('-').map(Number);
   return new Date(y, m - 1, d);
@@ -105,8 +103,10 @@ function generateSlotsForPattern(
   return slots;
 }
 
+import { navigateTo } from '../../hooks/useHashLocation';
+
 export const TimetableImportView: React.FC = () => {
-  const closeSubview = useUIStore(s => s.closeSubview);
+  const closeSubview = () => navigateTo('#plan/timetable');
   const activeSem = useLiveQuery(
     () => db.semesters.filter(s => s.is_active && !s.is_deleted).first(), []
   );
@@ -118,9 +118,9 @@ export const TimetableImportView: React.FC = () => {
   const [commitSummary, setCommitSummary] = useState<{ created: string[]; updated: string[]; skipped: string[] } | null>(null);
   const [preview, setPreview] = useState<{ newSubjects: number; projectedSlots: number; unresolvable: string[] } | null>(null);
   const [copied, setCopied] = useState(false);
+  const [facultyMatches, setFacultyMatches] = useState<FacultyMatch[] | null>(null);
+  const [facultyMatchError, setFacultyMatchError] = useState(false);
 
-  // Live preview of the real DB impact: how many subjects are NEW, and how many
-  // dated lecture slots the patterns will generate across the active semester.
   useEffect(() => {
     if (!parsed || !activeSem) { setPreview(null); return; }
     let cancelled = false;
@@ -135,12 +135,10 @@ export const TimetableImportView: React.FC = () => {
       const unresolvable: string[] = [];
       for (const pat of parsed.patterns || []) {
         const code = pat.subject_code.toUpperCase();
-        // A pattern is resolvable if its code is in the payload OR already in the DB.
         if (!payloadCodes.has(code) && !knownCodes.has(code)) {
           unresolvable.push(pat.subject_code);
           continue;
         }
-        // Slot COUNT is independent of the subject id — a dummy id is fine here.
         projectedSlots += generateSlotsForPattern(
           '__preview__', pat.day_of_week, pat.start_time, pat.end_time,
           undefined, undefined, activeSem.start_date, activeSem.end_date
@@ -167,8 +165,9 @@ export const TimetableImportView: React.FC = () => {
   const handleValidate = () => {
     setError(null);
     setParsed(null);
-    setImportedCount(null);   // clear stale success banner on re-validation
+    setImportedCount(null);
     setCommitSummary(null);
+    setFacultyMatches(null);
     try {
       if (!jsonText.trim()) throw new Error('Please paste JSON content or load sample.');
       const data: JSONTimetablePayload = JSON.parse(jsonText);
@@ -184,6 +183,7 @@ export const TimetableImportView: React.FC = () => {
       });
 
       setParsed(data);
+      buildFacultyMatches(data);
     } catch (err: any) {
       setError(err.message || 'Failed to parse JSON.');
     }
@@ -199,18 +199,50 @@ export const TimetableImportView: React.FC = () => {
       setError(null);
       setImportedCount(null);
       setCommitSummary(null);
+      setFacultyMatches(null);
     };
     reader.readAsText(file);
   };
 
+  const buildFacultyMatches = async (data: JSONTimetablePayload) => {
+    setFacultyMatches(null);
+    setFacultyMatchError(false);
+
+    const distinct = new Map<string, string>();
+    for (const p of data.patterns || []) {
+      if (p.faculty_name && p.faculty_name.trim()) {
+        const key = p.faculty_name.trim().toLowerCase();
+        if (!distinct.has(key)) distinct.set(key, p.faculty_name.trim());
+      }
+    }
+    if (distinct.size === 0) { setFacultyMatches([]); return; }
+
+    const ref = await getReferenceFaculty();
+    if (ref.error) setFacultyMatchError(true);
+    const list = ref.error ? [] : ref.data;
+
+    const matches: FacultyMatch[] = [];
+    for (const [key, input] of distinct) {
+      const matched = list.length > 0 ? findBestFacultyMatch(input, list) : null;
+      matches.push({ key, input, matched, override: matched?.name ?? input });
+    }
+    setFacultyMatches(matches);
+  };
+
+  const resolveFacultyName = (input?: string): string | undefined => {
+    if (!input || !input.trim()) return undefined;
+    const key = input.trim().toLowerCase();
+    const m = facultyMatches?.find(f => f.key === key);
+    if (!m) return input;
+    return m.override.trim() || undefined;
+  };
+
   const copyConversionPrompt = async () => {
-    const text = CONVERSION_PROMPT;
     try {
-      await navigator.clipboard.writeText(text);
+      await navigator.clipboard.writeText(CONVERSION_PROMPT);
     } catch {
-      // Fallback for non-secure contexts (served over plain http / file://)
       const ta = document.createElement('textarea');
-      ta.value = text;
+      ta.value = CONVERSION_PROMPT;
       ta.style.position = 'fixed';
       ta.style.opacity = '0';
       document.body.appendChild(ta);
@@ -234,8 +266,6 @@ export const TimetableImportView: React.FC = () => {
     const updated: string[] = [];
     const skipped: string[] = [];
 
-    // 1. Create missing subjects / refresh existing ones. Colors always come from
-    //    the 8 locked tokens — never hardcoded, never a free picker.
     if (parsed.subjects && Array.isArray(parsed.subjects)) {
       for (const s of parsed.subjects) {
         const uppercaseCode = s.code.toUpperCase();
@@ -259,20 +289,16 @@ export const TimetableImportView: React.FC = () => {
           codeToIdMap.set(uppercaseCode, newId);
           created.push(uppercaseCode);
         } else {
-          // Code already exists — refresh metadata so a re-import with corrected
-          // details isn't silently ignored. Existing color is preserved.
           await db.subjects.update(existingId, { name: s.name, credits: s.credits || 3 });
           updated.push(uppercaseCode);
         }
       }
     }
 
-    // 2. Generate dated slots across active semester using existing generation logic
     let totalGenerated = 0;
     for (const pat of parsed.patterns || []) {
       const subId = codeToIdMap.get(pat.subject_code.toUpperCase());
       if (!subId) {
-        // Never skip silently — surface the unresolvable pattern to the user.
         skipped.push(pat.subject_code);
         continue;
       }
@@ -283,7 +309,7 @@ export const TimetableImportView: React.FC = () => {
         pat.start_time,
         pat.end_time,
         pat.room_id,
-        pat.faculty_name,
+        resolveFacultyName(pat.faculty_name),
         activeSem.start_date,
         activeSem.end_date
       );
@@ -304,74 +330,101 @@ export const TimetableImportView: React.FC = () => {
     setImportedCount(totalGenerated);
     setCommitSummary({ created, updated, skipped });
     setParsed(null);
+    setFacultyMatches(null);
     setJsonText('');
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: 'var(--bg-page)', paddingBottom: '80px' }}>
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        backgroundColor: 'var(--bg-page)',
+      }}
+      data-testid="timetable-import-view"
+    >
       <h1 className="sr-only">Import Timetable JSON</h1>
       {/* Header */}
-      <header style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: 'var(--space-md)',
-        paddingTop: 'calc(var(--space-md) + env(safe-area-inset-top))',
-        borderBottom: '1px solid var(--border-hairline)',
-        backgroundColor: 'var(--bg-page)',
-        position: 'sticky', top: 0, zIndex: 10,
-      }}>
-        <button onClick={closeSubview} style={{ color: 'var(--text-primary)', display: 'flex', alignItems: 'center' }} aria-label="Go back"><ArrowLeft size={24} /></button>
+      <header
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '16px',
+          borderBottom: '1px solid var(--outline-variant)',
+          backgroundColor: 'var(--surface-container-lowest)',
+          position: 'sticky',
+          top: 0,
+          zIndex: 10,
+        }}
+      >
+        <button
+          onClick={closeSubview}
+          style={{ color: 'var(--on-surface)', display: 'flex', alignItems: 'center', border: 'none', background: 'transparent', cursor: 'pointer' }}
+          aria-label="Go back"
+        >
+          <ArrowLeft size={24} />
+        </button>
         <div style={{ flex: 1, marginLeft: '12px' }}>
-          <h2 style={{ fontSize: 'var(--text-xl)', fontWeight: 700, color: 'var(--text-primary)' }}>Import Timetable JSON</h2>
-          <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--on-surface)', margin: 0 }}>Import Timetable JSON</h2>
+          <p style={{ fontSize: '0.78rem', color: 'var(--on-surface-variant)', margin: 0 }}>
             {activeSem ? `${activeSem.label} (${activeSem.start_date} → ${activeSem.end_date})` : 'No active semester'}
           </p>
         </div>
       </header>
 
       {importedCount !== null && (
-        <div style={{ margin: 'var(--space-md)', padding: '14px', backgroundColor: 'var(--color-success-bg)', borderRadius: 'var(--radius-card)', border: '1px solid var(--color-success)', color: 'var(--color-success-fg)', fontWeight: 600 }}>
-          ✓ Successfully imported and generated {importedCount} lecture slots into IndexedDB!
+        <div
+          style={{
+            margin: '16px',
+            padding: '16px',
+            backgroundColor: 'var(--surface-container-low)',
+            borderRadius: 'var(--radius-lg, 12px)',
+            border: '1px solid var(--primary)',
+            color: 'var(--primary)',
+            fontWeight: 600,
+          }}
+        >
+          ✓ Successfully imported and generated {importedCount} lecture slots!
           {commitSummary && (
             <div style={{ marginTop: '8px', fontSize: '0.82rem', fontWeight: 500 }}>
               {commitSummary.created.length > 0 && (
                 <div>• Created {commitSummary.created.length} subject(s): {commitSummary.created.join(', ')}</div>
               )}
               {commitSummary.updated.length > 0 && (
-                <div>• Updated {commitSummary.updated.length} existing subject(s): {commitSummary.updated.join(', ')}</div>
-              )}
-              {commitSummary.skipped.length > 0 && (
-                <div style={{ color: 'var(--color-danger-fg)', fontWeight: 600 }}>
-                  ⚠ Skipped {commitSummary.skipped.length} pattern(s) — unknown subject codes: {commitSummary.skipped.join(', ')}
-                </div>
+                <div>• Updated {commitSummary.updated.length} subject(s): {commitSummary.updated.join(', ')}</div>
               )}
             </div>
           )}
         </div>
       )}
 
-      <div style={{ padding: 'var(--space-md)', display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
-        {/* Upload file or paste JSON */}
+      <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-          <label style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-secondary)' }}>JSON Data</label>
+          <label style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--on-surface-variant)' }}>JSON Data</label>
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-            <GlassButton
-              size="sm"
-              variant="subtle"
-              onClick={copyConversionPrompt}
-              title="Copies a prompt you can paste into any AI (ChatGPT/Gemini/Claude) with your timetable to get schema-correct JSON back"
-            >
+            <Button size="sm" variant="subtle" onClick={copyConversionPrompt}>
               <Copy size={12} />
-              {copied ? 'Copied ✓' : 'Copy Conversion Prompt'}
-            </GlassButton>
-            <GlassButton
-              size="sm"
-              variant="ghost"
-              onClick={() => { setJsonText(sampleJSON); setError(null); setImportedCount(null); setCommitSummary(null); }}
+              {copied ? 'Copied ✓' : 'Copy Prompt'}
+            </Button>
+            <Button size="sm" variant="subtle" onClick={() => { setJsonText(sampleJSON); setError(null); setImportedCount(null); setCommitSummary(null); }}>
+              Load Sample
+            </Button>
+            <label
+              style={{
+                fontSize: '0.78rem',
+                padding: '6px 12px',
+                borderRadius: 'var(--radius-full, 9999px)',
+                backgroundColor: 'var(--primary)',
+                color: 'var(--on-primary)',
+                cursor: 'pointer',
+                fontWeight: 600,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 4,
+              }}
             >
-              Load Sample JSON
-            </GlassButton>
-            <label style={{ fontSize: '0.78rem', padding: '7px 12px', borderRadius: 'var(--radius-pill)', backgroundColor: 'var(--color-primary)', color: '#FFFFFF', cursor: 'pointer', fontWeight: 600 }}>
-              <Upload size={12} style={{ display: 'inline', marginRight: '4px' }} /> Upload .json
+              <Upload size={12} /> Upload .json
               <input type="file" accept=".json" onChange={handleFileUpload} style={{ display: 'none' }} />
             </label>
           </div>
@@ -383,43 +436,76 @@ export const TimetableImportView: React.FC = () => {
           placeholder="Paste timetable JSON here..."
           rows={10}
           className="input"
-          style={{ marginTop: 4, fontFamily: 'var(--font-family-mono)', borderRadius: 'var(--radius-card)' }}
+          style={{ fontFamily: 'var(--font-mono)', minHeight: 160 }}
         />
 
         {error && (
-          <div style={{ padding: '12px', backgroundColor: 'var(--color-danger-bg)', borderRadius: 'var(--radius-card)', color: 'var(--color-danger-fg)', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div
+            style={{
+              padding: '12px',
+              backgroundColor: 'var(--error-container)',
+              borderRadius: 'var(--radius-md)',
+              color: 'var(--on-error-container)',
+              fontSize: '0.85rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+            }}
+          >
             <AlertCircle size={18} /> {error}
           </div>
         )}
 
-        <GlassButton onClick={handleValidate} variant="ghost" fullWidth>
+        <Button onClick={handleValidate} variant="subtle" fullWidth>
           <FileCode size={16} /> Validate JSON Payload
-        </GlassButton>
+        </Button>
 
-        {/* Preview before commit */}
         {parsed && (
-          <div style={{ padding: 'var(--space-md)', backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius-card)', border: '1px solid var(--border-hairline)', boxShadow: 'var(--shadow-card)', display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--color-success-fg)', fontWeight: 700 }}>
+          <div
+            style={{
+              padding: '16px',
+              backgroundColor: 'var(--surface-container-lowest)',
+              borderRadius: 'var(--radius-lg, 12px)',
+              border: '1px solid var(--outline-variant)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary)', fontWeight: 700 }}>
               <CheckCircle2 size={20} /> Validated Payload Ready
             </div>
 
-            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+            <div style={{ fontSize: '0.85rem', color: 'var(--on-surface-variant)' }}>
               <div>• <strong>{parsed.subjects?.length || 0}</strong> subjects defined (<strong>{preview ? `${preview.newSubjects} new` : '…'}</strong>)</div>
-              <div>• <strong>{parsed.patterns?.length || 0}</strong> weekly recurring patterns → <strong>{preview ? `~${preview.projectedSlots} dated lecture slots` : '…'}</strong></div>
-              {preview && preview.unresolvable.length > 0 && (
-                <div style={{ marginTop: '10px', padding: '10px', borderRadius: 'var(--radius-card)', backgroundColor: 'var(--color-warning-bg)', border: '1px solid var(--color-warning)', color: 'var(--color-warning-fg)', fontWeight: 600 }}>
-                  ⚠ {preview.unresolvable.length} pattern(s) reference subject codes that are neither in this payload nor in your database: {preview.unresolvable.join(', ')}
-                </div>
-              )}
+              <div>• <strong>{parsed.patterns?.length || 0}</strong> weekly recurring patterns → <strong>{preview ? `~${preview.projectedSlots} dated slots` : '…'}</strong></div>
             </div>
 
-            <GlassButton
-              onClick={handleCommitImport}
-              disabled={!activeSem}
-              fullWidth
-            >
+            {parsed.patterns?.some(p => p.faculty_name?.trim()) && (
+              <div style={{ borderTop: '1px solid var(--outline-variant)', paddingTop: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                  <UserCheck size={16} style={{ color: 'var(--primary)' }} />
+                  <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--on-surface)' }}>Faculty auto-matching</span>
+                </div>
+
+                {facultyMatches && facultyMatches.length > 0 && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {facultyMatches.map(m => (
+                      <div key={m.key} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.8rem' }}>
+                        <CheckCircle2 size={15} style={{ color: 'var(--primary)', flexShrink: 0 }} />
+                        <div style={{ flex: 1, minWidth: 0, color: 'var(--on-surface-variant)', fontFamily: 'var(--font-mono)' }}>
+                          {m.input} → <strong>{m.override}</strong>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            <Button onClick={handleCommitImport} disabled={!activeSem} fullWidth variant="primary">
               <Play size={16} /> Commit Import & Generate Slots
-            </GlassButton>
+            </Button>
           </div>
         )}
       </div>

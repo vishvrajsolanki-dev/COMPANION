@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import styles from './ui.module.css';
 
 interface BottomSheetProps {
@@ -6,6 +7,13 @@ interface BottomSheetProps {
   onClose: () => void;
   children: React.ReactNode;
   maxWidth?: number;
+  /**
+   * Optional pinned action row rendered below the scrollable content.
+   * When provided, only the children scroll; the footer stays fixed at the
+   * bottom of the sheet so action buttons are always visible/reachable even
+   * when the content is taller than the viewport (small phones, keyboards).
+   */
+  footer?: React.ReactNode;
 }
 
 /**
@@ -19,11 +27,20 @@ interface BottomSheetProps {
  *     trigger element's ref is implicitly captured from the browser focus
  *     state at open-time).
  */
-export const BottomSheet: React.FC<BottomSheetProps> = ({ open, onClose, children, maxWidth = 500 }) => {
+export const BottomSheet: React.FC<BottomSheetProps> = ({ open, onClose, children, maxWidth = 500, footer }) => {
   const panelRef = useRef<HTMLDivElement>(null);
   const returnFocusRef = useRef<HTMLElement | null>(null);
 
-  // Focus trap + auto-focus
+  // Keep the latest onClose in a ref so the focus-trap effect below can depend
+  // on `open` alone. Many call sites pass an inline arrow (recreated every
+  // render); depending on `onClose` made the effect re-run on every keystroke
+  // while a form inside the sheet was open — the cleanup yanked focus back to
+  // the trigger and the RAF then re-focused the first field, producing the
+  // "Subject Name focus jump" (Bug F#8).
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
+  // Focus trap + auto-focus (runs only on the open→close transition)
   useEffect(() => {
     if (!open) return;
 
@@ -42,7 +59,7 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({ open, onClose, childre
     // Escape to close
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        onClose();
+        onCloseRef.current();
         return;
       }
       // Focus trap: Tab / Shift+Tab cycling
@@ -75,21 +92,34 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({ open, onClose, childre
       // Return focus to the trigger element that opened the sheet
       returnFocusRef.current?.focus();
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
 
-  return (
+  // Render through a portal to document.body: on iOS Safari, an ancestor with
+  // -webkit-overflow-scrolling: touch (our <main>) becomes a containing block
+  // for position:fixed descendants, so the overlay would anchor to <main>'s box
+  // (ending above the tab bar) instead of the real viewport. Portaling removes
+  // the overlay from <main>'s subtree entirely — the sheet can never be captured.
+  return createPortal(
     <div className={styles.sheetOverlay} onClick={onClose} role="dialog" aria-modal="true">
       <div
         ref={panelRef}
-        className={styles.sheetPanel}
+        className={footer ? `${styles.sheetPanel} ${styles.sheetFooterMode}` : styles.sheetPanel}
         style={{ maxWidth }}
         onClick={e => e.stopPropagation()}
       >
         <div className={styles.sheetHandle} />
-        {children}
+        {footer ? (
+          <>
+            <div className={styles.sheetBody}>{children}</div>
+            <div className={styles.sheetFooter}>{footer}</div>
+          </>
+        ) : (
+          children
+        )}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 };

@@ -1,7 +1,7 @@
 import React from 'react';
 import styles from './ui.module.css';
 
-type BadgeTone = 'accent' | 'success' | 'warning' | 'danger' | 'neutral';
+export type BadgeTone = 'accent' | 'success' | 'warning' | 'danger' | 'neutral' | 'info';
 
 const TONE_CLASS: Record<BadgeTone, string> = {
   accent: styles.badgeAccent,
@@ -9,16 +9,19 @@ const TONE_CLASS: Record<BadgeTone, string> = {
   warning: styles.badgeWarning,
   danger: styles.badgeDanger,
   neutral: styles.badgeNeutral,
+  info: styles.badgeInfo,
 };
 
-interface BadgeProps {
+export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
   tone?: BadgeTone;
   children: React.ReactNode;
 }
 
-/** Small uppercase pill aligned to the Academic Core semantic-badge pattern. */
-export const Badge: React.FC<BadgeProps> = ({ tone = 'neutral', children }) => (
-  <span className={[styles.badge, TONE_CLASS[tone]].join(' ')}>
+/** Academic OS canonical Badge tag component (label-caps typography). */
+export const Badge: React.FC<BadgeProps> = ({ tone = 'neutral', children, className, ...rest }) => (
+  <span className={[styles.badge, TONE_CLASS[tone], className || ''].join(' ')} {...rest}>
     {children}
   </span>
 );
+
+export default Badge;

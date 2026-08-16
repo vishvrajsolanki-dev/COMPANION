@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { db, CalendarEvent } from '../../db/index';
 import { useUIStore } from '../../store/uiStore';
-import { GlassButton } from '../../components/ui';
+import { Button } from '../../components/ui';
 import { ArrowLeft, Upload, CheckCircle2, AlertCircle, Calendar } from 'lucide-react';
 
 interface JSONSemesterDefaults {
@@ -41,6 +41,7 @@ export const AcademicCalendarImportView: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [isImporting, setIsImporting] = useState(false);
+  const [semesterOverlapWarning, setSemesterOverlapWarning] = useState<string | null>(null);
 
   const sampleCalendarJSON = JSON.stringify({
     semester_defaults: {
@@ -56,10 +57,11 @@ export const AcademicCalendarImportView: React.FC = () => {
     ]
   }, null, 2);
 
-  const handleValidate = () => {
+  const handleValidate = async () => {
     setError(null);
     setParsed(null);
-    setSuccessMsg(null); // clear stale success banner on re-validation
+    setSuccessMsg(null);
+    setSemesterOverlapWarning(null);
     try {
       if (!jsonText.trim()) throw new Error('Please paste JSON content or load sample.');
       const data: JSONAcademicCalendarPayload = JSON.parse(jsonText);
@@ -74,6 +76,28 @@ export const AcademicCalendarImportView: React.FC = () => {
         if (!isValidDateStr(start_date)) throw new Error(`"semester_defaults" has invalid "start_date" (expected YYYY-MM-DD): ${start_date}`);
         if (!isValidDateStr(end_date)) throw new Error(`"semester_defaults" has invalid "end_date" (expected YYYY-MM-DD): ${end_date}`);
         if (end_date < start_date) throw new Error('"semester_defaults" end_date is before start_date.');
+
+        // Duplicate / overlap check — fuzzy-match label and detect date collisions
+        const normalizedLabel = label.trim().toLowerCase();
+        const labelMatch = await db.semesters
+          .filter(s => !s.is_deleted && s.label.trim().toLowerCase() === normalizedLabel)
+          .first();
+        const allSems = await db.semesters.filter(s => !s.is_deleted).toArray();
+        const dateOverlap = allSems.find(
+          s =>
+            s.start_date <= end_date &&
+            s.end_date >= start_date &&
+            s.label.trim().toLowerCase() !== normalizedLabel,
+        );
+        if (labelMatch) {
+          setSemesterOverlapWarning(
+            `A semester named "${labelMatch.label}" already exists — it will be updated with the new dates on import.`,
+          );
+        } else if (dateOverlap) {
+          setSemesterOverlapWarning(
+            `This semester's dates overlap with "${dateOverlap.label}" (${dateOverlap.start_date} → ${dateOverlap.end_date}). The other semester will be deactivated on import.`,
+          );
+        }
       }
 
       if (data.events) {
@@ -114,7 +138,10 @@ export const AcademicCalendarImportView: React.FC = () => {
     if (parsed.semester_defaults) {
       const def = parsed.semester_defaults;
       let targetSemId: string;
-      const existing = await db.semesters.filter(s => s.label === def.label && !s.is_deleted).first();
+      const normalizedLabel = def.label.trim().toLowerCase();
+      const existing = await db.semesters
+        .filter(s => !s.is_deleted && s.label.trim().toLowerCase() === normalizedLabel)
+        .first();
       if (!existing) {
         targetSemId = `sem-${Date.now()}`;
         await db.semesters.add({
@@ -178,7 +205,7 @@ export const AcademicCalendarImportView: React.FC = () => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: 'var(--bg-page)', paddingBottom: '80px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-page)' }}>
       <h1 className="sr-only">Import Academic Calendar</h1>
       {/* Header */}
       <header style={{
@@ -202,9 +229,9 @@ export const AcademicCalendarImportView: React.FC = () => {
         <div style={{ margin: 'var(--space-md)', padding: '14px', backgroundColor: 'var(--color-success-bg)', borderRadius: 'var(--radius-card)', border: '1px solid var(--color-success)', color: 'var(--color-success-fg)', fontWeight: 600 }}>
           {successMsg}
           <div style={{ marginTop: '8px' }}>
-            <GlassButton size="sm" onClick={() => navigateToSubview('semester-setup')}>
+            <Button size="sm" onClick={() => navigateToSubview('semester-setup')}>
               Open Semester Setup to Edit
-            </GlassButton>
+            </Button>
           </div>
         </div>
       )}
@@ -213,13 +240,13 @@ export const AcademicCalendarImportView: React.FC = () => {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
           <label style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Calendar JSON Data</label>
           <div style={{ display: 'flex', gap: '8px' }}>
-            <GlassButton
+            <Button
               size="sm"
               variant="ghost"
               onClick={() => { setJsonText(sampleCalendarJSON); setError(null); setSuccessMsg(null); }}
             >
               Sample Calendar JSON
-            </GlassButton>
+            </Button>
             <label style={{ fontSize: '0.78rem', padding: '7px 12px', borderRadius: 'var(--radius-pill)', backgroundColor: 'var(--color-primary)', color: '#FFFFFF', cursor: 'pointer', fontWeight: 600 }}>
               <Upload size={12} style={{ display: 'inline', marginRight: '4px' }} /> Upload .json
               <input type="file" accept=".json" onChange={handleFileUpload} style={{ display: 'none' }} />
@@ -242,9 +269,9 @@ export const AcademicCalendarImportView: React.FC = () => {
           </div>
         )}
 
-        <GlassButton onClick={handleValidate} variant="ghost" fullWidth>
+        <Button onClick={handleValidate} variant="ghost" fullWidth>
           <Calendar size={16} /> Validate Calendar Payload
-        </GlassButton>
+        </Button>
 
         {parsed && (
           <div style={{ padding: 'var(--space-md)', backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius-card)', border: '1px solid var(--border-hairline)', boxShadow: 'var(--shadow-card)', display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
@@ -262,9 +289,27 @@ export const AcademicCalendarImportView: React.FC = () => {
               Events to import: <strong>{parsed.events?.length || 0}</strong>
             </div>
 
-            <GlassButton onClick={handleCommitImport} disabled={isImporting} fullWidth>
+            {semesterOverlapWarning && (
+              <div
+                style={{
+                  padding: '10px 12px',
+                  borderRadius: 'var(--radius-card)',
+                  backgroundColor: 'var(--color-warning-bg)',
+                  color: 'var(--color-warning-fg)',
+                  fontSize: '0.82rem',
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                }}
+              >
+                <AlertCircle size={15} style={{ flexShrink: 0 }} /> {semesterOverlapWarning}
+              </div>
+            )}
+
+            <Button onClick={handleCommitImport} disabled={isImporting} fullWidth>
               {isImporting ? 'Importing…' : 'Import Academic Calendar Defaults'}
-            </GlassButton>
+            </Button>
           </div>
         )}
       </div>

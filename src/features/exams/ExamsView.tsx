@@ -1,16 +1,16 @@
 import React, { useState } from 'react';
 import { useExams, useSubjects } from '../../db/useDatabase';
 import { db } from '../../db/index';
-import { useUIStore } from '../../store/uiStore';
 import { todayISO, nowMinutes } from '../../utils/date';
-import { BottomSheet, SegmentedControl, GlassButton, EmptyState } from '../../components/ui';
+import { navigateTo, CANONICAL_HASHES } from '../../hooks/useHashLocation';
+import { BottomSheet, SegmentedControl, Button, Card, EmptyState, ConfirmDialog } from '../../components/ui';
 import { ArrowLeft, Plus, Calendar, AlertTriangle, Trash2, Check, BookOpen } from 'lucide-react';
 
 export const ExamsView: React.FC = () => {
   const exams = useExams() || [];
   const subjects = useSubjects() || [];
 
-  const closeSubview = useUIStore(state => state.closeSubview);
+  const closeSubview = () => navigateTo(CANONICAL_HASHES.studyTasks);
 
   const [activeFilter, setActiveFilter] = useState<'upcoming' | 'past'>('upcoming');
   const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
@@ -26,6 +26,7 @@ export const ExamsView: React.FC = () => {
   const selectedExamSubject = selectedExam ? subjects.find(s => s.id === selectedExam.subject_id) : null;
 
   const [dbError, setDbError] = useState<string | null>(null);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   const handleCreateExam = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,13 +65,10 @@ export const ExamsView: React.FC = () => {
   };
 
   const handleDeleteExam = async (examId: string) => {
-    const exam = exams.find(e => e.id === examId);
-    if (!exam) return;
-    const sub = subjects.find(s => s.id === exam.subject_id);
-    if (!confirm(`Delete ${sub?.name || 'this exam'} (${exam.type})?`)) return;
     try {
       await db.exams.update(examId, { is_deleted: true });
       setSelectedExamId(null);
+      setPendingDeleteId(null);
     } catch (err) {
       console.error('Failed to delete exam:', err);
       setDbError('Failed to delete exam. Please try again.');
@@ -79,8 +77,6 @@ export const ExamsView: React.FC = () => {
 
   const toggleSyllabusItem = async (examId: string, index: number) => {
     try {
-      // Atomic read-modify-write against the freshest row — avoids lost updates
-      // when two checkboxes are toggled in quick succession.
       await db.exams.update(examId, (exam) => {
         exam.syllabus_checklist = (exam.syllabus_checklist || []).map((item, i) =>
           i === index ? { ...item, completed: !item.completed } : item
@@ -91,7 +87,7 @@ export const ExamsView: React.FC = () => {
     }
   };
 
-  // Real date engine — no simulated timestamp
+  // Real date engine
   const nowStr = `${todayISO()}T${nowMinutes()}`;
 
   const filteredExams = exams.filter(e => {
@@ -104,7 +100,7 @@ export const ExamsView: React.FC = () => {
   });
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: 'var(--bg-page)', paddingBottom: '80px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-page)' }} data-testid="exams-view">
       <h1 className="sr-only">Exams</h1>
 
       {/* Screen header */}
@@ -113,33 +109,47 @@ export const ExamsView: React.FC = () => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: 'var(--space-md)',
-          paddingTop: 'calc(var(--space-md) + env(safe-area-inset-top))',
-          borderBottom: '1px solid var(--border-hairline)',
-          backgroundColor: 'var(--bg-page)',
+          padding: 'var(--stack-md, 16px)',
+          paddingTop: 'calc(var(--stack-md, 16px) + env(safe-area-inset-top))',
+          borderBottom: '1px solid var(--outline-variant, #c4c6d1)',
+          backgroundColor: 'var(--surface-container-lowest, #ffffff)',
           position: 'sticky',
           top: 0,
           zIndex: 10,
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <button onClick={closeSubview} style={{ color: 'var(--text-primary)' }} aria-label="Go back">
+          <button
+            onClick={closeSubview}
+            style={{
+              width: 44,
+              height: 44,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'var(--on-surface, #1a1c1c)',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+            }}
+            aria-label="Go back"
+          >
             <ArrowLeft size={24} />
           </button>
-          <h2 style={{ fontSize: 'var(--text-xl)', fontWeight: 700, color: 'var(--text-primary)' }}>Exams & Quizzes</h2>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--on-surface, #1a1c1c)', fontFamily: 'var(--font-primary)' }}>Exams & Quizzes</h2>
         </div>
 
-        <GlassButton size="sm" onClick={() => setIsAdding(true)}>
+        <Button size="sm" variant="primary" onClick={() => setIsAdding(true)}>
           <Plus size={16} /> Add Exam
-        </GlassButton>
+        </Button>
       </header>
 
       {/* Filter Tabs */}
-      <div style={{ padding: 'var(--space-sm) var(--space-md)' }}>
+      <div style={{ padding: 'var(--stack-sm, 8px) var(--stack-md, 16px)' }}>
         <SegmentedControl
           options={[
-            { value: 'upcoming', label: 'Upcoming' },
-            { value: 'past', label: 'Past' },
+            { value: 'upcoming', label: 'Upcoming Exams' },
+            { value: 'past', label: 'Past Exams' },
           ]}
           value={activeFilter}
           onChange={f => setActiveFilter(f as 'upcoming' | 'past')}
@@ -147,7 +157,7 @@ export const ExamsView: React.FC = () => {
       </div>
 
       {/* Exam Cards */}
-      <div style={{ padding: '0 var(--space-md)', display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
+      <div style={{ padding: '0 var(--stack-md, 16px)', display: 'flex', flexDirection: 'column', gap: 'var(--stack-sm, 8px)' }}>
         {filteredExams.length === 0 ? (
           <EmptyState
             title="No exams scheduled"
@@ -158,21 +168,21 @@ export const ExamsView: React.FC = () => {
             const sub = subjects.find(s => s.id === exam.subject_id);
             if (!sub) return null;
 
-            // Countdown — real now
+            // Countdown
             const examTime = new Date(exam.date).getTime();
             const nowTime = new Date(nowStr).getTime();
             const diffHours = (examTime - nowTime) / (1000 * 60 * 60);
             const diffDays = Math.floor(diffHours / 24);
 
-            let countdownColor = 'var(--text-secondary)';
+            let countdownColor = 'var(--on-surface-variant, #444750)';
             let isClose = false;
 
             if (activeFilter === 'upcoming') {
               if (diffHours < 24) {
-                countdownColor = 'var(--color-danger)';
+                countdownColor = 'var(--error, #ba1a1a)';
                 isClose = true;
               } else if (diffHours < 48) {
-                countdownColor = 'var(--color-warning)';
+                countdownColor = 'var(--color-warning, #d97706)';
                 isClose = true;
               }
             }
@@ -187,43 +197,43 @@ export const ExamsView: React.FC = () => {
                 style={{
                   position: 'relative',
                   overflow: 'hidden',
-                  padding: 'var(--space-md)',
-                  paddingLeft: 'calc(var(--space-md) + 4px)',
-                  backgroundColor: 'var(--bg-card)',
-                  borderRadius: 'var(--radius-card)',
-                  border: '1px solid var(--border-hairline)',
-                  boxShadow: 'var(--shadow-card)',
+                  padding: 'var(--stack-md, 16px)',
+                  paddingLeft: 'calc(var(--stack-md, 16px) + 4px)',
+                  backgroundColor: 'var(--surface-container-lowest, #ffffff)',
+                  borderRadius: 'var(--radius-lg, 12px)',
+                  border: '1px solid var(--outline-variant, #c4c6d1)',
                   cursor: 'pointer',
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
-                  gap: 'var(--space-sm)',
+                  gap: 'var(--stack-sm, 8px)',
+                  minHeight: '64px',
                 }}
               >
-                {/* Left accent bar — solid subject color */}
-                <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, background: sub.color }} />
+                {/* Left 4px accent bar in subject color */}
+                <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, background: sub.color }} />
 
                 <div style={{ minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span
                       style={{
-                        fontFamily: 'var(--font-family-mono)',
+                        fontFamily: 'var(--font-mono)',
                         fontSize: '0.75rem',
                         fontWeight: 700,
                         color: sub.color,
                         backgroundColor: `${sub.color}1A`,
                         padding: '2px 8px',
-                        borderRadius: 'var(--radius-pill)',
+                        borderRadius: 'var(--radius-full, 9999px)',
                       }}
                     >
                       {sub.code}
                     </span>
-                    <span style={{ fontSize: '0.8rem', fontWeight: 600, textTransform: 'capitalize', color: 'var(--text-secondary)' }}>
+                    <span style={{ fontSize: '0.8rem', fontWeight: 600, textTransform: 'capitalize', color: 'var(--on-surface-variant, #444750)' }}>
                       {exam.type === 'midsem' ? 'Mid-Sem' : exam.type === 'endsem' ? 'End-Sem' : 'Quiz'}
                     </span>
                   </div>
-                  <h4 style={{ fontWeight: 700, fontSize: '1rem', marginTop: 4, color: 'var(--text-primary)' }}>{sub.name}</h4>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-family-mono)', marginTop: 2 }}>
+                  <h4 style={{ fontWeight: 700, fontSize: '1rem', marginTop: 4, color: 'var(--on-surface, #1a1c1c)', fontFamily: 'var(--font-primary)' }}>{sub.name}</h4>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--on-surface-variant, #444750)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>
                     {exam.date ? new Date(exam.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'No date set'}
                   </div>
                 </div>
@@ -234,12 +244,12 @@ export const ExamsView: React.FC = () => {
                       flexShrink: 0,
                       textAlign: 'center',
                       padding: '6px 12px',
-                      borderRadius: 'var(--radius-pill)',
-                      backgroundColor: isClose ? `${countdownColor}1A` : 'var(--bg-card-tint)',
-                      border: `1px solid ${isClose ? `${countdownColor}44` : 'transparent'}`,
+                      borderRadius: 'var(--radius-full, 9999px)',
+                      backgroundColor: isClose ? `${countdownColor}1A` : 'var(--surface-container-low, #f4f3f2)',
+                      border: `1px solid ${isClose ? `${countdownColor}44` : 'var(--outline-variant, #c4c6d1)'}`,
                     }}
                   >
-                    <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: '0.9rem', fontWeight: 700, color: isClose ? countdownColor : 'var(--color-primary)' }}>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem', fontWeight: 700, color: isClose ? countdownColor : 'var(--primary, #001e4c)' }}>
                       {diffHours > 0 ? (diffDays > 0 ? `${diffDays}d left` : `${Math.floor(diffHours)}h left`) : 'Starting now'}
                     </div>
                     {isClose && (
@@ -259,17 +269,17 @@ export const ExamsView: React.FC = () => {
       <BottomSheet open={isAdding} onClose={() => setIsAdding(false)}>
         <form
           onSubmit={handleCreateExam}
-          style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}
+          style={{ display: 'flex', flexDirection: 'column', gap: 'var(--stack-md, 16px)' }}
         >
-          <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-primary)' }}>Add Exam / Quiz</h3>
+          <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--on-surface, #1a1c1c)', fontFamily: 'var(--font-primary)' }}>Add Exam / Quiz</h3>
 
           <div>
-            <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Subject Connection</label>
+            <label style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--on-surface-variant, #444750)', fontFamily: 'var(--font-mono)' }}>Subject Connection</label>
             <select
               value={newSubjectId}
               onChange={e => setNewSubjectId(e.target.value)}
               className="input"
-              style={{ marginTop: 4 }}
+              style={{ marginTop: 6, width: '100%', minHeight: '44px' }}
               required
             >
               <option value="">Select Subject</option>
@@ -279,14 +289,14 @@ export const ExamsView: React.FC = () => {
             </select>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-md)' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 'var(--stack-md, 16px)' }}>
             <div>
-              <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Exam Type</label>
+              <label style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--on-surface-variant, #444750)', fontFamily: 'var(--font-mono)' }}>Exam Type</label>
               <select
                 value={newType}
                 onChange={e => setNewType(e.target.value as any)}
                 className="input"
-                style={{ marginTop: 4 }}
+                style={{ marginTop: 6, width: '100%', minHeight: '44px' }}
               >
                 <option value="midsem">Mid-Semester</option>
                 <option value="endsem">End-Semester</option>
@@ -295,43 +305,43 @@ export const ExamsView: React.FC = () => {
             </div>
 
             <div>
-              <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Date & Time</label>
+              <label style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--on-surface-variant, #444750)', fontFamily: 'var(--font-mono)' }}>Date & Time</label>
               <input
                 type="datetime-local"
                 value={newDate}
                 onChange={e => setNewDate(e.target.value)}
                 required
                 className="input"
-                style={{ marginTop: 4 }}
+                style={{ marginTop: 6, width: '100%', minHeight: '44px' }}
               />
             </div>
           </div>
 
           <div>
-            <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Syllabus Topics (comma separated)</label>
+            <label style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--on-surface-variant, #444750)', fontFamily: 'var(--font-mono)' }}>Syllabus Topics (comma separated)</label>
             <input
               type="text"
               placeholder="Topic A, Topic B, Topic C"
               value={newSyllabusInput}
               onChange={e => setNewSyllabusInput(e.target.value)}
               className="input"
-              style={{ marginTop: 4 }}
+              style={{ marginTop: 6, width: '100%', minHeight: '44px' }}
             />
           </div>
 
           {dbError && (
-            <div style={{ padding: '10px', borderRadius: 'var(--radius-card)', backgroundColor: 'var(--color-danger-bg)', color: 'var(--color-danger)', fontSize: '0.85rem', fontWeight: 600 }}>
+            <div style={{ padding: '10px 14px', borderRadius: 'var(--radius-md, 8px)', backgroundColor: 'var(--error-container, #ffdad6)', color: 'var(--on-error-container, #93000a)', fontSize: '0.85rem', fontWeight: 600 }}>
               {dbError}
             </div>
           )}
 
-          <div style={{ display: 'flex', gap: 8, marginTop: 'var(--space-xs)' }}>
-            <GlassButton type="submit" style={{ flex: 1 }}>
+          <div style={{ display: 'flex', gap: 12, marginTop: '8px' }}>
+            <Button type="submit" variant="primary" style={{ flex: 1 }}>
               Add Exam
-            </GlassButton>
-            <GlassButton type="button" variant="ghost" onClick={() => setIsAdding(false)}>
+            </Button>
+            <Button type="button" variant="ghost" onClick={() => setIsAdding(false)}>
               Cancel
-            </GlassButton>
+            </Button>
           </div>
         </form>
       </BottomSheet>
@@ -339,13 +349,13 @@ export const ExamsView: React.FC = () => {
       {/* Exam Details Sheet w/ Syllabus Checklist */}
       <BottomSheet open={!!selectedExamId} onClose={() => setSelectedExamId(null)}>
         {selectedExam && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--stack-md, 16px)' }}>
             <div>
-              <span style={{ fontSize: '0.8rem', fontFamily: 'var(--font-family-mono)', color: selectedExamSubject?.color, fontWeight: 700 }}>
+              <span style={{ fontSize: '0.8rem', fontFamily: 'var(--font-mono)', color: selectedExamSubject?.color, fontWeight: 700 }}>
                 {selectedExamSubject?.code} — {selectedExam.type.toUpperCase()}
               </span>
-              <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-primary)' }}>{selectedExamSubject?.name}</h3>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.85rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-family-mono)', marginTop: 4 }}>
+              <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--on-surface, #1a1c1c)', fontFamily: 'var(--font-primary)' }}>{selectedExamSubject?.name}</h3>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.85rem', color: 'var(--on-surface-variant, #444750)', fontFamily: 'var(--font-mono)', marginTop: 4 }}>
                 <Calendar size={14} />
                 {selectedExam.date ? new Date(selectedExam.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'No date set'}
               </div>
@@ -353,7 +363,7 @@ export const ExamsView: React.FC = () => {
 
             {/* Syllabus Checklist */}
             <div>
-              <h4 style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 8 }}>
+              <h4 style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--on-surface-variant, #444750)', fontFamily: 'var(--font-mono)', marginBottom: 8 }}>
                 Syllabus Checklist
               </h4>
 
@@ -368,32 +378,33 @@ export const ExamsView: React.FC = () => {
                       style={{
                         display: 'flex',
                         alignItems: 'center',
-                        gap: 8,
-                        padding: 10,
-                        backgroundColor: 'var(--bg-card)',
-                        borderRadius: 'var(--radius-card)',
-                        border: '1px solid var(--border-hairline)',
+                        gap: 12,
+                        padding: '12px 16px',
+                        backgroundColor: 'var(--surface-container-low, #f4f3f2)',
+                        borderRadius: 'var(--radius-md, 8px)',
+                        border: '1px solid var(--outline-variant, #c4c6d1)',
                         cursor: 'pointer',
                         opacity: item.completed ? 0.6 : 1,
+                        minHeight: '44px',
                       }}
                     >
                       <span
                         style={{
-                          width: 20,
-                          height: 20,
-                          borderRadius: 7,
-                          border: item.completed ? 'none' : '2px solid var(--border-hairline)',
-                          backgroundColor: item.completed ? 'var(--color-success)' : 'transparent',
+                          width: 22,
+                          height: 22,
+                          borderRadius: 6,
+                          border: item.completed ? 'none' : '2px solid var(--outline, #747781)',
+                          backgroundColor: item.completed ? 'var(--primary, #001e4c)' : 'transparent',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          color: 'var(--color-on-accent)',
+                          color: 'var(--on-primary, #ffffff)',
                           flexShrink: 0,
                         }}
                       >
-                        {item.completed && <Check size={12} />}
+                        {item.completed && <Check size={14} strokeWidth={3} />}
                       </span>
-                      <span style={{ fontSize: '0.85rem', textDecoration: item.completed ? 'line-through' : 'none', color: 'var(--text-primary)' }}>
+                      <span style={{ fontSize: '0.85rem', textDecoration: item.completed ? 'line-through' : 'none', color: 'var(--on-surface, #1a1c1c)' }}>
                         {item.topic}
                       </span>
                     </div>
@@ -402,17 +413,27 @@ export const ExamsView: React.FC = () => {
               )}
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 'var(--space-xs)' }}>
-              <GlassButton variant="danger" onClick={() => handleDeleteExam(selectedExam.id)}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: '8px' }}>
+              <Button variant="danger" onClick={() => setPendingDeleteId(selectedExam.id)}>
                 <Trash2 size={15} /> Delete Exam
-              </GlassButton>
-              <GlassButton variant="ghost" onClick={() => setSelectedExamId(null)}>
+              </Button>
+              <Button variant="ghost" onClick={() => setSelectedExamId(null)}>
                 <BookOpen size={15} /> Close Details
-              </GlassButton>
+              </Button>
             </div>
           </div>
         )}
       </BottomSheet>
+
+      {/* Delete confirmation */}
+      <ConfirmDialog
+        open={!!pendingDeleteId}
+        title={`Delete ${subjects.find(s => s.id === exams.find(e => e.id === pendingDeleteId)?.subject_id)?.name ?? 'this exam'}?`}
+        message="The exam and its syllabus checklist will be permanently removed."
+        confirmLabel="Delete Exam"
+        onConfirm={() => { if (pendingDeleteId) handleDeleteExam(pendingDeleteId); }}
+        onCancel={() => setPendingDeleteId(null)}
+      />
     </div>
   );
 };

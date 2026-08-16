@@ -1,12 +1,14 @@
-import { db, type CalendarEvent } from './index';
+import { getDB, migrateLegacyDataIfNeeded, type AcademicOSDB } from './index';
+import type { CalendarEvent } from './index';
+import { useAuthStore } from '../store/authStore';
 import { ADIT_SEMESTER_DEFAULT, ADIT_CALENDAR_EVENT_DEFAULTS } from '../data/aditCalendarDefaults';
 
 // Insert the official ADIT Academic Calendar 2026-27 events (see
 // src/data/aditCalendarDefaults.ts) into calendarEvents. Deduped by
 // date|title|type so a partially-seeded install never duplicates a row.
-export async function ensureAditCalendarDefaults() {
-  const existing = await db.calendarEvents.filter(e => !e.is_deleted).toArray();
-  const existingKeys = new Set(existing.map(e => `${e.date}|${e.title}|${e.type}`));
+export async function ensureAditCalendarDefaults(target: AcademicOSDB) {
+  const existing = await target.calendarEvents.filter((e) => !e.is_deleted).toArray();
+  const existingKeys = new Set(existing.map((e) => `${e.date}|${e.title}|${e.type}`));
 
   const toAdd: CalendarEvent[] = [];
   ADIT_CALENDAR_EVENT_DEFAULTS.forEach((ev, i) => {
@@ -15,10 +17,32 @@ export async function ensureAditCalendarDefaults() {
     existingKeys.add(key);
     toAdd.push({ ...ev, id: `cal-ev-default-${i}`, is_deleted: false });
   });
-  if (toAdd.length > 0) await db.calendarEvents.bulkPut(toAdd);
+  if (toAdd.length > 0) await target.calendarEvents.bulkPut(toAdd);
 }
 
-export async function seedDatabaseIfEmpty() {
+/**
+ * Orchestrates first-run data setup for one account's database:
+ *
+ *   1. Already populated → no-op.
+ *   2. Owner upgrade path → one-time copy of the legacy `AcademicOSDB`.
+ *   3. Fresh install → starts with an empty workspace (user populates via onboarding/import).
+ *
+ * Students/admins never inherit the legacy (owner) database — that is the A2
+ * isolation guarantee. Seeding of demo data is NOT performed automatically on
+ * fresh production activations; users start with an empty academic workspace.
+ */
+export async function ensureAccountData(accountId: string, role: 'student' | 'admin' | 'owner' | string): Promise<void> {
+  const accountDB = getDB(accountId);
+
+  // Already populated → nothing to do.
+  if ((await accountDB.semesters.count()) > 0) return;
+
+  // Owner upgrade: copy the pre-account database (one-time).
+  await migrateLegacyDataIfNeeded(accountId, role);
+}
+
+/** Seeds the given database if it is empty and the user hasn't cleared data. */
+export async function seedDatabase(target: AcademicOSDB): Promise<void> {
   if (typeof window !== 'undefined') {
     try {
       if (localStorage.getItem('academic_os_user_cleared') === 'true') {
@@ -29,14 +53,14 @@ export async function seedDatabaseIfEmpty() {
 
   // Ship the official ADIT calendar on first run — including for installs that
   // pre-date this feature (semesters already present, calendar table empty).
-  await ensureAditCalendarDefaults();
+  await ensureAditCalendarDefaults(target);
 
-  const semesterCount = await db.semesters.count();
+  const semesterCount = await target.semesters.count();
   if (semesterCount > 0) return; // Already seeded
 
   // ── Semester ──────────────────────────────────────────────────────────────
   // Dates match the real ADIT ODD 2026 teaching calendar (Mon 6 Jul → 5 Nov).
-  await db.semesters.put({
+  await target.semesters.put({
     id: 'sem-5',
     label: ADIT_SEMESTER_DEFAULT.label,
     start_date: ADIT_SEMESTER_DEFAULT.start_date,
@@ -55,7 +79,7 @@ export async function seedDatabaseIfEmpty() {
     { id: 'sub-5', semester_id: 'sem-5', code: '2AI505', name: 'Software Engineering',        credits: 3, color: '#EF4444', current_faculty_id: 'teacher-5', is_deleted: false },
     { id: 'sub-6', semester_id: 'sem-5', code: '2AI506', name: 'AI Lab (Batch A)',             credits: 2, color: '#06B6D4', current_faculty_id: 'teacher-1', is_deleted: false },
   ];
-  await db.subjects.bulkPut(subjects);
+  await target.subjects.bulkPut(subjects);
 
   // ── Teachers ─────────────────────────────────────────────────────────────
   const teachers = [
@@ -65,7 +89,7 @@ export async function seedDatabaseIfEmpty() {
     { id: 'teacher-4', name: 'Prof. Ajay Trivedi',   email: 'ajay.trivedi@adit.ac.in',   phone: '+91-98765-44444', cabin: 'CS-203', office_hours: 'Wed–Thu 11:00–13:00',  subject_ids: ['sub-4'], is_deleted: false },
     { id: 'teacher-5', name: 'Dr. Sneha Joshi',      email: 'sneha.joshi@adit.ac.in',    phone: '+91-98765-55555', cabin: 'AB-412', office_hours: 'Tue, Fri 15:00–17:00', subject_ids: ['sub-5'], is_deleted: false },
   ];
-  await db.teachers.bulkPut(teachers);
+  await target.teachers.bulkPut(teachers);
 
   // ── Lecture Slots (Week of Aug 4–9, 2026) ─────────────────────────────────
   // Dates use naive local IST strings (no trailing Z — wall-clock times)
@@ -101,7 +125,7 @@ export async function seedDatabaseIfEmpty() {
     // Saturday Aug 9 — Lab session
     { id: 'slot-sat-1', subject_id: 'sub-6', room_id: 'CL-101', start_time: '2026-08-09T10:00:00', end_time: '2026-08-09T12:30:00', status: 'scheduled' as const, is_deleted: false },
   ];
-  await db.lectureSlots.bulkPut(lectureSlots);
+  await target.lectureSlots.bulkPut(lectureSlots);
 
   // ── Attendance Records (for Monday Aug 4 only — past slots) ──────────────
   // Denominator rule: only count slots with attendance records
@@ -113,7 +137,7 @@ export async function seedDatabaseIfEmpty() {
     // slot-wed-2 (rescheduled version of mon-3) — has a present record
     { id: 'att-wed-2', lecture_slot_id: 'slot-wed-2', status: 'present' as const, marked_at: '2026-08-06T12:00:00', version: 1, is_deleted: false },
   ];
-  await db.attendanceRecords.bulkPut(attendanceRecords);
+  await target.attendanceRecords.bulkPut(attendanceRecords);
 
   // ── Tasks ─────────────────────────────────────────────────────────────────
   const tasks = [
@@ -123,7 +147,7 @@ export async function seedDatabaseIfEmpty() {
     { id: 'task-4', subject_id: 'sub-5', title: 'Software Requirement Specification Draft',       due_at: '2026-08-10T23:59:00', priority: 'medium' as const, status: 'in_progress' as const, is_deleted: false },
     { id: 'task-5',                       title: 'Buy stationery for lab record',                  due_at: '2026-08-05T12:00:00', priority: 'low'    as const, status: 'completed' as const, is_deleted: false },
   ];
-  await db.tasks.bulkPut(tasks);
+  await target.tasks.bulkPut(tasks);
 
   // ── Notes ─────────────────────────────────────────────────────────────────
   const notes = [
@@ -152,7 +176,7 @@ export async function seedDatabaseIfEmpty() {
       is_deleted: false,
     },
   ];
-  await db.notes.bulkPut(notes);
+  await target.notes.bulkPut(notes);
 
   // ── Exams ─────────────────────────────────────────────────────────────────
   const exams = [
@@ -196,7 +220,7 @@ export async function seedDatabaseIfEmpty() {
       is_deleted: false,
     },
   ];
-  await db.exams.bulkPut(exams);
+  await target.exams.bulkPut(exams);
 
   // ── Resources ─────────────────────────────────────────────────────────────
   const resources = [
@@ -209,5 +233,17 @@ export async function seedDatabaseIfEmpty() {
     { id: 'res-7', subject_id: 'sub-5', title: 'Pressman Software Engg. Slides',     type: 'drive'  as const, url_or_file_ref: 'https://drive.google.com/pressman',          description: 'Unit 1–3 presentation decks',       is_deleted: false },
     { id: 'res-8', subject_id: 'sub-6', title: 'Scikit-Learn Quick Reference',       type: 'url'    as const, url_or_file_ref: 'https://scikit-learn.org/stable/user_guide', description: 'Official sklearn documentation',     is_deleted: false },
   ];
-  await db.resources.bulkPut(resources);
+  await target.resources.bulkPut(resources);
+}
+
+/**
+ * Backward-compatible entry point for App.tsx: seeds the ACTIVE account's
+ * database (or does nothing when the device is not activated yet — there is no
+ * account to seed until a key is activated). New activations call
+ * ensureAccountData directly.
+ */
+export async function seedDatabaseIfEmpty(): Promise<void> {
+  const activation = useAuthStore.getState().activation;
+  if (!activation?.accountId) return;
+  await ensureAccountData(activation.accountId, activation.role);
 }

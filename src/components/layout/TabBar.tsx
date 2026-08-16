@@ -1,35 +1,37 @@
 import React from 'react';
 import styles from './TabBar.module.css';
-import { Home, Calendar, CheckSquare, User } from 'lucide-react';
+import { LayoutDashboard, Calendar, BookOpen, User } from 'lucide-react';
+import { navigateTo } from '../../hooks/useHashLocation';
+import { TabType } from '../../store/uiStore';
 
-export type TabType = 'home' | 'schedule' | 'tasks' | 'profile';
-
-interface TabBarProps {
+export interface TabBarProps {
   activeTab: TabType;
-  onSelectTab: (tab: TabType) => void;
+  onSelectTab?: (tab: TabType) => void;
 }
 
-export const TabBar: React.FC<TabBarProps> = ({ activeTab, onSelectTab }) => {
+export const TabBar: React.FC<TabBarProps> = ({ activeTab }) => {
   const tabs = [
-    { id: 'home' as TabType, label: 'Home', icon: Home },
-    { id: 'schedule' as TabType, label: 'Schedule', icon: Calendar },
-    { id: 'tasks' as TabType, label: 'Tasks', icon: CheckSquare },
-    { id: 'profile' as TabType, label: 'Profile', icon: User },
+    { id: 'home' as TabType, hash: '#today', label: 'Today', icon: LayoutDashboard },
+    { id: 'schedule' as TabType, hash: '#plan/timetable', label: 'Plan', icon: Calendar },
+    { id: 'tasks' as TabType, hash: '#study/tasks', label: 'Study', icon: BookOpen },
+    { id: 'profile' as TabType, hash: '#account', label: 'Account', icon: User },
   ];
 
   return (
-    <nav className={styles.navBar}>
+    <nav className={styles.navBar} aria-label="Main Navigation">
       {tabs.map(t => {
         const Icon = t.icon;
         const isActive = activeTab === t.id;
         return (
           <button
             key={t.id}
-            onClick={() => onSelectTab(t.id)}
+            onClick={() => navigateTo(t.hash)}
             className={`${styles.tabItem} ${isActive ? styles.tabItemActive : ''}`}
+            aria-label={t.label}
+            aria-current={isActive ? 'page' : undefined}
           >
             <span className={`${styles.tabPill} ${isActive ? styles.tabPillActive : ''}`}>
-              <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
+              <Icon size={20} strokeWidth={isActive ? 2.5 : 2} aria-hidden="true" />
             </span>
             <span className={styles.tabLabel}>{t.label}</span>
           </button>
@@ -38,3 +40,5 @@ export const TabBar: React.FC<TabBarProps> = ({ activeTab, onSelectTab }) => {
     </nav>
   );
 };
+
+export default TabBar;

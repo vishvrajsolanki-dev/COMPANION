@@ -4,31 +4,31 @@ import { db, CalendarEvent } from '../../db/index';
 import { useActiveSemester } from '../../db/useDatabase';
 import { useUIStore } from '../../store/uiStore';
 import { ADIT_CALENDAR_EVENT_DEFAULTS, ADIT_SEMESTER_DEFAULT } from '../../data/aditCalendarDefaults';
-import { GlassButton, BottomSheet, EmptyState } from '../../components/ui';
+import { Button, BottomSheet, EmptyState, ConfirmDialog } from '../../components/ui';
 import { ArrowLeft, Plus, Pencil, Trash2, RotateCcw } from 'lucide-react';
 
-// Event-type styling pulled from the 8 locked design tokens (no free colors).
+import { navigateTo } from '../../hooks/useHashLocation';
+
 const EVENT_TYPE_META: Record<CalendarEvent['type'], { label: string; color: string }> = {
-  holiday:           { label: 'Holiday',       color: '#D97706' }, // amber
-  exam_window:       { label: 'Exam Window',   color: '#DC2626' }, // red
-  college_event:     { label: 'College Event', color: '#2563EB' }, // blue
-  semester_boundary: { label: 'Semester',      color: '#7C3AED' }, // violet
+  holiday:           { label: 'Holiday',       color: 'var(--color-warning, #d97706)' },
+  exam_window:       { label: 'Exam Window',   color: 'var(--error, #dc2626)' },
+  college_event:     { label: 'College Event', color: 'var(--primary, #2563eb)' },
+  semester_boundary: { label: 'Semester',      color: 'var(--secondary, #7c3aed)' },
 };
 const EVENT_TYPES = Object.keys(EVENT_TYPE_META) as CalendarEvent['type'][];
 
 const keyOf = (e: { date: string; title: string; type: string }) => `${e.date}|${e.title}|${e.type}`;
 
-// "2026-08-15" → { day: "Aug 15", year: "2026" }
 const fmtDate = (iso: string) => {
   const [y, m, d] = iso.split('-').map(Number);
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   return { day: `${months[m - 1]} ${d}`, year: String(y) };
 };
 
-const labelStyle: React.CSSProperties = { fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' };
+const labelStyle: React.CSSProperties = { fontSize: '0.8rem', fontWeight: 600, color: 'var(--on-surface-variant)' };
 
 export const CalendarEventsView: React.FC = () => {
-  const closeSubview = useUIStore(s => s.closeSubview);
+  const closeSubview = () => navigateTo('#plan/timetable');
   const activeSem = useActiveSemester();
 
   const events = useLiveQuery(
@@ -37,7 +37,6 @@ export const CalendarEventsView: React.FC = () => {
     []
   ) || [];
 
-  // Add / edit form state
   const [isEditing, setIsEditing] = useState(false);
   const [editTarget, setEditTarget] = useState<CalendarEvent | null>(null);
   const [title, setTitle]       = useState('');
@@ -45,6 +44,8 @@ export const CalendarEventsView: React.FC = () => {
   const [type, setType]         = useState<CalendarEvent['type']>('holiday');
   const [description, setDescription] = useState('');
   const [resetMsg, setResetMsg] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<CalendarEvent | null>(null);
+  const [pendingReset, setPendingReset] = useState(false);
 
   const openAdd = () => {
     setEditTarget(null);
@@ -87,22 +88,20 @@ export const CalendarEventsView: React.FC = () => {
     }
   };
 
-  const handleDelete = async (ev: CalendarEvent) => {
-    if (!confirm(`Delete "${ev.title}"?`)) return;
+  const requestDelete = (ev: CalendarEvent) => setPendingDelete(ev);
+
+  const executeDelete = async () => {
+    if (!pendingDelete) return;
     try {
-      await db.calendarEvents.update(ev.id, { is_deleted: true });
+      await db.calendarEvents.update(pendingDelete.id, { is_deleted: true });
     } catch (err) {
       console.error('Failed to delete calendar event:', err);
       setDbError('Failed to delete event.');
     }
+    setPendingDelete(null);
   };
 
-  // Restore the full ADIT default set: keep user customs, un-delete/restore
-  // any default that was edited or deleted, and align the sample semester's
-  // dates back to the real ADIT ODD 2026 calendar.
   const handleResetDefaults = async () => {
-    if (!confirm('Reset the calendar to the official ADIT Academic Calendar 2026-27 defaults?\n\nCustom events are kept. Default events you edited or deleted are restored.')) return;
-
     const existing = await db.calendarEvents.toArray();
     const liveKeys = new Set(existing.filter(e => !e.is_deleted).map(keyOf));
     const deletedByKey = new Map<string, CalendarEvent>();
@@ -130,8 +129,6 @@ export const CalendarEventsView: React.FC = () => {
       restored++;
     }
 
-    // If the active semester is still the shipped sample one, realign its
-    // dates to the ADIT calendar. Custom semesters are left untouched.
     if (activeSem && activeSem.label === ADIT_SEMESTER_DEFAULT.label) {
       await db.semesters.update(activeSem.id, {
         start_date: ADIT_SEMESTER_DEFAULT.start_date,
@@ -141,49 +138,98 @@ export const CalendarEventsView: React.FC = () => {
 
     setResetMsg(`Calendar reset to ADIT 2026-27 defaults — ${restored} default event(s) restored.`);
     setTimeout(() => setResetMsg(null), 5000);
+    setPendingReset(false);
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: 'var(--bg-page)', paddingBottom: '80px' }}>
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        backgroundColor: 'var(--bg-page)',
+      }}
+      data-testid="calendar-view"
+    >
       <h1 className="sr-only">Calendar Events</h1>
+
       {/* Header */}
-      <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'var(--space-md)', paddingTop: 'calc(var(--space-md) + env(safe-area-inset-top))', borderBottom: '1px solid var(--border-hairline)', backgroundColor: 'var(--bg-page)', position: 'sticky', top: 0, zIndex: 10 }}>
+      <header
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '16px',
+          borderBottom: '1px solid var(--outline-variant)',
+          backgroundColor: 'var(--surface-container-lowest)',
+          position: 'sticky',
+          top: 0,
+          zIndex: 10,
+        }}
+      >
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
-          <button onClick={closeSubview} style={{ color: 'var(--text-primary)', flexShrink: 0 }} aria-label="Go back"><ArrowLeft size={24} /></button>
+          <button
+            onClick={closeSubview}
+            style={{ color: 'var(--on-surface)', flexShrink: 0, border: 'none', background: 'transparent', cursor: 'pointer' }}
+            aria-label="Go back"
+          >
+            <ArrowLeft size={24} />
+          </button>
           <div>
-            <h2 style={{ fontSize: 'var(--text-xl)', fontWeight: 700, color: 'var(--text-primary)' }}>Calendar Events</h2>
-            <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--on-surface)', margin: 0 }}>Calendar Events</h2>
+            <p style={{ fontSize: '0.75rem', color: 'var(--on-surface-variant)', margin: 0 }}>
               {events.length} events · {activeSem?.label || 'No active semester'}
             </p>
           </div>
         </div>
         <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
-          <GlassButton size="sm" variant="ghost" onClick={handleResetDefaults} title="Restore the official ADIT Academic Calendar 2026-27 defaults">
-            <RotateCcw size={14} /> Reset to ADIT
-          </GlassButton>
-          <GlassButton size="sm" onClick={openAdd}>
+          <Button size="sm" variant="subtle" onClick={() => setPendingReset(true)} title="Restore ADIT Academic Calendar">
+            <RotateCcw size={14} /> Reset
+          </Button>
+          <Button size="sm" variant="primary" onClick={openAdd}>
             <Plus size={16} /> Add
-          </GlassButton>
+          </Button>
         </div>
       </header>
 
       {resetMsg && (
-        <div style={{ margin: 'var(--space-md) var(--space-md) 0', padding: '12px', borderRadius: 'var(--radius-card)', backgroundColor: 'var(--color-success-bg)', border: '1px solid var(--color-success)', color: 'var(--color-success)', fontWeight: 600, fontSize: '0.85rem' }}>
+        <div
+          style={{
+            margin: '16px 16px 0',
+            padding: '12px',
+            borderRadius: 'var(--radius-lg, 12px)',
+            backgroundColor: 'var(--surface-container-low)',
+            border: '1px solid var(--primary)',
+            color: 'var(--primary)',
+            fontWeight: 600,
+            fontSize: '0.85rem',
+          }}
+        >
           ✓ {resetMsg}
         </div>
       )}
 
       {/* Source banner */}
-      <div style={{ margin: 'var(--space-md) var(--space-md) 0', padding: '10px 12px', borderRadius: 'var(--radius-card)', backgroundColor: 'var(--color-info-bg)', border: '1px solid var(--border-hairline)', fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-        Ships with the official <strong>ADIT Academic Calendar 2026-27</strong> ({ADIT_CALENDAR_EVENT_DEFAULTS.length} defaults — source: adit.ac.in). Add your own events or edit/delete any row. "Reset to ADIT" restores the defaults.
+      <div
+        style={{
+          margin: '16px 16px 0',
+          padding: '12px 16px',
+          borderRadius: 'var(--radius-lg, 12px)',
+          backgroundColor: 'var(--surface-container-lowest)',
+          border: '1px solid var(--outline-variant)',
+          fontSize: '0.8125rem',
+          color: 'var(--on-surface-variant)',
+          lineHeight: 1.5,
+        }}
+      >
+        Ships with official <strong>ADIT Academic Calendar 2026-27</strong> ({ADIT_CALENDAR_EVENT_DEFAULTS.length} defaults — source: adit.ac.in). Custom events, edits, and resets supported.
       </div>
 
       {/* Event list */}
-      <div style={{ padding: 'var(--space-md)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+      <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
         {events.length === 0 && (
           <EmptyState
             title="No calendar events"
-            body="Tap Add to create one, or Reset to ADIT to load the college calendar."
+            body="Tap Add to create one, or Reset to load default calendar."
           />
         )}
         {events.map(ev => {
@@ -192,22 +238,29 @@ export const CalendarEventsView: React.FC = () => {
           return (
             <div
               key={ev.id}
-              style={{ display: 'flex', alignItems: 'stretch', gap: '12px', padding: 'var(--space-md)', backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius-card)', border: '1px solid var(--border-hairline)', boxShadow: 'var(--shadow-card)' }}
+              style={{
+                display: 'flex',
+                alignItems: 'stretch',
+                gap: '12px',
+                padding: '16px',
+                backgroundColor: 'var(--surface-container-lowest)',
+                borderRadius: 'var(--radius-lg, 12px)',
+                border: '1px solid var(--outline-variant)',
+              }}
             >
-              {/* Type color bar */}
-              <div style={{ width: '5px', borderRadius: '3px', backgroundColor: meta.color, flexShrink: 0 }} />
+              <div style={{ width: '4px', borderRadius: '2px', backgroundColor: meta.color, flexShrink: 0 }} />
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ev.title}</div>
+                <div style={{ fontWeight: 700, fontSize: '0.9375rem', color: 'var(--on-surface)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ev.title}</div>
                 <div style={{ display: 'flex', gap: '8px', marginTop: '4px', alignItems: 'center', flexWrap: 'wrap' }}>
-                  <span style={{ fontFamily: 'var(--font-family-mono)', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>{fd.day} {fd.year}</span>
-                  <span style={{ fontSize: '0.7rem', fontWeight: 700, color: meta.color, backgroundColor: `${meta.color}18`, padding: '1px 7px', borderRadius: '4px' }}>{meta.label}</span>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.78rem', color: 'var(--on-surface-variant)' }}>{fd.day} {fd.year}</span>
+                  <span style={{ fontSize: '0.7rem', fontWeight: 700, color: meta.color, backgroundColor: 'var(--surface-container-low)', padding: '2px 8px', borderRadius: 'var(--radius-full, 9999px)' }}>{meta.label}</span>
                 </div>
                 {ev.description && (
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px', lineHeight: 1.4 }}>{ev.description}</div>
+                  <div style={{ fontSize: '0.78rem', color: 'var(--on-surface-variant)', marginTop: '4px', lineHeight: 1.4 }}>{ev.description}</div>
                 )}
               </div>
               <div style={{ display: 'flex', gap: '6px', flexShrink: 0, alignItems: 'flex-start' }}>
-                <GlassButton
+                <Button
                   aria-label={`Edit ${ev.title}`}
                   size="sm"
                   variant="subtle"
@@ -215,30 +268,30 @@ export const CalendarEventsView: React.FC = () => {
                   title="Edit"
                 >
                   <Pencil size={15} />
-                </GlassButton>
-                <GlassButton
+                </Button>
+                <Button
                   aria-label={`Delete ${ev.title}`}
                   size="sm"
                   variant="danger"
-                  onClick={() => handleDelete(ev)}
+                  onClick={() => requestDelete(ev)}
                   title="Delete"
                 >
                   <Trash2 size={15} />
-                </GlassButton>
+                </Button>
               </div>
             </div>
           );
         })}
       </div>
 
-      {/* Add / Edit bottom sheet */}
+      {/* Add / Edit Sheet */}
       {isEditing && (
         <BottomSheet open onClose={() => setIsEditing(false)}>
           <form
             onSubmit={handleSave}
-            style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}
+            style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}
           >
-            <h3 style={{ fontWeight: 700, fontSize: '1.15rem', color: 'var(--text-primary)' }}>{editTarget ? 'Edit Event' : 'New Calendar Event'}</h3>
+            <h3 style={{ fontWeight: 700, fontSize: '1.15rem', color: 'var(--on-surface)', margin: 0 }}>{editTarget ? 'Edit Event' : 'New Calendar Event'}</h3>
 
             <div>
               <label style={labelStyle}>Title</label>
@@ -248,11 +301,11 @@ export const CalendarEventsView: React.FC = () => {
                 placeholder="e.g. Holi Vacation"
                 required
                 className="input"
-                style={{ marginTop: 4 }}
+                style={{ marginTop: 4, minHeight: 44 }}
               />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px' }}>
               <div>
                 <label style={labelStyle}>Date</label>
                 <input
@@ -261,7 +314,7 @@ export const CalendarEventsView: React.FC = () => {
                   onChange={e => setDate(e.target.value)}
                   required
                   className="input"
-                  style={{ marginTop: 4 }}
+                  style={{ marginTop: 4, minHeight: 44 }}
                 />
               </div>
               <div>
@@ -270,7 +323,7 @@ export const CalendarEventsView: React.FC = () => {
                   value={type}
                   onChange={e => setType(e.target.value as CalendarEvent['type'])}
                   className="input"
-                  style={{ marginTop: 4 }}
+                  style={{ marginTop: 4, minHeight: 44 }}
                 >
                   {EVENT_TYPES.map(t => (
                     <option key={t} value={t}>{EVENT_TYPE_META[t].label}</option>
@@ -286,23 +339,42 @@ export const CalendarEventsView: React.FC = () => {
                 onChange={e => setDescription(e.target.value)}
                 placeholder="e.g. 8 days: 16 – 23 Nov 2026"
                 className="input"
-                style={{ marginTop: 4 }}
+                style={{ marginTop: 4, minHeight: 44 }}
               />
             </div>
 
             {dbError && (
-              <div style={{ padding: '10px', borderRadius: 'var(--radius-card)', backgroundColor: 'var(--color-danger-bg)', color: 'var(--color-danger)', fontSize: '0.85rem', fontWeight: 600 }}>
+              <div style={{ padding: '10px', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--error-container)', color: 'var(--on-error-container)', fontSize: '0.85rem', fontWeight: 600 }}>
                 {dbError}
               </div>
             )}
 
             <div style={{ display: 'flex', gap: '8px', paddingTop: '4px' }}>
-              <GlassButton type="submit" style={{ flex: 1 }}>Save Event</GlassButton>
-              <GlassButton type="button" variant="ghost" onClick={() => setIsEditing(false)}>Cancel</GlassButton>
+              <Button type="submit" variant="primary" style={{ flex: 1 }}>Save Event</Button>
+              <Button type="button" variant="ghost" onClick={() => setIsEditing(false)}>Cancel</Button>
             </div>
           </form>
         </BottomSheet>
       )}
+
+      <ConfirmDialog
+        open={!!pendingDelete}
+        title={`Delete "${pendingDelete?.title ?? ''}"?`}
+        message="This calendar event will be permanently removed from your calendar."
+        confirmLabel="Delete Event"
+        onConfirm={executeDelete}
+        onCancel={() => setPendingDelete(null)}
+      />
+
+      <ConfirmDialog
+        open={pendingReset}
+        title="Reset calendar to ADIT defaults?"
+        message="Restores the official ADIT Academic Calendar 2026-27 defaults. Custom events are kept."
+        confirmLabel="Reset to ADIT"
+        tone="primary"
+        onConfirm={handleResetDefaults}
+        onCancel={() => setPendingReset(false)}
+      />
     </div>
   );
 };

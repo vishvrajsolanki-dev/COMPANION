@@ -1,123 +1,193 @@
+/* Academic OS — Weekly Timetable (Plan Hub)
+   Canonical Specs: fc3c825038c043bbb3dd0d4daee0572f (Light), 2d72213e1136479a98571d8b87b3da57 (Dark), 272f3accade04e35b2c9c2106bbbe8a3 (Desktop) */
+
 .container {
   display: flex;
   flex-direction: column;
-  height: 100%;
-  padding: var(--space-md);
-  gap: var(--space-md);
+  gap: var(--stack-md, 16px);
+  padding: var(--gutter-mobile, 16px);
+  padding-bottom: calc(var(--tabbar-clear, 80px) + 16px);
+  max-width: 1080px;
+  margin: 0 auto;
+  width: 100%;
 }
 
-/* Day Strip Navigation (for mobile) */
+@media (min-width: 768px) {
+  .container {
+    padding: var(--gutter-desktop, 32px);
+    gap: var(--stack-lg, 24px);
+  }
+}
+
+/* Header bar */
+.headerBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--outline-variant);
+}
+
+.headerTitle {
+  font-family: var(--font-primary);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--on-surface);
+  margin: 0;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Day Strip Navigation */
 .dayStrip {
   display: flex;
-  gap: var(--space-xs);
-  justify-content: space-between;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  -webkit-overflow-scrolling: touch;
 }
 
 .dayChip {
   flex: 1;
+  min-width: 44px;
+  min-height: 44px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: var(--space-sm) 0;
-  border-radius: var(--radius-pill);
-  background-color: var(--bg-card);
-  border: 1px solid var(--border-hairline);
-  color: var(--text-secondary);
-  transition: all 0.15s ease;
+  justify-content: center;
+  padding: 6px 10px;
+  border-radius: var(--radius-full, 9999px);
+  background-color: var(--surface-container-lowest);
+  border: 1px solid var(--outline-variant);
+  color: var(--on-surface-variant);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.dayChip:hover {
+  background-color: var(--surface-container-low);
 }
 
 .dayChipActive {
-  background-color: var(--color-primary);
-  color: #FFFFFF;
-  border-color: var(--color-primary);
+  background-color: var(--primary);
+  color: var(--on-primary);
+  border-color: var(--primary);
 }
 
 .dayName {
+  font-family: var(--font-mono);
   font-size: 0.75rem;
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
 }
 
-/* Grid Layout */
+/* Slot List */
 .gridWrapper {
   display: flex;
   flex-direction: column;
-  gap: var(--space-md);
-  overflow-y: auto;
-  padding-bottom: 80px; /* Space for bottom tab bar */
+  gap: 12px;
 }
 
+/* Time Slot Card */
 .timeSlotCard {
   display: flex;
-  background-color: var(--bg-card);
-  border-radius: var(--radius-card);
-  border: 1px solid var(--border-hairline);
-  box-shadow: var(--shadow-card);
-  overflow: hidden;
+  background-color: var(--surface-container-lowest);
+  border-radius: var(--radius-lg, 12px);
+  border: 1px solid var(--outline-variant);
   position: relative;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.12s ease, border-color 0.15s ease;
+  min-height: 44px;
+}
+
+.timeSlotCard:hover {
+  border-color: var(--primary);
 }
 
 .timeSlotCard:active {
   transform: scale(0.98);
 }
 
+/* Slot status state variations */
+.currentSlotCard {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 1px var(--primary);
+}
+
+.completedSlotCard {
+  opacity: 0.75;
+}
+
 .colorBar {
-  width: 6px;
+  width: 5px;
   flex-shrink: 0;
 }
 
 .cardBody {
   flex: 1;
-  padding: var(--space-md);
+  padding: 14px 16px;
   display: flex;
   flex-direction: column;
-  gap: var(--space-xs);
+  gap: 4px;
+  min-width: 0;
 }
 
 .cardHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
 }
 
 .subjectCode {
-  font-family: var(--font-family-mono);
-  font-size: 0.75rem;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
   font-weight: 700;
   padding: 2px 8px;
-  border-radius: var(--radius-pill);
-  letter-spacing: 0.5px;
+  border-radius: var(--radius-full, 9999px);
+  letter-spacing: 0.05em;
 }
 
 .timeBadge {
-  font-family: var(--font-family-mono);
-  font-size: 0.8rem;
-  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--on-surface-variant);
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .subjectName {
-  font-size: 1rem;
+  font-family: var(--font-primary);
+  font-size: 0.9375rem;
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--on-surface);
+  margin: 2px 0 0 0;
 }
 
 .cancelledText {
   text-decoration: line-through;
-  color: var(--text-muted);
+  color: var(--on-surface-variant);
 }
 
 .cardFooter {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: var(--space-xs);
+  margin-top: 4px;
+  gap: 8px;
 }
 
 .roomInfo {
-  font-family: var(--font-family-mono);
-  font-size: 0.8rem;
-  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--on-surface-variant);
   display: flex;
   align-items: center;
   gap: 4px;

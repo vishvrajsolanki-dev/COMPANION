@@ -3,10 +3,11 @@ import { useSubjects, useLectureSlots, useAttendanceRecords } from '../../db/use
 import { db, LectureSlot, Subject, AttendanceRecord } from '../../db/index';
 import styles from './WeeklyGrid.module.css';
 import { SlotDetailSheet } from './SlotDetailSheet';
-import { todayISO } from '../../utils/date';
+import { todayISO, nowMinutes, isToday } from '../../utils/date';
 import { useUIStore } from '../../store/uiStore';
-import { GlassButton, BottomSheet, EmptyState, Badge } from '../../components/ui';
-import { Calendar, MapPin, Clock, Plus, CalendarPlus } from 'lucide-react';
+import { navigateTo } from '../../hooks/useHashLocation';
+import { Button, BottomSheet, EmptyState, Badge } from '../../components/ui';
+import { Calendar, MapPin, Clock, Plus, CalendarPlus, AlertCircle } from 'lucide-react';
 
 const DAYS = [
   { dayNum: 1, name: 'Mon', fullName: 'Monday' },
@@ -18,17 +19,51 @@ const DAYS = [
   { dayNum: 7, name: 'Sun', fullName: 'Sunday' },
 ];
 
+const STATUS_LABELS: Record<string, string> = {
+  scheduled: 'Scheduled',
+  extra: 'Extra Class',
+  rescheduled: 'Rescheduled',
+  cancelled: 'Cancelled',
+  present: 'Present',
+  absent: 'Absent',
+  late: 'Late',
+  medical: 'Medical',
+  onduty: 'On-Duty',
+};
+const statusLabel = (raw: string) => STATUS_LABELS[raw] ?? raw;
+
 export const WeeklyGrid: React.FC = () => {
-  const [selectedDay, setSelectedDay] = useState<number>(1); // 1 = Mon
+  // Default selected day to current day of week (1=Mon ... 7=Sun)
+  const currentJsDay = new Date().getDay();
+  const defaultDay = currentJsDay === 0 ? 7 : currentJsDay;
+  const [selectedDay, setSelectedDay] = useState<number>(defaultDay);
+
   const [activeSlot, setActiveSlot] = useState<{ slot: LectureSlot; subject: Subject; record?: AttendanceRecord } | null>(null);
 
   // Extra class form state
   const [isAddingExtra, setIsAddingExtra] = useState(false);
+  const [isSavingExtra, setIsSavingExtra] = useState(false);
   const [extraSubjectId, setExtraSubjectId] = useState('');
   const [extraDate, setExtraDate] = useState(() => todayISO());
   const [extraStartTime, setExtraStartTime] = useState('16:00');
   const [extraEndTime, setExtraEndTime] = useState('17:15');
   const [extraRoomId, setExtraRoomId] = useState('LH-301');
+  const [extraError, setExtraError] = useState<string | null>(null);
+
+  const openExtraSheet = () => {
+    setExtraSubjectId('');
+    setExtraDate(todayISO());
+    setExtraStartTime('16:00');
+    setExtraEndTime('17:15');
+    setExtraRoomId('LH-301');
+    setExtraError(null);
+    setIsSavingExtra(false);
+    setIsAddingExtra(true);
+  };
+  const closeExtraSheet = () => {
+    setIsSavingExtra(false);
+    setIsAddingExtra(false);
+  };
 
   const subjects = useSubjects() || [];
   const lectureSlots = useLectureSlots() || [];
@@ -45,13 +80,17 @@ export const WeeklyGrid: React.FC = () => {
     recordMap.set(rec.lecture_slot_id, rec);
   }
 
+  // Current time in "HH:MM" format
+  const now = nowMinutes();
+  const isViewingToday = selectedDay === defaultDay;
+
   // Filter slots for selected day (1=Mon ... 7=Sun)
   const daySlots = lectureSlots
     .filter(slot => {
       if (slot.is_deleted) return false;
       const date = new Date(slot.start_time);
       let day = date.getDay(); // 0 = Sun, 1 = Mon, 6 = Sat
-      if (day === 0) day = 7; // Convert Sun to 7
+      if (day === 0) day = 7;
       return day === selectedDay;
     })
     .sort((a, b) => a.start_time.localeCompare(b.start_time));
@@ -59,54 +98,53 @@ export const WeeklyGrid: React.FC = () => {
   const handleAddExtraClass = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!extraSubjectId || !extraDate || !extraStartTime || !extraEndTime) return;
+    if (isSavingExtra) return;
 
-    await db.lectureSlots.add({
-      id: `slot-extra-${Date.now()}`,
-      subject_id: extraSubjectId,
-      room_id: extraRoomId || undefined,
-      start_time: `${extraDate}T${extraStartTime}:00`,
-      end_time: `${extraDate}T${extraEndTime}:00`,
-      status: 'extra',
-      is_deleted: false,
-    });
+    if (extraStartTime >= extraEndTime) {
+      setExtraError('End time must be after start time.');
+      return;
+    }
 
-    setIsAddingExtra(false);
+    setIsSavingExtra(true);
+    try {
+      await db.lectureSlots.add({
+        id: `slot-extra-${Date.now()}`,
+        subject_id: extraSubjectId,
+        room_id: extraRoomId || undefined,
+        start_time: `${extraDate}T${extraStartTime}:00`,
+        end_time: `${extraDate}T${extraEndTime}:00`,
+        status: 'extra',
+        is_deleted: false,
+      });
+    } finally {
+      closeExtraSheet();
+    }
   };
 
   return (
-    <div className={styles.container}>
+    <div className={styles.container} data-testid="timetable-view">
       <h1 className="sr-only">Weekly Timetable</h1>
-      {/* Screen header */}
-      <header
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: 'var(--space-md)',
-          paddingTop: 'calc(var(--space-md) + env(safe-area-inset-top))',
-          borderBottom: '1px solid var(--border-hairline)',
-          backgroundColor: 'var(--bg-page)',
-          position: 'sticky',
-          top: 0,
-          zIndex: 10,
-        }}
-      >
-        <h2 style={{ fontSize: 'var(--text-xl)', fontWeight: 700, color: 'var(--text-primary)' }}>Weekly Timetable (7-Day Grid)</h2>
-        <div style={{ display: 'flex', gap: '6px' }}>
-          <GlassButton size="sm" variant="ghost" onClick={() => setIsAddingExtra(true)}>
-            <Plus size={14} /> Extra Class
-          </GlassButton>
-          <GlassButton size="sm" onClick={() => navigateToSubview('timetable-builder')}>
-            <CalendarPlus size={14} /> Builder
-          </GlassButton>
-        </div>
-      </header>
 
-      {/* 7-Day Selector Strip (Mon-Sun) */}
-      <div className={styles.dayStrip}>
+      {/* Header Bar */}
+      <div className={styles.headerBar}>
+        <h2 className={styles.headerTitle}>Weekly Timetable</h2>
+        <div className={styles.headerActions}>
+          <Button size="sm" variant="subtle" onClick={openExtraSheet}>
+            <Plus size={14} /> Extra Class
+          </Button>
+          <Button size="sm" variant="primary" onClick={() => navigateTo('#plan/builder')}>
+            <CalendarPlus size={14} /> Builder
+          </Button>
+        </div>
+      </div>
+
+      {/* 7-Day Selector Strip */}
+      <div className={styles.dayStrip} role="tablist" aria-label="Select Day">
         {DAYS.map(d => (
           <button
             key={d.dayNum}
+            role="tab"
+            aria-selected={selectedDay === d.dayNum}
             onClick={() => setSelectedDay(d.dayNum)}
             className={`${styles.dayChip} ${selectedDay === d.dayNum ? styles.dayChipActive : ''}`}
           >
@@ -115,7 +153,7 @@ export const WeeklyGrid: React.FC = () => {
         ))}
       </div>
 
-      {/* Grid Slot List */}
+      {/* Slot List */}
       <div className={styles.gridWrapper}>
         {daySlots.length === 0 ? (
           <EmptyState
@@ -130,15 +168,26 @@ export const WeeklyGrid: React.FC = () => {
 
             const record = recordMap.get(slot.id);
             const isCancelled = slot.status === 'cancelled';
-            const statusLabel = record ? record.status : slot.status;
+            const rawStatus = record ? record.status : slot.status;
+
+            // Class status hierarchy (Current vs Completed vs Scheduled)
+            const startTimeStr = slot.start_time.split('T')[1]?.substring(0, 5) || '';
+            const endTimeStr = slot.end_time.split('T')[1]?.substring(0, 5) || '';
+
+            const isCurrent = isViewingToday && isToday(slot.start_time) && now >= startTimeStr && now <= endTimeStr;
+            const isCompleted = isViewingToday && isToday(slot.start_time) && now > endTimeStr;
 
             return (
               <div
                 key={slot.id}
-                className={styles.timeSlotCard}
+                className={`${styles.timeSlotCard} ${
+                  isCurrent ? styles.currentSlotCard : isCompleted ? styles.completedSlotCard : ''
+                }`}
                 onClick={() => setActiveSlot({ slot, subject, record })}
+                role="button"
+                tabIndex={0}
+                aria-label={`${subject.name} from ${startTimeStr} to ${endTimeStr}`}
               >
-                {/* Accent strip deriving strictly from subject.color token */}
                 <div
                   className={styles.colorBar}
                   style={{ backgroundColor: subject.color }}
@@ -156,8 +205,8 @@ export const WeeklyGrid: React.FC = () => {
                       {subject.code}
                     </span>
                     <span className={styles.timeBadge}>
-                      <Clock size={12} style={{ display: 'inline', marginRight: '4px', verticalAlign: 'middle' }} />
-                      {slot.start_time.split('T')[1]?.substring(0, 5) || slot.start_time} - {slot.end_time.split('T')[1]?.substring(0, 5) || slot.end_time}
+                      <Clock size={12} />
+                      {startTimeStr} - {endTimeStr}
                     </span>
                   </div>
 
@@ -182,11 +231,13 @@ export const WeeklyGrid: React.FC = () => {
                           : record?.status === 'late'
                           ? 'warning'
                           : record?.status === 'medical' || record?.status === 'onduty'
+                          ? 'info'
+                          : isCurrent
                           ? 'accent'
                           : 'neutral'
                       }
                     >
-                      {statusLabel}
+                      {isCurrent ? 'NOW LIVE' : statusLabel(rawStatus)}
                     </Badge>
                   </div>
                 </div>
@@ -197,21 +248,39 @@ export const WeeklyGrid: React.FC = () => {
       </div>
 
       {/* Add Extra Class Sheet */}
-      <BottomSheet open={isAddingExtra} onClose={() => setIsAddingExtra(false)}>
+      <BottomSheet open={isAddingExtra} onClose={closeExtraSheet}>
         <form
           onSubmit={handleAddExtraClass}
-          style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}
+          style={{ display: 'flex', flexDirection: 'column', gap: 'var(--stack-md, 16px)' }}
         >
-          <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-primary)' }}>Add Extra Lecture</h3>
+          <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--on-surface)' }}>Add Extra Lecture</h3>
+
+          {extraError && (
+            <div
+              style={{
+                padding: '10px 12px',
+                borderRadius: 'var(--radius-md)',
+                backgroundColor: 'var(--error-container)',
+                color: 'var(--on-error-container)',
+                fontSize: '0.82rem',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+              }}
+            >
+              <AlertCircle size={15} style={{ flexShrink: 0 }} /> {extraError}
+            </div>
+          )}
 
           <div>
-            <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Subject</label>
+            <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--on-surface-variant)' }}>Subject</label>
             <select
               value={extraSubjectId}
               onChange={e => setExtraSubjectId(e.target.value)}
               required
               className="input"
-              style={{ marginTop: 4 }}
+              style={{ marginTop: 4, minHeight: 44 }}
             >
               <option value="">Select subject…</option>
               {subjects.map(s => (
@@ -221,57 +290,61 @@ export const WeeklyGrid: React.FC = () => {
           </div>
 
           <div>
-            <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Date</label>
+            <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--on-surface-variant)' }}>Date</label>
             <input
               type="date"
               value={extraDate}
               onChange={e => setExtraDate(e.target.value)}
               required
               className="input"
-              style={{ marginTop: 4 }}
+              style={{ marginTop: 4, minHeight: 44 }}
             />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-md)' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '12px' }}>
             <div>
-              <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Start Time</label>
+              <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--on-surface-variant)' }}>Start Time</label>
               <input
                 type="time"
                 value={extraStartTime}
                 onChange={e => setExtraStartTime(e.target.value)}
                 required
                 className="input"
-                style={{ marginTop: 4 }}
+                style={{ marginTop: 4, minHeight: 44 }}
               />
             </div>
             <div>
-              <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>End Time</label>
+              <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--on-surface-variant)' }}>End Time</label>
               <input
                 type="time"
                 value={extraEndTime}
                 onChange={e => setExtraEndTime(e.target.value)}
                 required
                 className="input"
-                style={{ marginTop: 4 }}
+                style={{ marginTop: 4, minHeight: 44 }}
               />
             </div>
           </div>
 
-          <input
-            type="text"
-            placeholder="Room / Hall (e.g. CL-101)"
-            value={extraRoomId}
-            onChange={e => setExtraRoomId(e.target.value)}
-            className="input"
-          />
+          <div>
+            <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--on-surface-variant)' }}>Room / Hall</label>
+            <input
+              type="text"
+              placeholder="e.g. CL-101"
+              value={extraRoomId}
+              onChange={e => setExtraRoomId(e.target.value)}
+              className="input"
+              style={{ marginTop: 4, minHeight: 44 }}
+            />
+          </div>
 
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <GlassButton type="submit" style={{ flex: 1 }}>
-              Create Extra Class
-            </GlassButton>
-            <GlassButton type="button" variant="ghost" onClick={() => setIsAddingExtra(false)}>
+          <div style={{ display: 'flex', gap: '8px', paddingTop: 8 }}>
+            <Button type="submit" variant="primary" style={{ flex: 1 }} disabled={isSavingExtra}>
+              {isSavingExtra ? 'Adding…' : 'Create Extra Class'}
+            </Button>
+            <Button type="button" variant="ghost" onClick={closeExtraSheet} disabled={isSavingExtra}>
               Cancel
-            </GlassButton>
+            </Button>
           </div>
         </form>
       </BottomSheet>
@@ -288,3 +361,5 @@ export const WeeklyGrid: React.FC = () => {
     </div>
   );
 };
+
+export default WeeklyGrid;

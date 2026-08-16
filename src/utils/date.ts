@@ -47,5 +47,7 @@ export const addDaysISO = (iso: string, n: number): string => {
   return todayISOFrom(d);
 };
 
-const todayISOFrom = (d: Date): string =>
-  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+function todayISOFrom(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+

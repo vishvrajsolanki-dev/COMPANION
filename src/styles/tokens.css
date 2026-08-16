@@ -1,167 +1,264 @@
-/* Academic OS — Academic Core design tokens (LOCKED)
- * Source of truth: DESIGN_SYSTEM.md.
- *
- * This replaces the previous glass/gradient theme with the screenshot-matched
- * mobile productivity SaaS system: flat warm-gray page, white cards, royal-blue
- * primary, violet secondary, rust tertiary, slate neutral, pill controls, and
- * soft semantic badges/rings.
- */
+/* Self-hosted font declarations (No external Google Fonts runtime dependency) */
+@font-face {
+  font-family: 'Hanken Grotesk';
+  src: url('/fonts/HankenGrotesk-400.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Hanken Grotesk';
+  src: url('/fonts/HankenGrotesk-500.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Hanken Grotesk';
+  src: url('/fonts/HankenGrotesk-600.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Hanken Grotesk';
+  src: url('/fonts/HankenGrotesk-700.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('/fonts/JetBrainsMono-600.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Academic OS Design System Tokens (Stitch Project 10253714570536683011) */
 :root,
-[data-theme="light"],
-[data-theme="dark"] {
+[data-theme="light"] {
   color-scheme: light;
 
-  /* ── Brand palette ─────────────────────────────────────────────────────── */
-  --color-primary: #2563EB;
-  --color-secondary: #7C3AED;
-  --color-tertiary: #BC4800;
-  --color-neutral: #64748B;
+  /* ── Typography Families ────────────────────────────────────────────────── */
+  --font-primary: 'Hanken Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  --font-mono: 'JetBrains Mono', SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+  --font-family-base: var(--font-primary);
+  --font-family-mono: var(--font-mono);
+  --font-family: var(--font-primary);
 
-  --primary-900: #102A66;
-  --primary-800: #173F99;
-  --primary-700: #1D4ED8;
-  --primary-600: #2563EB;
-  --primary-500: #3B82F6;
-  --primary-400: #60A5FA;
-  --primary-300: #93C5FD;
-  --primary-200: #BFDBFE;
-  --primary-100: #DBEAFE;
-  --primary-50:  #EFF6FF;
+  /* ── Academic OS Tonal Surface Containers (Light Mode) ──────────────────── */
+  --bg-page: #faf9f8;
+  --surface: #faf9f8;
+  --surface-container-lowest: #ffffff;
+  --surface-container-low: #f4f3f2;
+  --surface-container: #eeeeed;
+  --surface-container-high: #e9e8e7;
+  --surface-container-highest: #e3e2e1;
 
-  --secondary-900: #32145F;
-  --secondary-800: #4C1D95;
-  --secondary-700: #6D28D9;
-  --secondary-600: #7C3AED;
-  --secondary-500: #8B5CF6;
-  --secondary-400: #A78BFA;
-  --secondary-300: #C4B5FD;
-  --secondary-200: #DDD6FE;
-  --secondary-100: #EDE9FE;
-  --secondary-50:  #F5F3FF;
+  /* Legacy card aliases pointing to surface container tokens */
+  --bg-card: var(--surface-container-lowest);
+  --bg-card-tint: #1b3462;
+  --border-hairline: #c4c6d1;
+  --text-primary: #1a1c1c;
+  --text-secondary: #444750;
+  --text-muted: #747781;
 
-  --tertiary-900: #4A1C00;
-  --tertiary-800: #783000;
-  --tertiary-700: #9A3C00;
-  --tertiary-600: #BC4800;
-  --tertiary-500: #D97706;
-  --tertiary-400: #F59E0B;
-  --tertiary-300: #FBBF24;
-  --tertiary-200: #FDE68A;
-  --tertiary-100: #FEF3C7;
-  --tertiary-50:  #FFFBEB;
+  /* Semantic surface text — M3 pattern used by UI components */
+  --on-surface: #1a1c1c;
+  --on-surface-variant: #444750;
 
-  --neutral-900: #0F172A;
-  --neutral-800: #1E293B;
-  --neutral-700: #334155;
-  --neutral-600: #475569;
-  --neutral-500: #64748B;
-  --neutral-400: #94A3B8;
-  --neutral-300: #CBD5E1;
-  --neutral-200: #E2E8F0;
-  --neutral-100: #F1F5F9;
-  --neutral-50:  #F8FAFC;
+  /* ── Brand Palette & Semantic Colors ───────────────────────────────────── */
+  --primary: #001e4c;
+  --on-primary: #ffffff;
+  --primary-container: #1b3462;
+  --on-primary-container: #879dd2;
+  --secondary: #5a54a4;
+  --secondary-container: #ada7fe;
+  --tertiary: #122132;
+  --outline: #747781;
+  --outline-variant: #c4c6d1;
 
-  /* ── Surfaces / text ───────────────────────────────────────────────────── */
-  --bg-page: #F1F3F4;
-  --bg-card: #FFFFFF;
-  --bg-card-tint: #E5EEFF;
-  --border-hairline: #E5E7EB;
-  --text-primary: #0F172A;
-  --text-secondary: #64748B;
-  --text-muted: #94A3B8;
+  /* Status Colors */
+  --error: #ba1a1a;
+  --error-container: #ffdad6;
+  --on-error-container: #93000a;
+  --success-attendance: #0f336d;
+  --on-success: #ffffff;
 
-  /* Compatibility aliases for existing code. */
+  /* Legacy compatibility aliases */
+  --color-primary: #001e4c;
+  --color-secondary: #5a54a4;
+  --color-tertiary: #122132;
+  --color-neutral: #747781;
   --color-bg-primary: var(--bg-page);
   --color-bg-secondary: var(--bg-card);
-  --color-bg-tertiary: var(--neutral-100);
-  --color-border: var(--border-hairline);
+  --color-bg-tertiary: var(--surface-container-low);
+  --color-border: var(--outline-variant);
   --color-text-primary: var(--text-primary);
   --color-text-secondary: var(--text-secondary);
   --color-text-tertiary: var(--text-muted);
-  --color-accent-primary: var(--color-primary);
-  --color-accent-primary-pressed: #1D4ED8;
-  --color-accent-secondary: var(--color-secondary);
-  --color-accent-tertiary: var(--color-tertiary);
-  --color-on-accent: #FFFFFF;
+  --color-accent-primary: var(--primary);
+  --color-accent-primary-pressed: #001438;
+  --color-accent-secondary: var(--secondary);
+  --color-on-accent: var(--on-primary);
 
-  /* ── Semantic colors ───────────────────────────────────────────────────── */
-  --color-danger-bg: #FEE2E2;
-  --color-danger-fg: #DC2626;
-  --color-warning-bg: #FEF3C7;
-  --color-warning-fg: #D97706;
-  --color-success-bg: #DCFCE7;
-  --color-success-fg: #16A34A;
-  --color-info-bg: #DBEAFE;
-  --color-info-fg: #2563EB;
+  --color-danger-bg: #ffdad6;
+  --color-danger-fg: #ba1a1a;
+  --color-warning-bg: #fef3c7;
+  --color-warning-fg: #d97706;
+  --color-success-bg: #dcfce7;
+  --color-success-fg: #0f336d;
+  --color-info-bg: #dbeafe;
+  --color-info-fg: #1b3462;
 
   --color-danger: var(--color-danger-fg);
   --color-warning: var(--color-warning-fg);
   --color-success: var(--color-success-fg);
   --color-info: var(--color-info-fg);
 
-  /* ── Page/system surfaces ──────────────────────────────────────────────── */
+  /* Page/system surfaces */
   --bg-app: var(--bg-page);
-  --surface-glass: var(--bg-card);
-  --surface-glass-border: var(--border-hairline);
-  --surface-sheet: var(--bg-card);
+  --surface-glass: var(--surface-container-lowest);
+  --surface-glass-border: var(--outline-variant);
+  --surface-sheet: var(--surface-container-lowest);
   --blur-glass: 0px;
 
-  /* Gradients are kept only as compatibility fallbacks. UI components should
-     prefer solid/tinted Academic Core tokens. */
-  --gradient-accent: var(--color-primary);
-  --gradient-accent-soft: var(--color-info-bg);
-
-  --shadow-card: 0 1px 2px rgba(15,23,42,0.04), 0 4px 12px rgba(15,23,42,0.05);
+  --shadow-card: 0 1px 2px rgba(26,28,28,0.04), 0 4px 12px rgba(26,28,28,0.05);
   --shadow-glass: var(--shadow-card);
-  --shadow-glow: 0 1px 2px rgba(15,23,42,0.04), 0 4px 12px rgba(15,23,42,0.05);
-  --shadow-sheet: 0 -1px 2px rgba(15,23,42,0.04), 0 -8px 24px rgba(15,23,42,0.08);
+  --shadow-glow: 0 1px 2px rgba(26,28,28,0.04), 0 4px 12px rgba(26,28,28,0.05);
+  --shadow-sheet: 0 -1px 2px rgba(26,28,28,0.04), 0 -8px 24px rgba(26,28,28,0.08);
 
-  /* ── Shape ─────────────────────────────────────────────────────────────── */
-  --radius-card: 18px;
-  --radius-sheet: 24px;
-  --radius-chip: 999px;
-  --radius-btn: 999px;
-  --radius-squircle: 18px;
-  --radius-blob: 20px;
-  --radius-pill: 999px;
-  --radius-pill-lg: 999px;
+  /* ── Shape & Radii ──────────────────────────────────────────────────────── */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
 
-  /* ── Typography ───────────────────────────────────────────────────────── */
-  --font-family-base: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-family-mono: 'Inter', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  --font-family: var(--font-family-base);
+  --radius-card: 12px;
+  --radius-sheet: 16px;
+  --radius-chip: 9999px;
+  --radius-btn: 8px;
+  --radius-squircle: 12px;
+  --radius-blob: 16px;
+  --radius-pill: 9999px;
+  --radius-pill-lg: 9999px;
 
-  --text-2xs: 0.6875rem; /* 11px label */
+  /* ── Typography Scale & Spacing ─────────────────────────────────────────── */
+  --text-2xs: 0.6875rem; /* 11px label-caps */
   --text-xs: 0.75rem;
-  --text-sm: 0.8125rem;
-  --text-base: 0.9375rem;
-  --text-md: 1rem;
-  --text-lg: 1.125rem;
-  --text-xl: 1.5rem;
-  --text-2xl: 1.75rem;
+  --text-sm: 0.875rem;   /* 14px */
+  --text-base: 1rem;     /* 16px */
+  --text-md: 1.125rem;   /* 18px */
+  --text-lg: 1.5rem;     /* 24px headline-md */
+  --text-xl: 2rem;       /* 32px headline-lg */
+  --text-2xl: 2.5rem;    /* 40px display */
 
-  /* ── Spacing ──────────────────────────────────────────────────────────── */
+  --spacing-unit: 4px;
+  --stack-sm: 8px;
+  --stack-md: 16px;
+  --stack-lg: 32px;
+  --gutter-mobile: 16px;
+  --gutter-tablet: 24px;
+  --gutter-desktop: 32px;
+
   --space-xs: 4px;
   --space-sm: 8px;
   --space-md: 16px;
   --space-lg: 24px;
   --space-xl: 32px;
 
-  /* ── Status/subject helpers ───────────────────────────────────────────── */
+  /* Status/subject helpers */
   --priority-low: var(--text-secondary);
   --priority-medium: var(--color-warning-fg);
   --priority-high: var(--color-danger-fg);
   --priority-urgent: var(--color-danger-fg);
 
-  --subject-1: var(--color-secondary);
-  --subject-2: #DB2777;
-  --subject-3: var(--color-primary);
-  --subject-4: #0D9488;
-  --subject-5: var(--color-tertiary);
+  --subject-1: var(--secondary);
+  --subject-2: #db2777;
+  --subject-3: var(--primary);
+  --subject-4: #0d9488;
+  --subject-5: var(--tertiary);
   --subject-6: var(--color-success-fg);
   --subject-7: var(--color-danger-fg);
   --subject-8: var(--color-neutral);
 
-  --tabbar-height: 68px;
-  --tabbar-clear: 92px;
+  --tabbar-height: 64px;
+  --tabbar-clear: 88px;
 }
+
+/* ── Academic OS Tonal Surface Containers (Dark Mode) ───────────────────── */
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  /*
+   * Dark theme surface hierarchy — Quiet Luxury Academic character.
+   * Page bg is a dark warm-charcoal (not deep navy).
+   * Cards sit on top as slightly lighter charcoal — not blue panels.
+   * Primary accent is a cool periwinkle, not saturated navy.
+   */
+  --bg-page: #111318;
+  --surface: #111318;
+  --surface-container-lowest: #1c1e26;
+  --surface-container-low:    #21232e;
+  --surface-container:        #2a2d3a;
+  --surface-container-high:   #34374a;
+  --surface-container-highest:#3e4154;
+
+  --bg-card: var(--surface-container-lowest);
+  --bg-card-tint: rgba(144, 176, 238, 0.08);
+  --border-hairline: #2e3145;
+  --text-primary: #e4e2f0;
+  --text-secondary: #9a98b0;
+  --text-muted: #666880;
+
+  /* Semantic surface text — mirrors light theme pattern */
+  --on-surface: #e4e2f0;
+  --on-surface-variant: #9a98b0;
+
+  /* Primary: cool periwinkle — readable against dark surfaces */
+  --primary: #a8c5f5;
+  --on-primary: #0a1a3a;
+  --primary-container: #1c2d4f;
+  --on-primary-container: #c8dbff;
+
+  --secondary: #b8b4ff;
+  --secondary-container: #2d2b5a;
+
+  --outline: #4a4d62;
+  --outline-variant: #2e3145;
+
+  /* Legacy compat */
+  --color-primary: #a8c5f5;
+  --color-secondary: #b8b4ff;
+  --neutral-100: #21232e;
+  --neutral-50: #111318;
+
+  /* Status semantic — restrained, not oversaturated */
+  --error: #ffb4ab;
+  --error-container: #3a1218;
+  --on-error-container: #ffb4ab;
+
+  --color-danger-bg: rgba(255, 180, 171, 0.12);
+  --color-danger-fg: #ff8a7a;
+  --color-warning-bg: rgba(255, 179, 0, 0.12);
+  --color-warning-fg: #ffb800;
+  --color-success-bg: rgba(74, 222, 128, 0.10);
+  --color-success-fg: #4ade80;
+  --color-info-bg: rgba(168, 197, 245, 0.10);
+  --color-info-fg: #a8c5f5;
+
+  --success-attendance: #4ade80;
+  --on-success: #0a2a12;
+
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.5), 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-glass: var(--shadow-card);
+  --shadow-glow: 0 0 0 1px rgba(168, 197, 245, 0.15);
+  --shadow-sheet: 0 -1px 2px rgba(0, 0, 0, 0.5), 0 -8px 24px rgba(0, 0, 0, 0.55);
+}
+

@@ -3,7 +3,7 @@ import { useAttendanceMath } from '../../hooks/useAttendanceMath';
 import { useSubjects, useLectureSlots, useAttendanceRecords } from '../../db/useDatabase';
 import { db } from '../../db/index';
 import { useUIStore } from '../../store/uiStore';
-import { BottomSheet, GlassButton, ProgressRing, Badge } from '../../components/ui';
+import { BottomSheet, Button, ProgressRing, Badge } from '../../components/ui';
 import { ArrowLeft, AlertCircle, Plus, Calendar, ArrowRight, PlusCircle, Check } from 'lucide-react';
 
 export const AttendanceView: React.FC = () => {
@@ -82,7 +82,7 @@ export const AttendanceView: React.FC = () => {
   const overallColor = overall.isAnyAtRisk ? 'var(--color-danger)' : 'var(--color-success)';
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: 'var(--bg-page)', paddingBottom: '80px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-page)' }}>
       <h1 className="sr-only">Attendance</h1>
 
       {/* Screen header */}
@@ -312,12 +312,12 @@ export const AttendanceView: React.FC = () => {
                       <AlertCircle size={14} /> {dbError}
                     </div>
                   )}
-                  <GlassButton onClick={handleBackfill} disabled={isSavingBackfill} style={{ flex: 1 }}>
+                  <Button onClick={handleBackfill} disabled={isSavingBackfill} style={{ flex: 1 }}>
                     {isSavingBackfill ? 'Saving…' : 'Save Backfill'}
-                  </GlassButton>
-                  <GlassButton variant="ghost" onClick={() => setBackfillSlotId(null)}>
+                  </Button>
+                  <Button variant="ghost" onClick={() => setBackfillSlotId(null)}>
                     Cancel
-                  </GlassButton>
+                  </Button>
                 </div>
               </div>
             )}
