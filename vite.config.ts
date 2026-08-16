@@ -33,17 +33,7 @@ export default defineConfig({
       workbox: {
         // Cache all assets from the app shell
         globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
-        // Cache Dexie-served data by default — no remote API calls needed for Phase 1
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\/.*/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'google-fonts',
-              expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 },
-            },
-          },
-        ],
+
         // Prevent the service worker from swallowing navigation to external links
         navigateFallback: 'index.html',
         navigateFallbackDenylist: [/^\/api\//],
