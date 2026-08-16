@@ -32,6 +32,7 @@ export type ActivationResult =
       ok: true;
       role: ActivationRole;
       accountId: string;
+      sessionToken: string;
       profile: ActivationProfile;
       /** First-time student activation — client must show the onboarding form. */
       needsOnboarding: boolean;
@@ -69,6 +70,7 @@ export function mapRpcResult(raw: unknown): ActivationResult {
   if (
     typeof r.role !== 'string' ||
     typeof r.account_id !== 'string' ||
+    typeof r.session_token !== 'string' ||
     typeof r.profile !== 'object' ||
     r.profile === null
   ) {
@@ -81,6 +83,7 @@ export function mapRpcResult(raw: unknown): ActivationResult {
     ok: true,
     role,
     accountId: r.account_id,
+    sessionToken: r.session_token,
     profile: {
       id: typeof p.id === 'string' ? p.id : '',
       name: typeof p.name === 'string' ? p.name : null,
@@ -121,19 +124,19 @@ export async function activateAccessKey(
 
 /**
  * Save student identity fields (name, department, enrollment number) to the
- * server-side account record. Called once after first student activation
- * (the onboarding form). account_id is the bearer; the raw key is NOT sent.
+ * server-side account record. Authenticated via p_session_token (identity derived
+ * server-side from active device_sessions).
  */
 export async function saveStudentProfile(
-  accountId: string,
+  sessionToken: string,
   name: string,
   department: string,
   enrollmentNumber: string,
 ): Promise<boolean> {
-  if (!supabase) return false;
+  if (!supabase || !sessionToken) return false;
   try {
     const { data, error } = await supabase.rpc('save_student_profile', {
-      p_account_id: accountId,
+      p_session_token: sessionToken,
       p_name: name,
       p_department: department,
       p_enrollment_number: enrollmentNumber,
@@ -150,21 +153,19 @@ export async function saveStudentProfile(
 
 /**
  * Sign out of the current device — removes the device session server-side.
- * Account-keyed (not code-keyed) because students never persist their raw key
- * on-device. This is a best-effort cleanup; a network failure is non-fatal
- * (the device just has a stale session row).
+ * Authenticated via p_session_token (identity derived server-side).
+ * This is a best-effort cleanup; a network failure is non-fatal.
  */
 export async function signOutSession(
-  accountId: string,
-  deviceId: string,
+  sessionToken: string,
 ): Promise<void> {
-  if (!supabase) return;
+  if (!supabase || !sessionToken) return;
   try {
     await supabase.rpc('sign_out_session', {
-      p_account_id: accountId,
-      p_device_id: deviceId,
+      p_session_token: sessionToken,
     });
   } catch {
     /* non-fatal — device stays signed in server-side */
   }
 }
+

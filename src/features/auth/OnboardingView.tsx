@@ -57,11 +57,11 @@ export const OnboardingView: React.FC = () => {
   const [submitError,      setSubmitError]      = useState<string | null>(null);
   const [saved,            setSaved]            = useState(false);
 
-  const accountId = activation?.accountId ?? '';
-  const nameOk    = name.trim().length >= 2;
-  const deptOk    = department.trim().length >= 2;
-  const enrollOk  = enrollmentNumber.trim().length >= 3;
-  const canSubmit = nameOk && deptOk && enrollOk && !submitting;
+  const sessionToken = activation?.sessionToken ?? '';
+  const nameOk       = name.trim().length >= 2;
+  const deptOk       = department.trim().length >= 2;
+  const enrollOk     = enrollmentNumber.trim().length >= 3;
+  const canSubmit    = nameOk && deptOk && enrollOk && !submitting;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,7 +70,7 @@ export const OnboardingView: React.FC = () => {
     setSubmitError(null);
 
     const ok = await saveStudentProfile(
-      accountId,
+      sessionToken,
       name.trim(),
       department.trim(),
       enrollmentNumber.trim(),

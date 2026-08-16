@@ -42,15 +42,15 @@ beforeEach(() => {
 });
 
 describe('saveStudentProfile', () => {
-  it('calls save_student_profile RPC with account_id + identity fields', async () => {
+  it('calls save_student_profile RPC with session_token + identity fields', async () => {
     rpcMock.mockResolvedValue({ data: { ok: true }, error: null });
 
-    const ok = await saveStudentProfile('acc-1', 'Drashti Patel', 'Computer Engineering', '2204039');
+    const ok = await saveStudentProfile('token-abc1234567890', 'Drashti Patel', 'Computer Engineering', '2204039');
 
     expect(ok).toBe(true);
     expect(rpcMock).toHaveBeenCalledTimes(1);
     expect(rpcMock).toHaveBeenCalledWith('save_student_profile', {
-      p_account_id: 'acc-1',
+      p_session_token: 'token-abc1234567890',
       p_name: 'Drashti Patel',
       p_department: 'Computer Engineering',
       p_enrollment_number: '2204039',

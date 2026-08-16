@@ -23,6 +23,8 @@ export interface Activation {
   role: ActivationRole;
   accountId: string;
   profileId: string;
+  /** Server-issued 256-bit session token used for protected RPC authorization. */
+  sessionToken: string;
   /** Masked preview of the entered key, e.g. "XK7A…" — never the raw code. */
   codePreview: string;
   activatedAt: string;
@@ -109,12 +111,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       return;
     }
 
-    const { role, accountId, profile: p, needsOnboarding } = result;
+    const { role, accountId, sessionToken, profile: p, needsOnboarding } = result;
     const isAdmin = role === 'admin' || role === 'owner';
     const activation: Activation = {
       role,
       accountId,
       profileId: p.id,
+      sessionToken,
       codePreview: maskCode(code),
       activatedAt: new Date().toISOString(),
       needsOnboarding,
@@ -142,8 +145,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const { activation } = get();
 
     // Best-effort server-side sign-out (non-blocking, non-fatal).
-    if (activation?.accountId) {
-      await signOutSession(activation.accountId, getDeviceId());
+    if (activation?.sessionToken) {
+      await signOutSession(activation.sessionToken);
     }
 
     try {

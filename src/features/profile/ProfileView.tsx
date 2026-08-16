@@ -102,8 +102,8 @@ export const ProfileView: React.FC = () => {
     setIsConfirmingClear(false);
     await exportBackupJSON();
 
-    if (activation?.accountId) {
-      await signOutSession(activation.accountId, getDeviceId()).catch(() => {});
+    if (activation?.sessionToken) {
+      await signOutSession(activation.sessionToken).catch(() => {});
     }
 
     localStorage.setItem('academic_os_user_cleared', 'true');
