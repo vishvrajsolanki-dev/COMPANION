@@ -113,7 +113,7 @@ as $$
 $$;
 ```
 
-### 6.2 Internal Helper: `verify_device_session`
+### 6.2 Internal Helper: `verify_device_session` (Hardened in Migration 0009 — [CONFIRMED] Live-Verified)
 ```sql
 create type public.session_verification_result as (
   account_id  uuid,
@@ -129,9 +129,9 @@ security definer
 set search_path = public, extensions, pg_temp
 as $$
 declare
-  v_hash   text;
-  v_res    public.session_verification_result;
-  v_rec    record;
+  v_hash text;
+  v_res  public.session_verification_result;
+  v_rec  record;
 begin
   v_res.is_valid := false;
 
@@ -141,7 +141,20 @@ begin
 
   v_hash := public.hash_session_token(trim(p_session_token));
 
-  select ds.account_id, ds.device_id, ac.role, ds.expires_at, ds.last_seen
+  -- Query device_sessions joined ONLY with accounts (1:1 relationship),
+  -- using an EXISTS subquery on access_keys to eliminate row multiplication
+  -- for multi-key accounts.
+  select ds.account_id,
+         ds.device_id,
+         ac.role,
+         ds.expires_at,
+         ds.last_seen,
+         exists (
+           select 1
+           from public.access_keys ak
+           where ak.account_id = ds.account_id
+             and ak.is_active = true
+         ) as key_active
   into v_rec
   from public.device_sessions ds
   join public.accounts ac on ac.id = ds.account_id
@@ -151,10 +164,22 @@ begin
     return v_res;
   end if;
 
-  if v_rec.expires_at < now() or v_rec.last_seen < (now() - interval '7 days') then
+  -- Verify key is active (account must have at least one active access key)
+  if not v_rec.key_active then
     return v_res;
   end if;
 
+  -- Absolute expiration check (30 days)
+  if v_rec.expires_at < now() then
+    return v_res;
+  end if;
+
+  -- Idle timeout check (7 days)
+  if v_rec.last_seen < (now() - interval '7 days') then
+    return v_res;
+  end if;
+
+  -- Update last_seen on active session use
   update public.device_sessions
   set last_seen = now()
   where session_token_hash = v_hash;
@@ -167,6 +192,9 @@ begin
   return v_res;
 end;
 $$;
+
+revoke execute on function public.verify_device_session(text) from public, anon, authenticated;
+```
 ```
 
 ### 6.3 Redesigned `save_student_profile` RPC
