@@ -8,6 +8,7 @@ import { ErrorBoundary } from '../components/ErrorBoundary';
 import { GlobalErrorCatcher } from '../components/GlobalErrorCatcher';
 import { ToastProvider } from '../components/ui';
 import { NotFoundView } from '../features/notfound/NotFoundView';
+import { shouldRenderActivationGate } from './authGate';
 
 const ActivationView = React.lazy(() => import('../features/auth/ActivationView').then(m => ({ default: m.ActivationView })));
 const OnboardingView = React.lazy(() => import('../features/auth/OnboardingView').then(m => ({ default: m.OnboardingView })));
@@ -111,7 +112,7 @@ export const App: React.FC = () => {
 
   // Phase B Auth Gate: If Supabase is configured and local device has no activation record,
   // lock out the app shell entirely. Once activated, state persists in localStorage.
-  if (supabaseConfigured && authStatus === 'unactivated') {
+  if (shouldRenderActivationGate(supabaseConfigured, authStatus)) {
     return (
       <ErrorBoundary scope="Activation Gate">
         <Suspense fallback={<ViewLoading scope="Activation Gate" />}>
